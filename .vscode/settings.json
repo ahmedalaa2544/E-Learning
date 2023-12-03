@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "undefined/subscriptions/0989730b-8067-4de7-90d3-4e058dd4b8d5/resourceGroups/appsvc_linux_centralus/providers/Microsoft.Web/sites/E-learnig-Graduation-Project",
+    "appService.deploySubpath": "."
+}
