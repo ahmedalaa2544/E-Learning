@@ -67,10 +67,25 @@ router.get(
 );
 
 /**
- * Retrieve a list of courses created by the authenticated user.
  * Route: GET /courses
+ * Description: Retrieve a list of courses created by the authenticated user.
  * Middleware: isAuthenticated
+ *
+ * This route supports an optional query parameter 'view', where:
+ * - If 'view' is set to 'all', it triggers the 'getCourses' method to fetch all courses without check is authenticated.
+ * - If 'view' is not provided or set to any other value, the route proceeds to the next middleware and check if is authenticated.
  */
-router.get("/", isAuthenticated, courseController.getMyCreatedCourses);
+router.get(
+  "/",
+  (req, res, next) => {
+    if (req.query.view === "all") {
+      courseController.getCourses(req, res, next);
+    } else {
+      next();
+    }
+  },
+  isAuthenticated,
+  courseController.getCourses
+);
 
 export default router;

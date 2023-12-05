@@ -198,21 +198,43 @@ export const getCourse = asyncHandler(async (req, res, next) => {
  * @param {Function} next - Express next middleware function.
  * @returns {Object} - JSON response containing a list of user-created courses or an error message.
  */
+export const getCourses = asyncHandler(async (req, res, next) => {
+  console.log("reached endpoint");
 
-export const getMyCreatedCourses = asyncHandler(async (req, res, next) => {
-  // Find courses created by the authenticated user.
-  let myCourses = await Course.find({ createdBy: req.userId });
+  // Check the 'view' query parameter to determine the type of courses to retrieve.
+  if (req.query.view === "instructor") {
+    // Find courses created by the authenticated user.
+    let courses = await Course.find({ createdBy: req.userId });
 
-  // Extract the document representation for each course.
-  myCourses = myCourses.map((course) => course._doc);
+    // If no courses are found, invoke the error middleware with a 404 status.
+    if (courses.length <= 0) {
+      return next(new Error("Courses not found"), { cause: 404 });
+    }
 
-  // If no courses are found, invoke the error middleware with a 404 status.
-  if (myCourses.length <= 0) {
-    return next(new Error("Courses not found"), { cause: 404 });
+    // Extract the document representation for each course.
+    courses = courses.map((course) => course._doc);
+
+    // Return a JSON response containing the list of user-created courses.
+    return courses
+      ? res.status(200).json({ message: "Done", courses: courses })
+      : res.json({ message: "Something went wrong" });
+  } else if (req.query.view === "student") {
+    // Handling for 'student' view (to be implemented if needed).
+  } else if (req.query.view === "all") {
+    // Retrieve all courses, regardless of the creator.
+    let courses = await Course.find();
+
+    // Extract the document representation for each course.
+    courses = courses.map((course) => course._doc);
+
+    // Return a JSON response containing the list of all courses.
+    return courses
+      ? res.status(200).json({ message: "Done", courses: courses })
+      : res.json({ message: "Something went wrong" });
   }
 
-  // Return a JSON response containing the list of user-created courses.
-  return myCourses
-    ? res.status(200).json({ message: "Done", courses: myCourses })
-    : res.json({ message: "Something went wrong" });
+  // If the 'view' query parameter is not valid, return a 400 status with an error message.
+  return res
+    .status(400)
+    .json({ message: "Please, enter a suitable 'view' query parameter" });
 });
