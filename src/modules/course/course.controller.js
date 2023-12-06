@@ -199,8 +199,6 @@ export const getCourse = asyncHandler(async (req, res, next) => {
  * @returns {Object} - JSON response containing a list of user-created courses or an error message.
  */
 export const getCourses = asyncHandler(async (req, res, next) => {
-  console.log("reached endpoint");
-
   // Check the 'view' query parameter to determine the type of courses to retrieve.
   if (req.query.view === "instructor") {
     // Find courses created by the authenticated user.
@@ -220,7 +218,7 @@ export const getCourses = asyncHandler(async (req, res, next) => {
       : res.json({ message: "Something went wrong" });
   } else if (req.query.view === "student") {
     // Handling for 'student' view (to be implemented if needed).
-  } else if (req.query.view === "all") {
+  } else if (req.query.view === undefined || "all") {
     // Retrieve all courses, regardless of the creator.
     let courses = await Course.find();
 
