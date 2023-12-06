@@ -4,6 +4,8 @@ import Chapter from "../../../DB/model/chapter.model.js";
 import Curriculum from "../../../DB/model/curriculum.model.js";
 import Video from "../../../DB/model/video.model.js";
 import Article from "../../../DB/model/article.model.js";
+import Category from "../../../DB/model/category.model.js";
+import SubCategory from "../../../DB/model/subcategory.model.js";
 import upload, { deleteDirectory } from "../../utils/azureServices.js";
 /**
  * Create a new course with the provided title.
@@ -202,12 +204,10 @@ export const getCourses = asyncHandler(async (req, res, next) => {
   // Check the 'view' query parameter to determine the type of courses to retrieve.
   if (req.query.view === "instructor") {
     // Find courses created by the authenticated user.
-    let courses = await Course.find({ createdBy: req.userId });
-
-    // If no courses are found, invoke the error middleware with a 404 status.
-    if (courses.length <= 0) {
-      return next(new Error("Courses not found"), { cause: 404 });
-    }
+    let courses = await Course.find({ createdBy: req.userId })
+      .populate({ path: "category", select: "name" })
+      .populate({ path: "subCategory", select: "name" })
+      .exec();
 
     // Extract the document representation for each course.
     courses = courses.map((course) => course._doc);
@@ -220,7 +220,10 @@ export const getCourses = asyncHandler(async (req, res, next) => {
     // Handling for 'student' view (to be implemented if needed).
   } else if (req.query.view === undefined || "all") {
     // Retrieve all courses, regardless of the creator.
-    let courses = await Course.find();
+    let courses = await Course.find()
+      .populate({ path: "category", select: "name" })
+      .populate({ path: "subCategory", select: "name" })
+      .exec();
 
     // Extract the document representation for each course.
     courses = courses.map((course) => course._doc);
