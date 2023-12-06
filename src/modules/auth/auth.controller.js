@@ -82,7 +82,7 @@ export const LogIn = asyncHandler(async (req, res, next) => {
   if (!checkEmail.isConfirm)
     return next(new Error("unConfirmed Email"), { cause: 400 });
   // check password
-  const matchPass = bcryptjs.compare(password, checkEmail.password);
+  const matchPass = await bcryptjs.compare(password, checkEmail.password);
   if (!matchPass) return next(new Error("Wrong password"), { cause: 400 });
   // create a token
   const token = jwt.sign(
