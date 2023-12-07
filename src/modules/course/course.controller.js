@@ -57,6 +57,14 @@ export const editCourse = asyncHandler(async (req, res, next) => {
     level,
   } = req.body;
 
+  // Retrieve the identifiers (IDs) for the specified category and subcategory.
+
+  const categoryId = await Category.find({ name: category })._id;
+  const subCategoryId = await SubCategory.find({
+    name: subCategory,
+    categoryId: categoryId,
+  })._id;
+
   // Extract courseId from the request parameters.
   const { courseId } = req.params;
   // Initialize variables for cover image and promotional video URLs.
@@ -112,8 +120,8 @@ export const editCourse = asyncHandler(async (req, res, next) => {
       promotionalVideoUrl: promotionalVideoUrl,
       price: price,
       discount: discount,
-      category: category,
-      subCategory: subCategory,
+      category: categoryId,
+      subCategory: subCategoryId,
       tags: tags,
     }
   );
