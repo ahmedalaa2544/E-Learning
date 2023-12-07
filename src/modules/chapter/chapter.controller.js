@@ -37,7 +37,9 @@ export const createChapter = asyncHandler(async (req, res, next) => {
   // Send a response based on the success or failure of the chapter creation
   return createdChapter
     ? res.status(200).json({ message: "Done", chapter: createdChapter._doc })
-    : res.json({ message: "Something went wrong during chapter creation." });
+    : res
+        .status(500)
+        .json({ message: "Something went wrong during chapter creation." });
 });
 /**
  * Edit the details of a chapter within a specified course, including changing order if requested.
@@ -106,7 +108,7 @@ export const editChapter = asyncHandler(async (req, res, next) => {
     // Send a response based on the success or failure of the order update
     return editChapterOrder
       ? res.status(200).json({ message: "Done" })
-      : res.json({
+      : res.status(500).json({
           message: "Something went wrong during chapter order update.",
         });
   }
@@ -120,7 +122,7 @@ export const editChapter = asyncHandler(async (req, res, next) => {
   // Send a response based on the success or failure of the chapter edit
   return editedChapter
     ? res.status(200).json({ message: "Done" })
-    : res.json({
+    : res.status(500).json({
         message: "Something went wrong during chapter details update.",
       });
 });
@@ -157,7 +159,9 @@ export const deleteChapter = asyncHandler(async (req, res, next) => {
   // Send a response based on the success or failure of the chapter deletion
   return deletedChapter
     ? res.status(200).json({ message: "Done" })
-    : res.json({ message: "Something went wrong during chapter deletion." });
+    : res
+        .status(500)
+        .json({ message: "Something went wrong during chapter deletion." });
 });
 /**
  * Retrieve details of a specific chapter within a given course.
@@ -177,10 +181,10 @@ export const getChapter = asyncHandler(async (req, res, next) => {
   // Send a response based on the success or failure of the chapter retrieval
   return chapter
     ? res.status(200).json({
-        message: "Chapter details retrieved successfully.",
+        message: "Done",
         chapter: chapter,
       })
-    : res.json({
+    : res.status(500).json({
         message: "Chapter not found or something went wrong during retrieval.",
       });
 });

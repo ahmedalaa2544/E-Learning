@@ -13,6 +13,7 @@ const courseSchema = new Schema(
         return !(this.status === "Draft");
       },
       max: 120,
+      set: (value) => (value === "" ? null : value),
     },
     description: {
       type: String,
@@ -20,12 +21,14 @@ const courseSchema = new Schema(
         return !(this.status === "Draft");
       },
       max: 200,
+      set: (value) => (value === "" ? null : value),
     },
     language: {
       type: String,
       required: function () {
         return !(this.status === "Draft");
       },
+      set: (value) => (value === "" ? null : value),
     },
     tags: [
       {
@@ -34,6 +37,7 @@ const courseSchema = new Schema(
         required: function () {
           return !(this.status === "Draft");
         },
+        set: (value) => (value === "" ? null : value),
       },
     ],
     level: {
@@ -42,16 +46,32 @@ const courseSchema = new Schema(
       required: function () {
         return !(this.status === "Draft");
       },
+      set: (value) => (value === "" ? null : value),
     },
     coverImageUrl: {
       type: String,
       required: function () {
         return !(this.status === "Draft");
       },
+      set: (value) => (value === "" ? null : value),
     },
-
+    coverImageBlobName: {
+      type: String,
+      required: function () {
+        return !(this.status === "Draft");
+      },
+      set: (value) => (value === "" ? null : value),
+    },
     promotionalVideoUrl: {
       type: String,
+      set: (value) => (value === "" ? null : value),
+    },
+    promotionalVideoBlobName: {
+      type: String,
+      required: function () {
+        return !(this.status === "Draft");
+      },
+      set: (value) => (value === "" ? null : value),
     },
     price: {
       type: Number,
@@ -59,14 +79,18 @@ const courseSchema = new Schema(
       required: function () {
         return !(this.status === "Draft");
       },
+      set: (value) => (value === "" ? null : value),
     },
-    discount: { type: Number, min: 1, max: 100 }, // %
+    discount: {
+      type: Number,
+      min: 1,
+      max: 100,
+      set: (value) => (value === "" ? null : value),
+    }, // %
     createdBy: {
       type: Types.ObjectId,
       ref: "User",
-      required: function () {
-        return !(this.status === "Draft");
-      },
+      required: true,
     },
     category: {
       type: Types.ObjectId,
@@ -74,6 +98,7 @@ const courseSchema = new Schema(
       required: function () {
         return !(this.status === "Draft");
       },
+      set: (value) => (value === "" ? null : value),
     },
     subCategory: {
       type: Types.ObjectId,
@@ -81,6 +106,7 @@ const courseSchema = new Schema(
       required: function () {
         return !(this.status === "Draft");
       },
+      set: (value) => (value === "" ? null : value),
     },
     instructors: [
       {
@@ -89,6 +115,7 @@ const courseSchema = new Schema(
         required: function () {
           return !(this.status === "Draft");
         },
+        set: (value) => (value === "" ? null : value),
       },
     ],
 
@@ -96,6 +123,7 @@ const courseSchema = new Schema(
       {
         type: Types.ObjectId,
         ref: "User",
+        set: (value) => (value === "" ? null : value),
       },
     ],
     status: {

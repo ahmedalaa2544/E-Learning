@@ -20,7 +20,7 @@ const authorization = asyncHandler(async (req, res, next) => {
     // If the course is not found, send a 404 error response
     return next(new Error("Course not found"), { cause: 404 });
   }
-
+  req.course = course;
   // Check if the user has access to the specified course (is the creator)
   if (!(course.createdBy.toString() === req.userId)) {
     // If the user does not have access, send a 401 error response

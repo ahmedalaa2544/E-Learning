@@ -300,7 +300,7 @@ export const editArticle = asyncHandler(async (req, res, next) => {
   // Send a response indicating the success or failure of the article editing process
   return editedArticle
     ? res.status(200).json({ message: "Done" })
-    : res.json({ message: "Something went wrong" });
+    : res.status(500).json({ message: "Something went wrong" });
 });
 
 /**
@@ -335,7 +335,7 @@ export const deleteVideo = asyncHandler(async (req, res, next) => {
   // Send a response based on the success of the video deletion
   return deletedVideo
     ? res.status(200).json({ message: "Done" })
-    : res.json({ message: "Something went wrong" });
+    : res.status(500).json({ message: "Something went wrong" });
 });
 
 /**
@@ -370,7 +370,7 @@ export const deleteArticle = asyncHandler(async (req, res, next) => {
   // Send a response based on the success of the article deletion
   return deletedArticle
     ? res.status(200).json({ message: "Done" })
-    : res.json({ message: "Something went wrong" });
+    : res.status(500).json({ message: "Something went wrong" });
 });
 
 /**
@@ -420,7 +420,7 @@ export const getVideo = asyncHandler(async (req, res, next) => {
         message: "Done",
         video: { ...video._doc, url: accountSasTokenUrl, blobName: undefined },
       })
-    : res.json({ message: "Something went wrong" });
+    : res.status(500).json({ message: "Something went wrong" });
 });
 
 /**
@@ -462,7 +462,7 @@ export const getArticle = asyncHandler(async (req, res, next) => {
   // Send a response containing article details
   return article
     ? res.status(200).json({ message: "Done", article: article._doc })
-    : res.json({ message: "Something went wrong" });
+    : res.status(500).json({ message: "Something went wrong" });
 });
 
 /**
@@ -511,5 +511,5 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
   return curriculum
     ? res.status(200).json({ message: "Done", curriculum: sortedCurriculum })
     : //// Handle errors and pass them to the next middleware
-      res.json({ message: "Something went wrong" });
+      res.status(500).json({ message: "Something went wrong" });
 });

@@ -13,13 +13,16 @@ export const editCourseSchema = joi
   .object({
     courseId: joi.string().custom(isValidObjectId).required(),
     title: joi.string().max(60),
-    subtitle: joi.string().max(120),
-    category: joi.string(),
-    subCategory: joi.string(),
-    language: joi.string(),
-    coureTags: joi.array().max(50),
-    descriotion: joi.string().min(60).max(200),
-    level: joi.string().valid(...allowedLevels),
+    subtitle: joi.string().max(120).allow(""),
+    category: joi.string().allow(""),
+    subCategory: joi.string().allow(""),
+    language: joi.string().allow(""),
+    coureTags: joi.array().max(50).allow(""),
+    descriotion: joi.string().min(60).max(200).allow(""),
+    level: joi
+      .string()
+      .valid(...allowedLevels)
+      .allow(""),
   })
   .unknown(true);
 
