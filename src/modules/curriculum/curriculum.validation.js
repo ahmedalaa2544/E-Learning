@@ -7,7 +7,6 @@ export const createVideoSchema = joi
     chapterId: joi.string().custom(isValidObjectId).required(),
     title: joi.string(),
     describtion: joi.string(),
-    order: joi.string(),
   })
   .unknown(true);
 
@@ -17,7 +16,6 @@ export const createArticleSchema = joi
     chapterId: joi.string().custom(isValidObjectId).required(),
     title: joi.string(),
     quillContent: joi.string(),
-    order: joi.string(),
   })
   .unknown(true);
 export const editCurriculumSchema = joi

@@ -6,7 +6,6 @@ export const createChapterSchema = joi
     courseId: joi.string().custom(isValidObjectId).required(),
     title: joi.string().required(),
     learningObjective: joi.string(),
-    order: joi.string().required(),
   })
   .required();
 

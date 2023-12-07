@@ -29,7 +29,7 @@ const handleUpload = async (
       const videoDirectory = `Users\\${userId}\\Courses\\${courseId}\\${chapterId}\\${videoId}`;
 
       // Check if a video file is present in the request
-      if (files.video) {
+      if (files?.video) {
         // If updating an existing video, delete the old Blob Storage entry
         if (videoEdited) {
           deleteBlob(videoEdited);
@@ -57,7 +57,7 @@ const handleUpload = async (
       let resources;
 
       // Check if additional resource files are attached to the video
-      if (files.resources) {
+      if (files?.resources) {
         resources = [];
 
         // Upload each resource file to Azure Blob Storage and collect their URLs

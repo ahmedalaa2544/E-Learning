@@ -5,7 +5,7 @@ import Curriculum from "../../../DB/model/curriculum.model.js";
 import Video from "../../../DB/model/video.model.js";
 import Article from "../../../DB/model/article.model.js";
 import { deleteDirectory } from "../../utils/azureServices.js";
-import { mergeSort } from "../../utils/dataSructures.js";
+import { mergeSort, findMax } from "../../utils/dataSructures.js";
 /**
  * Create a new chapter within a specified course.
  *
@@ -17,16 +17,18 @@ import { mergeSort } from "../../utils/dataSructures.js";
 export const createChapter = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { courseId } = req.params;
-
   // Extract chapter details from the request body
-  const { order, title, learningObjective } = req.body;
+  const { title } = req.body;
 
+  let chapters = await Chapter.find({ course: courseId });
+
+  // Calculate the order value for the next chapter .
+  const order = chapters.length + 1;
   // Create a new Chapter document
   const createdChapter = new Chapter({
     course: courseId,
     order: order,
     title: title,
-    learningObjective: learningObjective,
   });
 
   // Save the new Chapter document to the database

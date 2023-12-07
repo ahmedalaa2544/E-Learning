@@ -63,7 +63,7 @@ export const editCourse = asyncHandler(async (req, res, next) => {
   let coverImageUrl;
   let promotionalVideoUrl;
   // Check if a cover image file is provided in the request.
-  if (req.files.coverImage) {
+  if (req.files?.coverImage) {
     // Extract the extension for the cover image.
     const blobImageExtension = req.files.coverImage[0].originalname
       .split(".")
@@ -81,7 +81,7 @@ export const editCourse = asyncHandler(async (req, res, next) => {
   }
 
   // Check if a promotional video file is provided in the request.
-  if (req.files.promotionalVideo) {
+  if (req.files?.promotionalVideo) {
     // Extract the extension for the promotional video.
     const blobVideoExtension = req.files.promotionalVideo[0].originalname
       .split(".")
@@ -193,7 +193,7 @@ export const getCourse = asyncHandler(async (req, res, next) => {
 });
 
 /**
- * Retrieve a list of courses created by the authenticated user.
+ * Retrieve a list of courses .
  *
  * @param {Object} req - Express request object containing user ID for identifying created courses.
  * @param {Object} res - Express response object.

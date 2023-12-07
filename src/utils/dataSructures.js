@@ -44,5 +44,28 @@ const merge = (left, right, sortBy) => {
   // Add the remaining elements from both arrays to the result
   return [...sortedArr, ...left, ...right];
 };
+/**
+ * Find the maximum value of a specified property within an array of objects.
+ *
+ * @param {Array} arr - The array of objects to search.
+ * @param {string} prop - The property within each object to find the maximum value of.
+ * @returns {number} - The maximum value found for the specified property, or 0 if the array is empty.
+ */
+export const findMax = (arr, prop) => {
+  // Initialize max to 0 to handle the case of an empty array.
+  let max = 0;
+
+  // Iterate through each element in the array.
+  for (const element of arr) {
+    // Compare the specified property of the current element with the current max value.
+    if (element[prop] > max) {
+      // If the property value is greater, update the max value.
+      max = element[prop];
+    }
+  }
+
+  // Return the maximum value found for the specified property.
+  return max;
+};
 
 export default mergeSort;

@@ -9,7 +9,7 @@ export const validation = (Schema) => {
       { abortEarly: false }
     );
     if (validationResult.error) {
-      return res.json({
+      return res.status(403).json({
         message: "validation err",
         ValidationError: validationResult.error.details,
       });

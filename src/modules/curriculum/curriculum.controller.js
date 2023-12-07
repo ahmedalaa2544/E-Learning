@@ -19,11 +19,15 @@ import { mergeSort } from "../../utils/dataSructures.js";
 export const createVideo = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { courseId, chapterId } = req.params;
-  const { title, describtion, order } = req.body;
+  const { title, describtion } = req.body;
   // Generate a unique videoId using MongoDB ObjectId
   const videoId = new mongoose.Types.ObjectId();
   // Generate a unique curriculumId using MongoDB ObjectId
   const curriculumId = new mongoose.Types.ObjectId();
+  let curriculums = await Curriculum.find({ chapter: chapterId });
+
+  // Calculate the order value for the next curriculum by adding 1 to the number of existing curriculums.
+  const order = curriculums.length + 1;
   // Handle video file uploads and retrieve updated video details
   const { videoUrl, resources, duration, blobVideoName } = await handleUpload(
     req.files,
@@ -79,11 +83,15 @@ export const createVideo = asyncHandler(async (req, res, next) => {
 export const createArticle = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { courseId, chapterId } = req.params;
-  const { title, quillContent, order } = req.body;
+  const { title, quillContent } = req.body;
   // Generate a unique articleId using MongoDB ObjectId
   const articleId = new mongoose.Types.ObjectId();
   // Generate a unique curriculumId using MongoDB ObjectId
   const curriculumId = new mongoose.Types.ObjectId();
+  let curriculums = await Curriculum.find({ chapter: chapterId });
+
+  // Calculate the order value for the next curriculum by adding 1 to the number of existing curriculums.
+  const order = curriculums.length + 1;
   /**
    * Handle article file uploads, retrieve updated article Resources
    *

@@ -18,7 +18,6 @@ const chapterSchema = new Schema(
     },
     learningObjective: {
       type: String,
-      required: true,
       max: 200,
     },
   },
