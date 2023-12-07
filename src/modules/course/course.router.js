@@ -78,7 +78,7 @@ router.get(
 router.get(
   "/",
   (req, res, next) => {
-    if (req.query.view === undefined || "all") {
+    if (req.query.view === "all" || req.query.view === undefined) {
       courseController.getCourses(req, res, next);
     } else {
       next();
