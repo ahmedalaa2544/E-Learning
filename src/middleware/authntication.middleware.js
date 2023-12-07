@@ -6,6 +6,7 @@ import userModel from "../../DB/model/user.model.js";
 const isAuth = asyncHandler(async (req, res, next) => {
   // check token exits and type
   let { token } = req.headers;
+
   if (!token?.startsWith(process.env.BEARER_TOKEN)) {
     return next(new Error("required valid token"), { cause: 400 });
   }
