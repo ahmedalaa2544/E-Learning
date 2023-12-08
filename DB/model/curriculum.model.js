@@ -16,6 +16,7 @@ const curriculumSchema = new Schema(
       type: String,
       enum: ["video", "article"],
       require: true,
+      set: (value) => (value === "" ? null : value),
     },
     order: {
       type: Number,
@@ -27,6 +28,7 @@ const curriculumSchema = new Schema(
       required: function () {
         return this.type === "video";
       },
+      set: (value) => (value === "" ? null : value),
     },
     article: {
       type: Types.ObjectId,
@@ -34,6 +36,7 @@ const curriculumSchema = new Schema(
       required: function () {
         return this.type === "article";
       },
+      set: (value) => (value === "" ? null : value),
     },
   },
 

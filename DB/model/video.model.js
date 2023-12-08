@@ -20,9 +20,11 @@ const videoSchema = new Schema(
     title: {
       type: String,
       required: true,
+      set: (value) => (value === "" ? null : value),
     },
     describtion: {
       type: String,
+      set: (value) => (value === "" ? null : value),
     },
     url: {
       type: String,

@@ -19,6 +19,7 @@ const chapterSchema = new Schema(
     learningObjective: {
       type: String,
       max: 200,
+      set: (value) => (value === "" ? null : value),
     },
   },
 

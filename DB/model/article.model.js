@@ -12,10 +12,15 @@ const articleSchema = new Schema(
       ref: "Chapter",
       reuired: true,
     },
+
     curriculum: {
       type: Types.ObjectId,
       ref: "Curriculum",
       reuired: true,
+    },
+    title: {
+      type: String,
+      required: true,
     },
     quillContent: {
       type: String,
