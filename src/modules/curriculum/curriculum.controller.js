@@ -5,8 +5,16 @@ import Curriculum from "../../../DB/model/curriculum.model.js";
 import Video from "../../../DB/model/video.model.js";
 import Article from "../../../DB/model/article.model.js";
 import mongoose from "mongoose";
-import handleUpload from "./curriculum.handleUpload.js";
-import { deleteDirectory, generateSASUrl } from "../../utils/azureServices.js";
+import {
+  uploadVideo,
+  uploadResources,
+  uploadSubtitles,
+} from "./curriculum.handleUpload.js";
+import {
+  deleteDirectory,
+  generateSASUrl,
+  deleteBlob,
+} from "../../utils/azureServices.js";
 import { mergeSort } from "../../utils/dataSructures.js";
 /**
  * Controller function to create a new video within a course chapter, handling file uploads and database operations.
@@ -28,14 +36,7 @@ export const createVideo = asyncHandler(async (req, res, next) => {
 
   // Calculate the order value for the next curriculum by adding 1 to the number of existing curriculums.
   const order = curriculums.length + 1;
-  // Handle video file uploads and retrieve updated video details
-  const { videoUrl, resources, duration, blobVideoName } = await handleUpload(
-    req.files,
-    req.userId,
-    courseId,
-    chapterId,
-    videoId
-  );
+
   // Create a new Video document in the database
   const createdVideo = new Video({
     _id: videoId,
@@ -44,11 +45,6 @@ export const createVideo = asyncHandler(async (req, res, next) => {
     curriculum: curriculumId,
     title: title,
     describtion: describtion,
-    url: videoUrl,
-    blobName: blobVideoName,
-    resources: resources,
-    duration: duration,
-    resources: resources,
   });
   // Save the new Video document in the database
   await createdVideo.save();
@@ -92,24 +88,6 @@ export const createArticle = asyncHandler(async (req, res, next) => {
 
   // Calculate the order value for the next curriculum by adding 1 to the number of existing curriculums.
   const order = curriculums.length + 1;
-  /**
-   * Handle article file uploads, retrieve updated article Resources
-   *
-   * @param {Object} req.files - Files attached to the request.
-   * @param {string} req.userId - User ID obtained from the request.
-   * @param {string} courseId - ID of the course associated with the article.
-   * @param {string} chapterId - ID of the chapter associated with the article.
-   * @param {string} articleId - ID of the article being updated.
-   * @returns {Object} - An object containing the updated article details, new Blob Storage name, and additional resources.
-   */
-
-  const { _, resources, __, ___ } = await handleUpload(
-    req.files,
-    req.userId,
-    courseId,
-    chapterId,
-    articleId
-  );
 
   // Create a new Article document in the database
   const article = new Article({
@@ -119,7 +97,6 @@ export const createArticle = asyncHandler(async (req, res, next) => {
     curriculum: curriculumId,
     title: title,
     quillContent: quillContent,
-    resources: resources,
   });
 
   // Save the new Article document in the database
@@ -213,37 +190,102 @@ export const editCurriculum = asyncHandler(async (req, res, next) => {
  */
 export const editVideo = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
-  const { courseId, chapterId, videoId } = req.params;
+  const { courseId, chapterId, videoId, curriculumId } = req.params;
   const { title, describtion } = req.body;
+  // Retrieve the existing video document based on videoId
+  const video = await Video.findById(videoId);
+  // Check if the video exists
+  if (!video) {
+    return next(new Error("Video not found"), { cause: 404 });
+  }
+  // Declare variables to store video-related information.
+  let videoUrl, duration, blobVideoName, resources, subtitles;
 
-  /**
-   * Handle video file uploads, retrieve updated video details, and provide the new Blob Storage name.
-   *
-   * @param {Object} req.files - Files attached to the request.
-   * @param {string} req.userId - User ID obtained from the request.
-   * @param {string} courseId - ID of the course associated with the video.
-   * @param {string} chapterId - ID of the chapter associated with the video.
-   * @param {string} videoId - ID of the video being updated.
-   * @param {string} oldBlobVideoName - The old Blob Storage name of the video to be deleted.
-   * @returns {Object} - An object containing the updated video details, new Blob Storage name, and additional resources.
-   */
-  /**
-   * Note: If new resources are being uploaded for this video, existing resources will be overwritten.
-   * This ensures that the latest set of resources replaces any previous attachments.
-   */
-  const { videoUrl, resources, duration, blobVideoName } = await handleUpload(
-    req.files,
-    req.userId,
-    courseId,
-    chapterId,
-    videoId,
-    video.blobName
-  );
+  // Check if the request involves uploading a video.
+  if (req.query.upload === "video") {
+    // Upload the video and retrieve information such as URL, duration, and blob name.
+    ({ videoUrl, duration, blobVideoName } = await uploadVideo(
+      req.files,
+      req.userId,
+      courseId,
+      chapterId,
+      curriculumId,
+      video.blobName
+    ));
+  }
+
+  // Check if the request involves uploading resources.
+  if (req.query.upload === "resources") {
+    /**
+     * Note: If new resources are being uploaded for this video, existing resources will be overwritten.
+     * This ensures that the latest set of resources replaces any previous attachments.
+     */
+    resources = await uploadResources(
+      req.files,
+      req.userId,
+      courseId,
+      chapterId,
+      curriculumId
+    );
+  }
+
+  // Check if the request involves uploading subtitles.
+  if (req.query.upload === "subtitles") {
+    // Upload subtitles and retrieve information such as blob name.
+    ({ subtitles } = await uploadSubtitles(
+      req.files,
+      req.userId,
+      courseId,
+      chapterId,
+      curriculumId,
+      video.subtitles.blobName
+    ));
+  }
+
+  // Check if the request involves deleting the video.
+  if (req.query.delete === "video") {
+    // Retrieve blob names associated with the video and its subtitles, then delete them.
+    const videoBlobName = video.blobName;
+    console.log(videoBlobName);
+    const subtitlesBlobName = video.subtitles.blobName;
+    await deleteBlob(videoBlobName);
+    await deleteBlob(subtitlesBlobName);
+    // Update the Video document in the database to remove video-related details.
+    await Video.findByIdAndUpdate(videoId, {
+      url: "",
+      blobName: "",
+      duration: "",
+      subtitles: "",
+    });
+  }
+
+  // Check if the request involves deleting resources.
+  if (req.query.delete === "resources") {
+    // Retrieve the resources directory and delete it along with its content.
+    const resourcesDirectory = video.resources.directory;
+    await deleteDirectory(resourcesDirectory);
+    // Update the Video document in the database to remove resource-related details.
+    await Video.findByIdAndUpdate(videoId, {
+      resources: { directory: "", content: [] },
+    });
+  }
+
+  // Check if the request involves deleting subtitles.
+  if (req.query.delete === "subtitles") {
+    // Retrieve the subtitles' blob name and delete it.
+    const subtitlesBlobName = video.subtitles.blobName;
+    await deleteBlob(subtitlesBlobName);
+    // Update the Video document in the database to remove subtitle-related details.
+    await Video.findByIdAndUpdate(videoId, {
+      subtitles: "",
+    });
+  }
   // Update the video document with the edited details
   const editedVideo = await Video.findByIdAndUpdate(videoId, {
     title: title,
+    subtitles: subtitles,
     describtion: describtion,
-    Url: videoUrl,
+    url: videoUrl,
     blobName: blobVideoName,
     duration: duration,
     resources: resources,
@@ -265,31 +307,39 @@ export const editVideo = asyncHandler(async (req, res, next) => {
  */
 export const editArticle = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
-  const { courseId, chapterId, articleId } = req.params;
+  const { courseId, chapterId, articleId, curriculumId } = req.params;
   const { title, quillContent } = req.body;
-
-  /**
-   * Handle article file uploads, retrieve updated article Resources
-   *
-   * @param {Object} req.files - Files attached to the request.
-   * @param {string} req.userId - User ID obtained from the request.
-   * @param {string} courseId - ID of the course associated with the article.
-   * @param {string} chapterId - ID of the chapter associated with the article.
-   * @param {string} articleId - ID of the article being updated.
-   * @returns {Object} - An object containing the updated article details, new Blob Storage name, and additional resources.
-   */
-  /**
-   * Note: If new resources are being uploaded for this article, existing resources will be overwritten.
-   * This ensures that the latest set of resources replaces any previous attachments.
-   */
-  const { _, resources, __, ___ } = await handleUpload(
-    req.files,
-    req.userId,
-    courseId,
-    chapterId,
-    articleId
-  );
-
+  // Retrieve the existing article document based on videoId
+  const article = await Article.findById(articleId);
+  // Check if the article exists
+  if (!article) {
+    return next(new Error("Article not found"), { cause: 404 });
+  }
+  let resources;
+  // Check if the request involves uploading resources.
+  if (req.query.upload === "resources") {
+    /**
+     * Note: If new resources are being uploaded for this article, existing resources will be overwritten.
+     * This ensures that the latest set of resources replaces any previous attachments.
+     */
+    resources = await uploadResources(
+      req.files,
+      req.userId,
+      courseId,
+      chapterId,
+      curriculumId
+    );
+  }
+  // Check if the request involves deleting resources.
+  if (req.query.delete === "resources") {
+    // Retrieve the resources directory and delete it along with its content.
+    const resourcesDirectory = article.resources.directory;
+    await deleteDirectory(resourcesDirectory);
+    // Update the Article document in the database to remove resource-related details.
+    await Article.findByIdAndUpdate(articleId, {
+      resources: { directory: "", content: [] },
+    });
+  }
   // Update the article document with the edited details
   const editedArticle = await Article.findByIdAndUpdate(articleId, {
     title: title,
@@ -304,73 +354,46 @@ export const editArticle = asyncHandler(async (req, res, next) => {
 });
 
 /**
- * Delete a video along with its associated resources and metadata.
- *
+ * Controller function to delete a curriculum including its associated resources and documents.
  * @param {Object} req - Express request object.
  * @param {Object} res - Express response object.
- * @param {function} next - Express next middleware function.
- * @returns {void} - Sends a response indicating the success or failure of the video deletion.
+ * @param {Function} next - Express next middleware function.
+ * @returns {Promise<void>} - A promise that resolves once the curriculum is successfully deleted.
  */
-export const deleteVideo = asyncHandler(async (req, res, next) => {
+export const deleteCurriculum = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
-  const { courseId, chapterId, videoId } = req.params;
+  const { courseId, chapterId, curriculumId } = req.params;
 
-  // Retrieve the existing video document based on videoId
-  const video = await Video.findById(videoId);
+  // Retrieve the existing curriculum document based on curriculumId
+  const curriculum = await Curriculum.findById(curriculumId);
 
-  // Check if the video exists
-  if (!video) {
-    return next(new Error("Video not found"), { cause: 404 });
+  // Check if the curriculum exists
+  if (!curriculum) {
+    return next(new Error("Curriculum not found"), { cause: 404 });
   }
 
-  // Construct the directory path for the video resources
-  const videoDirectory = `Users\\${req.userId}\\Courses\\${courseId}\\${chapterId}\\${videoId}`;
+  // Construct the directory path for the curriculum resources
+  const curriculumDirectory = `Users\\${req.userId}\\Courses\\${courseId}\\${chapterId}\\${curriculumId}`;
 
-  // Delete the entire directory including video and associated resources
-  await deleteDirectory(videoDirectory);
+  // Delete the entire directory including curriculum and associated resources
+  await deleteDirectory(curriculumDirectory);
 
-  // Delete the video document from the database
-  const deletedVideo = await video.deleteOne({ _id: videoId });
-
-  // Send a response based on the success of the video deletion
-  return deletedVideo
-    ? res.status(200).json({ message: "Done" })
-    : res.status(500).json({ message: "Something went wrong" });
-});
-
-/**
- * Delete an article along with its associated resources and metadata.
- *
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @param {function} next - Express next middleware function.
- * @returns {void} - Sends a response indicating the success or failure of the article deletion.
- */
-export const deleteArticle = asyncHandler(async (req, res, next) => {
-  // Extract parameters from the request
-  const { courseId, chapterId, articleId } = req.params;
-
-  // Retrieve the existing article document based on articleId
-  const article = await Article.findById(articleId);
-
-  // Check if the article exists
-  if (!article) {
-    return next(new Error("Article not found"), { cause: 404 });
+  // Delete the associated video or article document based on curriculum type
+  if (curriculum.type === "video") {
+    await Video.deleteOne({ _id: curriculum.video });
+  } else if (curriculum.type === "article") {
+    await Article.deleteOne({ _id: curriculum.article });
   }
 
-  // Construct the directory path for the article resources
-  const articleDirectory = `Users\\${req.userId}\\Courses\\${courseId}\\${chapterId}\\${articleId}`;
+  // Delete the curriculum document from the database
+  const deletedCurriculum = await Curriculum.deleteOne({ _id: curriculumId });
 
-  // Delete the entire directory including article and associated resources
-  await deleteDirectory(articleDirectory);
-
-  // Delete the article document from the database
-  const deletedArticle = await article.deleteOne({ _id: articleId });
-
-  // Send a response based on the success of the article deletion
-  return deletedArticle
+  // Send a response based on the success of the curriculum deletion
+  return deletedCurriculum
     ? res.status(200).json({ message: "Done" })
-    : res.status(500).json({ message: "Something went wrong" });
+    : res
+        .status(500)
+        .json({ message: "An error occurred while deleting the curriculum." });
 });
 
 /**

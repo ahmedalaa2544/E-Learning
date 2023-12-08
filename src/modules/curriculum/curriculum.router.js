@@ -13,10 +13,6 @@ router.post(
   isAuthenticated,
   isAuthorized,
   validation(validators.createVideoSchema),
-  fileUpload(customValidation.file.concat(customValidation.video)).fields([
-    { name: "video", maxCount: 1 },
-    { name: "resources", maxCount: 10 },
-  ]),
   curriculumController.createVideo
 );
 
@@ -26,9 +22,6 @@ router.post(
   isAuthenticated,
   isAuthorized,
   validation(validators.createArticleSchema),
-  fileUpload(customValidation.file).fields([
-    { name: "resources", maxCount: 10 },
-  ]),
   curriculumController.createArticle
 );
 
@@ -43,20 +36,21 @@ router.patch(
 
 // Edit an existing video in the curriculum
 router.patch(
-  "/video/:videoId",
+  "/:curriculumId/video/:videoId",
   isAuthenticated,
   isAuthorized,
   validation(validators.editVideoSchema),
   fileUpload(customValidation.file.concat(customValidation.video)).fields([
     { name: "video", maxCount: 1 },
     { name: "resources", maxCount: 10 },
+    { name: "subtitles", maxCount: 1 },
   ]),
   curriculumController.editVideo
 );
 
 // Edit an existing article in the curriculum
 router.patch(
-  "/article/:articleId",
+  "/:curriculumId/article/:articleId",
   isAuthenticated,
   isAuthorized,
   validation(validators.editArticleSchema),
@@ -66,22 +60,13 @@ router.patch(
   curriculumController.editArticle
 );
 
-// Delete an existing video from the curriculum
+// Delete an existing curriculum from the curriculum
 router.delete(
-  "/video/:videoId",
+  "/:curriculumId",
   isAuthenticated,
   isAuthorized,
-  validation(validators.deleteVideoSchema),
-  curriculumController.deleteVideo
-);
-
-// Delete an existing article from the curriculum
-router.delete(
-  "/article/:articleId",
-  isAuthenticated,
-  isAuthorized,
-  validation(validators.deleteArticleSchema),
-  curriculumController.deleteArticle
+  validation(validators.deleteCurriculumSchema),
+  curriculumController.deleteCurriculum
 );
 
 // Get details of a specific video in the curriculum

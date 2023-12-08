@@ -22,33 +22,38 @@ const videoSchema = new Schema(
       required: true,
       set: (value) => (value === "" ? null : value),
     },
+    subtitles: {
+      blobName: {
+        type: String,
+      },
+    },
     describtion: {
       type: String,
       set: (value) => (value === "" ? null : value),
     },
     url: {
       type: String,
-      required: true,
     },
     blobName: {
       type: String,
-      required: true,
     },
     duration: {
       type: String,
-      required: true,
     },
-    resources: [
-      {
-        name: {
-          type: String,
-          max: 60,
+    resources: {
+      directory: { type: String },
+      content: [
+        {
+          name: {
+            type: String,
+            max: 60,
+          },
+          url: {
+            type: String,
+          },
         },
-        url: {
-          type: String,
-        },
-      },
-    ],
+      ],
+    },
   },
 
   { timestamps: true }

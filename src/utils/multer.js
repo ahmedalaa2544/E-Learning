@@ -2,7 +2,13 @@ import multer, { diskStorage } from "multer";
 
 export const customValidation = {
   image: ["image/png", "image/jpg", "image/jpeg"],
-  file: ["application/pdf", "application/msword", "application/vnd.rar"],
+  file: [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.rar",
+    "application/zip",
+    "application/x-subrip",
+  ],
   video: ["video/mp4", "video/x-matroska", "video/x-m4v"],
 };
 export const fileUpload = (filterArray) => {

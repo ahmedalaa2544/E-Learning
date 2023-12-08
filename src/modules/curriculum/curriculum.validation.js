@@ -47,19 +47,11 @@ export const editArticleSchema = joi
     quillContent: joi.string().allow(""),
   })
   .unknown(true);
-export const deleteVideoSchema = joi
+export const deleteCurriculumSchema = joi
   .object({
     courseId: joi.string().custom(isValidObjectId).required(),
     chapterId: joi.string().custom(isValidObjectId).required(),
-    videoId: joi.string().custom(isValidObjectId).required(),
-  })
-  .required();
-
-export const deleteArticleSchema = joi
-  .object({
-    courseId: joi.string().custom(isValidObjectId).required(),
-    chapterId: joi.string().custom(isValidObjectId).required(),
-    articleId: joi.string().custom(isValidObjectId).required(),
+    curriculumId: joi.string().custom(isValidObjectId).required(),
   })
   .required();
 

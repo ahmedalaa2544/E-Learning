@@ -26,17 +26,20 @@ const articleSchema = new Schema(
       type: String,
       required: true,
     },
-    resources: [
-      {
-        name: {
-          type: String,
-          max: 60,
+    resources: {
+      directory: { type: String },
+      content: [
+        {
+          name: {
+            type: String,
+            max: 60,
+          },
+          url: {
+            type: String,
+          },
         },
-        url: {
-          type: String,
-        },
-      },
-    ],
+      ],
+    },
   },
 
   { timestamps: true }

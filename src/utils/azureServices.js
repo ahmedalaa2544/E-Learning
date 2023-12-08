@@ -216,7 +216,7 @@ export const deleteBlob = async (blobName) => {
     await blobClient.delete();
   } catch (error) {
     // Throw an error if any step encounters an issue during Blob deletion
-    throw new Error(`Error deleting Blob: ${error.message}`);
+    return new Error(`Error deleting Blob: ${error.message}`);
   }
 };
 
