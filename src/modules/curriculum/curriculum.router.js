@@ -75,7 +75,7 @@ router.get(
   curriculumController.getCurriculum
 );
 
-// Get the entire curriculum for a specific chapter
+// Get the entire curriculums for a specific chapter
 router.get(
   "/",
   validation(validators.getCurriculumsSchema),

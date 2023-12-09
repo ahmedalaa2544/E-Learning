@@ -398,6 +398,16 @@ export const deleteCurriculum = asyncHandler(async (req, res, next) => {
     return next(new Error("Curriculum not found"), { cause: 404 });
   }
 
+  // Update the order of subsequent curricula in the same chapter to maintain order
+  await Curriculum.updateMany(
+    {
+      chapter: chapterId,
+      order: {
+        $gt: curriculum.order,
+      },
+    },
+    { $inc: { order: -1 } }
+  );
   // Construct the directory path for the curriculum resources
   const curriculumDirectory = `Users\\${req.userId}\\Courses\\${courseId}\\${chapterId}\\${curriculumId}`;
 
