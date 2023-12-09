@@ -43,7 +43,6 @@ export const createVideo = asyncHandler(async (req, res, next) => {
     course: courseId,
     chapter: chapterId,
     curriculum: curriculumId,
-    title: title,
     describtion: describtion,
   });
   // Save the new Video document in the database
@@ -55,6 +54,7 @@ export const createVideo = asyncHandler(async (req, res, next) => {
     course: courseId,
     chapter: chapterId,
     type: "video",
+    title: title,
     order: order,
     video: createdVideo._id,
   });
@@ -64,7 +64,10 @@ export const createVideo = asyncHandler(async (req, res, next) => {
 
   // Send a response indicating the success or failure of the video creation process
   return createdVideo
-    ? res.status(200).json({ message: "Done", video: createdVideo._doc })
+    ? res.status(200).json({
+        message: "Done",
+        video: { ...createdVideo._doc, title: title },
+      })
     : res.json({ message: "Something went wrong" });
 });
 
@@ -95,7 +98,6 @@ export const createArticle = asyncHandler(async (req, res, next) => {
     course: courseId,
     chapter: chapterId,
     curriculum: curriculumId,
-    title: title,
     quillContent: quillContent,
   });
 
@@ -108,6 +110,7 @@ export const createArticle = asyncHandler(async (req, res, next) => {
     course: courseId,
     chapter: chapterId,
     type: "article",
+    title: title,
     order: order,
     article: article._id,
   });
@@ -117,7 +120,9 @@ export const createArticle = asyncHandler(async (req, res, next) => {
 
   // Send a response indicating the success or failure of the article creation process
   return article
-    ? res.status(200).json({ message: "Done", article: article._doc })
+    ? res
+        .status(200)
+        .json({ message: "Done", article: { ...article._doc, title: title } })
     : res.json({ message: "Something went wrong" });
 });
 
@@ -198,6 +203,12 @@ export const editVideo = asyncHandler(async (req, res, next) => {
   if (!video) {
     return next(new Error("Video not found"), { cause: 404 });
   }
+  // Retrieve the existing curriculum document based on curriculumId
+  const curriculum = await Curriculum.findById(curriculumId);
+  // Check if the curriculum exists
+  if (!curriculum) {
+    return next(new Error("Curriculum not found"), { cause: 404 });
+  }
   // Declare variables to store video-related information.
   let videoUrl, duration, blobVideoName, resources, subtitles;
 
@@ -246,7 +257,6 @@ export const editVideo = asyncHandler(async (req, res, next) => {
   if (req.query.delete === "video") {
     // Retrieve blob names associated with the video and its subtitles, then delete them.
     const videoBlobName = video.blobName;
-    console.log(videoBlobName);
     const subtitlesBlobName = video.subtitles.blobName;
     await deleteBlob(videoBlobName);
     await deleteBlob(subtitlesBlobName);
@@ -262,10 +272,10 @@ export const editVideo = asyncHandler(async (req, res, next) => {
   // Check if the request involves deleting resources.
   if (req.query.delete === "resources") {
     // Retrieve the resources directory and delete it along with its content.
-    const resourcesDirectory = video.resources.directory;
+    const resourcesDirectory = curriculum.resources.directory;
     await deleteDirectory(resourcesDirectory);
-    // Update the Video document in the database to remove resource-related details.
-    await Video.findByIdAndUpdate(videoId, {
+    // Update the curriculum document in the database to remove resource-related details.
+    await Curriculum.findByIdAndUpdate(curriculum, {
       resources: { directory: "", content: [] },
     });
   }
@@ -281,18 +291,23 @@ export const editVideo = asyncHandler(async (req, res, next) => {
     });
   }
   // Update the video document with the edited details
-  const editedVideo = await Video.findByIdAndUpdate(videoId, {
+  await Video.findByIdAndUpdate(videoId, {
     title: title,
     subtitles: subtitles,
     describtion: describtion,
     url: videoUrl,
     blobName: blobVideoName,
     duration: duration,
+  });
+
+  // Update the curriculum document with the edited details
+  const editedCurriculum = await Curriculum.findByIdAndUpdate(curriculumId, {
+    title: title,
     resources: resources,
   });
 
   // Send a response indicating the success or failure of the video editing process
-  return editedVideo
+  return editedCurriculum
     ? res.status(200).json({ message: "Done" })
     : res.json({ message: "Something went wrong" });
 });
@@ -315,6 +330,12 @@ export const editArticle = asyncHandler(async (req, res, next) => {
   if (!article) {
     return next(new Error("Article not found"), { cause: 404 });
   }
+  // Retrieve the existing curriculum document based on curriculumId
+  const curriculum = await Curriculum.findById(curriculumId);
+  // Check if the curriculum exists
+  if (!curriculum) {
+    return next(new Error("Curriculum not found"), { cause: 404 });
+  }
   let resources;
   // Check if the request involves uploading resources.
   if (req.query.upload === "resources") {
@@ -333,22 +354,27 @@ export const editArticle = asyncHandler(async (req, res, next) => {
   // Check if the request involves deleting resources.
   if (req.query.delete === "resources") {
     // Retrieve the resources directory and delete it along with its content.
-    const resourcesDirectory = article.resources.directory;
+    const resourcesDirectory = curriculum.resources.directory;
     await deleteDirectory(resourcesDirectory);
-    // Update the Article document in the database to remove resource-related details.
-    await Article.findByIdAndUpdate(articleId, {
+    // Update the curriculum document in the database to remove resource-related details.
+    await Curriculum.findByIdAndUpdate(curriculum, {
       resources: { directory: "", content: [] },
     });
   }
   // Update the article document with the edited details
-  const editedArticle = await Article.findByIdAndUpdate(articleId, {
+  await Article.findByIdAndUpdate(articleId, {
     title: title,
     quillContent: quillContent,
     resources: resources,
   });
+  // Update the curriculum document with the edited details
+  const editedCurriculum = await Curriculum.findByIdAndUpdate(curriculumId, {
+    title: title,
+    resources: resources,
+  });
 
   // Send a response indicating the success or failure of the article editing process
-  return editedArticle
+  return editedCurriculum
     ? res.status(200).json({ message: "Done" })
     : res.status(500).json({ message: "Something went wrong" });
 });
@@ -395,18 +421,16 @@ export const deleteCurriculum = asyncHandler(async (req, res, next) => {
         .status(500)
         .json({ message: "An error occurred while deleting the curriculum." });
 });
-
 /**
- * Retrieve details of a specific video within a given course and chapter.
- *
+ * Controller function to retrieve curriculum details, including videos or articles, and associated resources.
  * @param {Object} req - Express request object.
  * @param {Object} res - Express response object.
- * @param {function} next - Express next middleware function.
- * @returns {void} - Sends a response containing video details or an error message.
+ * @param {Function} next - Express next middleware function.
+ * @returns {Promise<void>} - A promise that resolves once curriculum details are successfully retrieved and formatted in the response.
  */
-export const getVideo = asyncHandler(async (req, res, next) => {
+export const getCurriculum = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
-  const { courseId, chapterId, videoId } = req.params;
+  const { courseId, chapterId, curriculumId } = req.params;
 
   // Find the corresponding course based on courseId
   const course = await Course.findById(courseId);
@@ -424,68 +448,70 @@ export const getVideo = asyncHandler(async (req, res, next) => {
     return next(new Error("Chapter not found"), { cause: 404 });
   }
 
-  // Retrieve the existing video document based on videoId
-  const video = await Video.findById(videoId);
+  // Retrieve the existing curriculum document based on curriculumId, populating associated video or article details
+  const curriculum = await Curriculum.findById(curriculumId)
+    .populate("video")
+    .populate("article")
+    .exec();
 
-  // Check if the video exists
-  if (!video) {
-    return next(new Error("Video not found"), { cause: 404 });
+  // Check if the curriculum exists
+  if (!curriculum) {
+    return next(new Error("Curriculum not found"), { cause: 404 });
   }
 
-  //Obtain the Shared Access Signature (SAS) URL for a specific video blob.
+  let resources = [];
+  // Generate SAS URLs for each resource associated with the video
+  for (const resource of curriculum.resources.content) {
+    const { accountSasTokenUrl: resourceUrl } = await generateSASUrl(
+      resource.blobName,
+      "r",
+      "60"
+    );
+    resources.push({ name: resource.name, url: resourceUrl });
+  }
+  if (curriculum.type === "video") {
+    const video = curriculum.video;
 
-  const videoBlobName = video.blobName;
-  const { accountSasTokenUrl } = await generateSASUrl(videoBlobName, "r", "60");
+    // Obtain the Shared Access Signature (SAS) URL for the video blob
+    const videoBlobName = video.blobName;
+    const { accountSasTokenUrl: videoUrl } = await generateSASUrl(
+      videoBlobName,
+      "r",
+      "60"
+    );
 
-  // Send a response containing video details
-  return video
-    ? res.status(200).json({
-        message: "Done",
-        video: { ...video._doc, url: accountSasTokenUrl, blobName: undefined },
-      })
-    : res.status(500).json({ message: "Something went wrong" });
-});
-
-/**
- * Retrieve details of a specific article within a given course and chapter.
- *
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @param {function} next - Express next middleware function.
- * @returns {void} - Sends a response containing article details or an error message.
- */
-export const getArticle = asyncHandler(async (req, res, next) => {
-  // Extract parameters from the request
-  const { courseId, chapterId, articleId } = req.params;
-
-  // Find the corresponding course based on courseId
-  const course = await Course.findById(courseId);
-
-  // If the course is not found, send a 404 error response
-  if (!course) {
-    return next(new Error("Course not found"), { cause: 404 });
+    // Send a response containing video details
+    return video
+      ? res.status(200).json({
+          message: "Done",
+          video: {
+            ...video._doc,
+            type: "video",
+            title: curriculum.title,
+            url: videoUrl,
+            blobName: undefined,
+            resources: resources,
+          },
+        })
+      : res.status(500).json({ message: "Something went wrong" });
   }
 
-  // Find the corresponding chapter based on chapterId
-  const chapter = await Chapter.findById(chapterId);
+  if (curriculum.type === "article") {
+    const article = curriculum.article;
 
-  // If the chapter is not found, send a 404 error response
-  if (!chapter) {
-    return next(new Error("Chapter not found"), { cause: 404 });
+    // Send a response containing article details
+    return article
+      ? res.status(200).json({
+          message: "Done",
+          article: {
+            ...article._doc,
+            type: "article",
+            title: curriculum.title,
+            resources: resources,
+          },
+        })
+      : res.status(500).json({ message: "Something went wrong" });
   }
-
-  // Retrieve the existing article document based on articleId
-  const article = await Article.findById(articleId);
-
-  // Check if the article exists
-  if (!article) {
-    return next(new Error("Article not found"), { cause: 404 });
-  }
-
-  // Send a response containing article details
-  return article
-    ? res.status(200).json({ message: "Done", article: article._doc })
-    : res.status(500).json({ message: "Something went wrong" });
 });
 
 /**
@@ -496,7 +522,7 @@ export const getArticle = asyncHandler(async (req, res, next) => {
  * @param {function} next - Express next middleware function.
  * @returns {void} - Sends a response containing the curriculum details or an error message.
  */
-export const getCurriculum = asyncHandler(async (req, res, next) => {
+export const getCurriculums = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { courseId, chapterId } = req.params;
 
@@ -517,22 +543,24 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
   }
 
   // Retrieve the curriculum for the specified chapter, including video and article details
-  const curriculum = await Curriculum.find({
+  let curriculum = await Curriculum.find({
     chapter: chapterId,
-  })
-    .populate("video")
-    .populate("article")
-    .exec();
+  });
 
-  // Map the curriculum documents to plain objects
-  curriculum.map((curriculum) => curriculum._doc);
+  // Map the curriculum documents to plain objects and overwrite resources with undefined
+  curriculum = curriculum.map((curriculum) => {
+    return { ...curriculum._doc, resources: undefined };
+  });
 
   // Sort the curriculum based on the 'order' property using merge sort
   const sortedCurriculum = mergeSort(curriculum, "order");
 
   // Send a response containing the sorted curriculum details
   return curriculum
-    ? res.status(200).json({ message: "Done", curriculum: sortedCurriculum })
+    ? res.status(200).json({
+        message: "Done",
+        curriculum: sortedCurriculum,
+      })
     : //// Handle errors and pass them to the next middleware
       res.status(500).json({ message: "Something went wrong" });
 });

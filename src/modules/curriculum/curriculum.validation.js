@@ -74,5 +74,12 @@ export const getCurriculumSchema = joi
   .object({
     courseId: joi.string().custom(isValidObjectId).required(),
     chapterId: joi.string().custom(isValidObjectId).required(),
+    curriculumId: joi.string().custom(isValidObjectId).required(),
+  })
+  .required();
+export const getCurriculumsSchema = joi
+  .object({
+    courseId: joi.string().custom(isValidObjectId).required(),
+    chapterId: joi.string().custom(isValidObjectId).required(),
   })
   .required();

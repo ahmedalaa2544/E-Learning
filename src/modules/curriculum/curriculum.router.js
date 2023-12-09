@@ -68,26 +68,18 @@ router.delete(
   validation(validators.deleteCurriculumSchema),
   curriculumController.deleteCurriculum
 );
-
-// Get details of a specific video in the curriculum
+// Get curriculum video or article
 router.get(
-  "/video/:videoId",
-  validation(validators.getVideoSchema),
-  curriculumController.getVideo
-);
-
-// Get details of a specific article in the curriculum
-router.get(
-  "/article/:articleId",
-  validation(validators.getArticleSchema),
-  curriculumController.getArticle
+  "/:curriculumId",
+  validation(validators.getCurriculumSchema),
+  curriculumController.getCurriculum
 );
 
 // Get the entire curriculum for a specific chapter
 router.get(
   "/",
-  validation(validators.getCurriculumSchema),
-  curriculumController.getCurriculum
+  validation(validators.getCurriculumsSchema),
+  curriculumController.getCurriculums
 );
 
 export default router;

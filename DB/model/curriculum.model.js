@@ -38,6 +38,24 @@ const curriculumSchema = new Schema(
       },
       set: (value) => (value === "" ? null : value),
     },
+    title: {
+      type: String,
+      required: true,
+    },
+    resources: {
+      directory: { type: String },
+      content: [
+        {
+          name: {
+            type: String,
+            max: 60,
+          },
+          blobName: {
+            type: String,
+          },
+        },
+      ],
+    },
   },
 
   { timestamps: true }

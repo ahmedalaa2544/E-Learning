@@ -116,7 +116,7 @@ export const uploadResources = async (
           );
 
           // Add resource information to the resources array
-          resources.push({ name: file.originalname, url: resourceUrl });
+          resources.push({ name: file.originalname, blobName: blobFileName });
         }
       }
 
