@@ -483,9 +483,13 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
     const video = curriculum.video;
 
     // Obtain the Shared Access Signature (SAS) URL for the video blob
-    const videoBlobName = video.blobName;
     const { accountSasTokenUrl: videoUrl } = await generateSASUrl(
-      videoBlobName,
+      video.blobName,
+      "r",
+      "60"
+    );
+    const { accountSasTokenUrl: subtitlesUrl } = await generateSASUrl(
+      video.subtitles.blobName,
       "r",
       "60"
     );
@@ -501,6 +505,7 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
             url: videoUrl,
             blobName: undefined,
             resources: resources,
+            subtitles: subtitlesUrl,
           },
         })
       : res.status(500).json({ message: "Something went wrong" });
