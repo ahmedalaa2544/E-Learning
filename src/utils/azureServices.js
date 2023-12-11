@@ -73,8 +73,8 @@ export const generateSASUrl = async (
   // Specify the container name for temporary uploads
   const containerName = process.env.MAIN_CONTAINER;
 
-  const serviceName = process.env.accountName;
-  const serviceKey = process.env.accountKey;
+  const serviceName = process.env.ACCOUNT_NAME;
+  const serviceKey = process.env.accountKeACCOUNT_KEYy;
 
   // Check if required parameters are provided
   if (!serviceName || !serviceKey || !blobName || !containerName) {
@@ -199,8 +199,8 @@ export const deleteBlob = async (blobName) => {
 
     // Create a BlobServiceClient using the provided credentials
     const blobServiceClient = await getBlobServiceClient(
-      process.env.accountName,
-      process.env.accountKey
+      process.env.ACCOUNT_NAME,
+      process.env.ACCOUNT_KEY
     );
 
     // Create or retrieve the container using the BlobServiceClient
@@ -230,8 +230,8 @@ export const deleteContainer = async (containerName) => {
   try {
     // Create a BlobServiceClient using the provided credentials
     const blobServiceClient = await getBlobServiceClient(
-      process.env.accountName,
-      process.env.accountKey
+      process.env.ACCOUNT_NAME,
+      process.env.ACCOUNT_KEY
     );
 
     // Create or retrieve the container using the BlobServiceClient
@@ -266,8 +266,8 @@ export const deleteDirectory = async (directoryPath) => {
 
     // Create a BlobServiceClient using the provided credentials
     const blobServiceClient = await getBlobServiceClient(
-      process.env.accountName,
-      process.env.accountKey
+      process.env.ACCOUNT_NAME,
+      process.env.ACCOUNT_KEY
     );
 
     // Create or retrieve the container using the BlobServiceClient

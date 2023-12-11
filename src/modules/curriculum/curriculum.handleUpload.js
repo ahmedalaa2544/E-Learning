@@ -153,9 +153,6 @@ export const uploadSubtitles = async (
 ) => {
   return new Promise(async (resolve, reject) => {
     try {
-      // Log a message indicating that subtitles are being uploaded
-      console.log(`Uploading subtitles`);
-
       let blobSubtitlesName, subtitlesUrl;
 
       // Define the directory structure for storing subtitles
