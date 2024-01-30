@@ -5,7 +5,7 @@ import Curriculum from "../../../DB/model/curriculum.model.js";
 import Video from "../../../DB/model/video.model.js";
 import Article from "../../../DB/model/article.model.js";
 import Category from "../../../DB/model/category.model.js";
-import SubCategory from "../../../DB/model/subcategory.model.js";
+import SubCategory from "../../../DB/model/subCategory.model.js";
 import upload, {
   deleteDirectory,
   deleteBlob,
