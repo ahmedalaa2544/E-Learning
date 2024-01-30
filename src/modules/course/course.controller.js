@@ -5,7 +5,7 @@ import Curriculum from "../../../DB/model/curriculum.model.js";
 import Video from "../../../DB/model/video.model.js";
 import Article from "../../../DB/model/article.model.js";
 import Category from "../../../DB/model/category.model.js";
-import SubCategory from "../../../DB/model/subCategory.model.js";
+import subCategoryModel from "../../../DB/model/subCategory.model.js";
 import upload, {
   deleteDirectory,
   deleteBlob,
@@ -64,7 +64,7 @@ export const editCourse = asyncHandler(async (req, res, next) => {
   // Retrieve the identifiers (IDs) for the specified category and subcategory.
 
   const categoryId = await Category.find({ name: category })._id;
-  const subCategoryId = await SubCategory.find({
+  const subCategoryId = await subCategoryModel.find({
     name: subCategory,
     categoryId: categoryId,
   })._id;

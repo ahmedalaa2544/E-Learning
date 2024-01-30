@@ -1,8 +1,13 @@
-import subCategoryModel from "../../../DB/model/subCategory.js";
+import subCategoryModel from "../../../DB/model/subCategory.model.js";
 import { asyncHandler } from "../../utils/asyncHandling.js";
 
 export const createSubCateg = asyncHandler(async (req, res, next) => {
-  // create a category
+  // check the name
+  const checkName = await subCategoryModel.findOne({ name: req.body.name });
+  if (checkName) {
+    return next(new Error("subCategory is already exist"), { cause: 400 });
+  }
+  // create a subCategory
   await subCategoryModel.create({
     name: req.body.name,
     categoryId: req.params.categoryId,

@@ -1,4 +1,4 @@
-mport connectDB from "../DB/connection.js";
+import connectDB from "../DB/connection.js";
 import authRouter from "./modules/auth/auth.router.js";
 import userRouter from "./modules/user/user.router.js";
 import uploadRouter from "./modules/upload/upload.router.js";
@@ -35,4 +35,4 @@ const appRouter = (app, express) => {
   app.use(globalErrorHandler);
 };
 
-export default appRouter;
+export default appRouter;
