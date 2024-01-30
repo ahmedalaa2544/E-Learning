@@ -33,7 +33,7 @@ const workshopSchema = new Schema(
     },
     categoryId: { type: Types.ObjectId, ref: "Category" },
     subCategoryId: { type: Types.ObjectId, ref: "SubCategory" },
-    // instructor: { type: Types.ObjectId, ref: "Instructor" },
+    instructor: { type: Types.ObjectId, ref: "User" },
   },
   {
     timestamps: true, // used as start date
