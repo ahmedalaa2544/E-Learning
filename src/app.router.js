@@ -12,7 +12,7 @@ import { globalErrorHandler } from "./utils/asyncHandling.js";
 import cors from "cors";
 
 const appRouter = (app, express) => {
-  // Corse  the routes
+  // Cors
   app.use(cors({}));
 
   app.use(express.json());
