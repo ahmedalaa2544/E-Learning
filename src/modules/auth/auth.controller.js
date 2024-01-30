@@ -34,7 +34,7 @@ export const signUp = asyncHandler(async (req, res, next) => {
     activationCode,
   });
   // create confirmLink
-  const link = `https://e-learning-platform-mu.vercel.app/auth/confirmEmail/${activationCode}`;
+  const link = `https://education-project.azurewebsites.net/auth/confirmEmail/${activationCode}`;
   // send email
   const isSent = await sendEmail({
     to: email,
