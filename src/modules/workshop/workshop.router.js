@@ -5,7 +5,7 @@ import * as workshopValidation from "./workshop.validation.js";
 import { validation } from "../../middleware/validation.js";
 import isAuth from "../../middleware/authntication.middleware.js";
 
-import { fileUpload, filterObject } from "../../utils/multer.js";
+import { fileUpload, customValidation } from "../../utils/multer.js";
 
 // Create Workshop
 router.post(
@@ -19,7 +19,7 @@ router.post(
 router.patch(
   "/:workshopId",
   isAuth,
-  fileUpload(filterObject.image).single("promotionImage"),
+  fileUpload(customValidation.image).single("promotionImage"),
   validation(workshopValidation.updateWorkshopSchema),
   workshopController.updateWorkshop
 );
