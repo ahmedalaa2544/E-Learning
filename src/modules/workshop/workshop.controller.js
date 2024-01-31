@@ -258,6 +258,12 @@ export const deleteWorkshop = asyncHandler(async (req, res, next) => {
       })
     );
 
+  // delete workshop only if it isn't published
+  if (workshop.status === "Published")
+    return next(
+      new Error("Workshop is published, Deletion not allowed!", { cause: 405 })
+    ); // 405 resourse exists but not allowed
+
   // delete promotionImage & promotionVideo from Azure cloud
   await deleteBlob(workshop.promotionImage.blobName);
 
