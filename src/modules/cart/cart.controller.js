@@ -23,6 +23,8 @@ export const addToCart = asyncHandler(async (req, res, next) => {
       $push: {
         course: {
           courseId: req.params.courseId,
+          price: course.price,
+          name: course.title,
         },
       },
     },

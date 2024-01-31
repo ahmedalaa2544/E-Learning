@@ -7,6 +7,8 @@ const cartSchema = new Schema(
       {
         _id: false,
         courseId: { type: Types.ObjectId, ref: "Course" },
+        price: { type: Number, required: true },
+        name: String,
       },
     ],
   },
