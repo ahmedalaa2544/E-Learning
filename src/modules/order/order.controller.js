@@ -99,5 +99,5 @@ export const orderWebhook = asyncHandler(async (request, response) => {
     return;
   }
   // Return a 200 response to acknowledge receipt of the event
-  response.send();
+  return response.status(200).json({ message: "Done" });
 });
