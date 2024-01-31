@@ -19,7 +19,7 @@ const isAuth = asyncHandler(async (req, res, next) => {
   req.userId = decoded.id;
   const user = await userModel.findById(decoded.id);
   // check Online and deleted accounts
-  if (!user.isOnline) {
+  if (!user?.isOnline) {
     return next(new Error("LogIn First", { cause: 400 }));
   }
   if (user.isDeleted) {
