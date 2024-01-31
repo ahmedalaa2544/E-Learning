@@ -42,8 +42,8 @@ const workshopSchema = new Schema(
   {
     // id: false,
     timestamps: true, // used as start date
-    toJSON: { virtuals: false }, // includes id & _id
-    toObject: { virtuals: false },
+    toJSON: { virtuals: true }, // includes id & _id
+    toObject: { virtuals: true },
   }
 );
 
