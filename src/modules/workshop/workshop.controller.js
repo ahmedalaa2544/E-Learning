@@ -2,18 +2,16 @@ import { asyncHandler } from "../../utils/asyncHandling.js";
 import workshopModel from "../../../DB/model/workshop.model.js";
 import categoryModel from "../../../DB/model/category.model.js";
 import subCategoryModel from "../../../DB/model/subCategory.model.js";
-import cloudinary from "../../utils/cloud.js";
 import slugify from "slugify";
+import upload, { deleteBlob } from "../../utils/azureServices.js";
 
 export const createWorkshop = asyncHandler(async (req, res, next) => {
   // data
   const { title } = req.body;
-  // const userId = req.user._id
-
-  // if only looged user is instructor he will create workshop
+  const instructor = req.user._id;
 
   // create workshop
-  const workshop = await workshopModel.create({ title });
+  const workshop = await workshopModel.create({ title, instructor });
 
   // send response
   return res.status(201).json({
@@ -25,7 +23,6 @@ export const createWorkshop = asyncHandler(async (req, res, next) => {
 
 export const updateWorkshop = asyncHandler(async (req, res, next) => {
   // data
-  // const userId = req.user._id
   const { workshopId } = req.params;
   const {
     title,
@@ -48,9 +45,15 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
 
   // check workshop existence
   const workshop = await workshopModel.findById(workshopId);
-  if (!workshop) return next(new Error("Workshop not found!", { cause: 404 }));
+  if (!workshop) return next(new Error("Workshop Not found!", { cause: 404 }));
 
-  // check workshop owner(instructor)
+  // only logged instructor can access workshop
+  if (!workshop.instructor.equals(req.user._id))
+    return next(
+      new Error("Only logged instructor can deal with workshop!", {
+        cause: 401,
+      })
+    );
 
   // update title if found
   if (title) {
@@ -126,20 +129,6 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
     workshop.subCategoryId = subCategoryId;
   }
 
-  // upload promotionImage if found
-  if (req.file) {
-    const { public_id, secure_url } = await cloudinary.uploader.upload(
-      req.file.path,
-      {
-        folder: `${process.env.CLOUD_FOLDER_NAME}/workshop`,
-      }
-    );
-
-    // update url & id
-    workshop.promotionImage.id = public_id;
-    workshop.promotionImage.url = secure_url;
-  }
-
   // save all changes to DB
   await workshop.save();
 
@@ -147,6 +136,81 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
   return res.status(200).json({
     success: true,
     message: "Workshop Updated Successfully",
+    results: workshop,
+  });
+});
+
+export const uploadImageOrVideo = asyncHandler(async (req, res, next) => {
+  // data
+  const { workshopId } = req.params;
+
+  // check workshop existence
+  const workshop = await workshopModel.findById(workshopId);
+  if (!workshop) return next(new Error("Workshop Not found!", { cause: 404 }));
+
+  // only logged instructor can access workshop
+  if (!workshop.instructor.equals(req.user._id))
+    return next(
+      new Error("Only logged instructor can deal with workshop!", {
+        cause: 401,
+      })
+    );
+
+  // check files exists
+  if (!req.files.promotionImage)
+    return next(new Error("Promotion Image not attached!", { cause: 400 }));
+
+  if (!req.files.promotionVideo)
+    return next(new Error("Promotion Video not attached!", { cause: 400 }));
+
+  ///////////////////// Upload Promotion Image ///////////////////
+  // Extract the extension for the promotion image.
+  const blobImageExtension = req.files.promotionImage[0].originalname
+    .split(".")
+    .pop();
+
+  // Define the path for the promotion image in the user's course directory.
+  const blobImageName = `Users\\${req.userId}\\Workshops\\${workshopId}\\promotion_image.${blobImageExtension}`;
+
+  // Upload the promotion image and obtain its URL.
+  const promotionImageUrl = await upload(
+    req.files.promotionImage[0].path,
+    blobImageName,
+    "image",
+    blobImageExtension
+  );
+
+  // save changes in DB
+  workshop.promotionImage.blobName = blobImageName;
+  workshop.promotionImage.url = promotionImageUrl;
+
+  ///////////////////// Upload Promotion Video ///////////////////
+  // Extract the extension for the promotion video.
+  const blobVideoExtension = req.files.promotionVideo[0].originalname
+    .split(".")
+    .pop();
+
+  // Define the path for the promotion video in the user's course directory.
+  const blobVideoName = `Users\\${req.userId}\\Workshops\\${workshopId}\\promotion_video.${blobVideoExtension}`;
+
+  // Upload the promotion video and obtain its URL.
+  const promotionVideoUrl = await upload(
+    req.files.promotionVideo[0].path,
+    blobVideoName,
+    "video",
+    blobVideoExtension
+  );
+
+  // save changes in DB
+  workshop.promotionVideo.blobName = blobVideoName;
+  workshop.promotionVideo.url = promotionVideoUrl;
+
+  await workshop.save();
+
+  // send response
+  return res.json({
+    success: true,
+    message: "Promotion Image & Video Upoaded Successfully!",
     results: workshop,
   });
 });
@@ -160,15 +224,17 @@ export const getAllWorkshops = asyncHandler(async (req, res, next) => {
 export const getWorkshop = asyncHandler(async (req, res, next) => {
   // data
   const { workshopId } = req.params;
-  // const userId = req.user._id
 
   // check workshop existence
-  const workshop = await workshopModel.findById(workshopId);
+  const workshop = await workshopModel
+    .findById(workshopId)
+    .populate({ path: "categoryId", select: "name" })
+    .populate({ path: "subCategoryId", select: "name" })
+    .populate({ path: "instructor", select: "userName" });
+
   if (!workshop) return next(new Error("Workshop not found!", { cause: 404 }));
 
-  // check workshop owner(instructor)
-
-  // it is found send res
+  // send response
   return res.status(200).json({
     success: true,
     message: "Workshop Found Successfully!",
@@ -179,18 +245,23 @@ export const getWorkshop = asyncHandler(async (req, res, next) => {
 export const deleteWorkshop = asyncHandler(async (req, res, next) => {
   // data
   const { workshopId } = req.params;
-  // const userId = req.user._id
 
   // check workshop existence
   const workshop = await workshopModel.findById(workshopId);
-  if (!workshop) return next(new Error("Workshop not found!", { cause: 404 }));
+  if (!workshop) return next(new Error("Workshop Not found!", { cause: 404 }));
 
-  // check workshop owner(instructor)
+  // only logged instructor can access workshop
+  if (!workshop.instructor.equals(req.user._id))
+    return next(
+      new Error("Only logged instructor can deal with workshop!", {
+        cause: 401,
+      })
+    );
 
-  // delete promotionImage from cloudinary
-  const deletedImage = await cloudinary.uploader.destroy(
-    workshop.promotionImage.id
-  );
+  // delete promotionImage & promotionVideo from Azure cloud
+  await deleteBlob(workshop.promotionImage.blobName);
+
+  await deleteBlob(workshop.promotionVideo.blobName);
 
   // delete workshop from DB
   await workshopModel.findByIdAndDelete(workshopId);
