@@ -75,13 +75,11 @@ export const orderWebhook = asyncHandler(async (request, response) => {
   try {
     event = stripe.webhooks.constructEvent(
       request.body,
-      sig?.toString(),
+      sig,
       process.env.ENDPOINT_SECERT
     );
   } catch (err) {
-    response
-      .status(400)
-      .send(`Webhook Errors: ${(err.message, request.body, sig)}`);
+    response.status(400).send(`Webhook Errors: ${err.message}`);
     return;
   }
 
