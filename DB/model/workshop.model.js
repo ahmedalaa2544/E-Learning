@@ -28,7 +28,11 @@ const workshopSchema = new Schema(
       },
     ],
     promotionImage: {
-      id: { type: String },
+      blobName: { type: String },
+      url: { type: String },
+    },
+    promotionVideo: {
+      blobName: { type: String },
       url: { type: String },
     },
     categoryId: { type: Types.ObjectId, ref: "Category" },
@@ -36,10 +40,10 @@ const workshopSchema = new Schema(
     instructor: { type: Types.ObjectId, ref: "User" },
   },
   {
+    // id: false,
     timestamps: true, // used as start date
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    toJSON: { virtuals: false }, // includes id & _id
+    toObject: { virtuals: false },
   }
 );
 

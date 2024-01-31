@@ -15,11 +15,25 @@ router.post(
   workshopController.createWorkshop
 );
 
-// Update Workshop
+// Upload promotionImage & promotionVideo
+router.put(
+  "/:workshopId",
+  isAuth,
+  fileUpload(customValidation.image.concat(customValidation.video)).fields([
+    { name: "promotionImage", maxCount: 1 },
+    { name: "promotionVideo", maxCount: 1 },
+  ]),
+  workshopController.uploadImageOrVideo
+);
+
+// Update Workshop static data
 router.patch(
   "/:workshopId",
   isAuth,
-  fileUpload(customValidation.image).single("promotionImage"),
+  fileUpload(customValidation.image.concat(customValidation.video)).fields([
+    { name: "promotionImage", maxCount: 1 },
+    { name: "promotionVideo", maxCount: 1 },
+  ]),
   validation(workshopValidation.updateWorkshopSchema),
   workshopController.updateWorkshop
 );
