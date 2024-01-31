@@ -11,6 +11,7 @@ import upload, {
   deleteBlob,
   generateSASUrl,
 } from "../../utils/azureServices.js";
+import mongoose from "mongoose";
 /**
  * Create a new course with the provided title.
  *
@@ -63,11 +64,14 @@ export const editCourse = asyncHandler(async (req, res, next) => {
 
   // Retrieve the identifiers (IDs) for the specified category and subcategory.
 
-  const categoryId = await Category.find({ name: category })._id;
-  const subCategoryId = await subCategoryModel.find({
-    name: subCategory,
-    categoryId: categoryId,
-  })._id;
+  const categoryId = (await Category.findOne({ name: category }))._id;
+
+  const subCategoryId = (
+    await subCategoryModel.findOne({
+      name: subCategory,
+      categoryId: categoryId,
+    })
+  )._id;
 
   // Extract courseId from the request parameters.
   const { courseId } = req.params;

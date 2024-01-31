@@ -6,7 +6,6 @@ import workshopRouter from "./modules/workshop/workshop.router.js";
 // import roomRouter from "./modules/room/room.router.js"
 import courseRouter from "./modules/course/course.router.js";
 import categRouter from "./modules/category/categ.router.js";
-import SubCategRouter from "./modules/subCategory/subCateg.router.js";
 import cartRouter from "./modules/cart/cart.router.js";
 import orderRouter from "./modules/order/order.router.js";
 import { globalErrorHandler } from "./utils/asyncHandling.js";
@@ -30,7 +29,6 @@ const appRouter = (app, express) => {
   app.use("/workshop", workshopRouter);
   // app.use("/room", roomRouter);
   app.use("/category", categRouter);
-  app.use("/subCategory", SubCategRouter);
   app.use("/cart", cartRouter);
   app.use("/order", orderRouter);
 
