@@ -69,9 +69,10 @@ export const createOrder = asyncHandler(async (req, res, next) => {
 
 //webhook
 export const orderWebhook = asyncHandler(async (request, response) => {
-  const stripe = new Stripe(process.env.STRIPE_KEY);
   const sig = request.headers["stripe-signature"];
+
   let event;
+  const stripe = new Stripe(process.env.STRIPE_KEY);
   try {
     event = stripe.webhooks.constructEvent(
       request.body,
@@ -79,7 +80,7 @@ export const orderWebhook = asyncHandler(async (request, response) => {
       process.env.ENDPOINT_SECERT
     );
   } catch (err) {
-    response.status(400).send(`Webhook Error: ${err.message}`);
+    response.status(400).send(`Webhook Errors: ${err.message}`);
     return;
   }
 
