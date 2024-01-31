@@ -16,7 +16,7 @@ const appRouter = (app, express) => {
   app.use(cors({}));
 
   app.use((req, res, next) => {
-    if (req.originalUrl.includes("/order/webhook")) {
+    if (req.originalUrl == "/order/webhook") {
       return next();
     }
     express.json()(req, res, next);
