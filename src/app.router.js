@@ -16,11 +16,10 @@ const appRouter = (app, express) => {
   app.use(cors({}));
 
   app.use((req, res, next) => {
-    if (req.originalUrl === "/order/webhook") {
-      next();
-    } else {
-      express.json()(req, res, next);
+    if (req.originalUrl.includes("/order/webhook")) {
+      return next();
     }
+    express.json()(req, res, next);
   });
 
   app.use("/auth", authRouter);
