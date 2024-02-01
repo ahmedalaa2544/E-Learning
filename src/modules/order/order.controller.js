@@ -91,10 +91,12 @@ export const orderWebhook = asyncHandler(async (request, response) => {
     const order = await orderModel.findByIdAndUpdate(orderId, {
       status: "Completed",
     });
+    let cBought = [];
+    for (let i = 0; i < order.courses.length; i++) {
+      cBought.push(order.courses[i].courseId);
+    }
     // add course to user
-    await userModel.findByIdAndUpdate(order.user, {
-      $push: { coursesBought: { courseId: order.courses.courseId } },
-    });
+    await userModel.findByIdAndUpdate(order.user, { coursesBought: cBought });
     // clear cart
     await cartModel.updateOne({ user: order.user }, { course: [] });
     return response.status(200).json({ message: "Done" });
