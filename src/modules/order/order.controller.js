@@ -74,7 +74,7 @@ export const orderWebhook = asyncHandler(async (request, response) => {
   const stripe = new Stripe(process.env.STRIPE_KEY);
   try {
     event = stripe.webhooks.constructEvent(
-      JSON.stringify(request.body),
+      request.body,
       sig,
       process.env.ENDPOINT_SECERT
     );
@@ -96,9 +96,9 @@ export const orderWebhook = asyncHandler(async (request, response) => {
       $push: { coursesBought: order.courses.courseId },
     });
     // clear cart
-    await cartModel.updateOne({ user: req.user.id }, { course: [] });
-    return;
+    await cartModel.updateOne({ user: order.user }, { course: [] });
+    return response.status(200).json({ message: "Done" });
   }
   // Return a 200 response to acknowledge receipt of the event
-  return response.status(200).json({ message: "Done" });
+  return response.status(400).json({ message: "failed" });
 });
