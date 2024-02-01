@@ -93,7 +93,7 @@ export const orderWebhook = asyncHandler(async (request, response) => {
     });
     // add course to user
     await userModel.findByIdAndUpdate(order.user, {
-      $push: { coursesBought: order.courses.courseId },
+      $push: { coursesBought: { courseId: order.courses.courseId } },
     });
     // clear cart
     await cartModel.updateOne({ user: order.user }, { course: [] });
