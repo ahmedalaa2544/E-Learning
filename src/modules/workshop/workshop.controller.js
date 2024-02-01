@@ -170,7 +170,7 @@ export const uploadImageOrVideo = asyncHandler(async (req, res, next) => {
     .pop();
 
   // Define the path for the promotion image in the user's course directory.
-  const blobImageName = `Users\\${req.userId}\\Workshops\\${workshopId}\\promotion_image.${blobImageExtension}`;
+  const blobImageName = `Users\\${req.user.userName}_${req.userId}\\Workshops\\${workshop.title}_${workshopId}\\promotion_image.${blobImageExtension}`;
 
   // Upload the promotion image and obtain its URL.
   const promotionImageUrl = await upload(
@@ -273,7 +273,7 @@ export const deleteWorkshop = asyncHandler(async (req, res, next) => {
   await workshopModel.findByIdAndDelete(workshopId);
 
   // send response
-  return res.status(204).json({
+  return res.status(200).json({
     success: true,
     message: "Workshop Deleted Successfully!",
   });
