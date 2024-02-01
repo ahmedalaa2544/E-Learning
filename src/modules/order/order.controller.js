@@ -74,7 +74,7 @@ export const orderWebhook = asyncHandler(async (request, response) => {
   const stripe = new Stripe(process.env.STRIPE_KEY);
   try {
     event = stripe.webhooks.constructEvent(
-      request.rawBody,
+      request.body,
       sig,
       process.env.ENDPOINT_SECERT
     );
