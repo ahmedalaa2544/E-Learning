@@ -23,6 +23,7 @@ router.put(
     { name: "promotionImage", maxCount: 1 },
     { name: "promotionVideo", maxCount: 1 },
   ]),
+  validation(workshopValidation.workshopIdSchema),
   workshopController.uploadImageOrVideo
 );
 
@@ -42,19 +43,33 @@ router.patch(
 router.get(
   "/:workshopId",
   isAuth,
-  validation(workshopValidation.getWorkshopSchema),
-  workshopController.getWorkshop
+  validation(workshopValidation.workshopIdSchema),
+  workshopController.getSpecificWorkshop
 );
 
 // Get All Workshops
-router.get("/", isAuth, workshopController.getAllWorkshops);
+
+router.get(
+  "/",
+  isAuth,
+  validation(workshopValidation.getAllWorkshopsSchema),
+  workshopController.getAllWorkshops
+);
 
 // Delete Workshop
 router.delete(
   "/:workshopId",
   isAuth,
-  validation(workshopValidation.deleteWorkshopSchema),
+  validation(workshopValidation.workshopIdSchema),
   workshopController.deleteWorkshop
+);
+
+// Publish Workshop
+router.patch(
+  "/publish/:workshopId",
+  isAuth,
+  validation(workshopValidation.workshopIdSchema),
+  workshopController.publishWorkshop
 );
 
 export default router;

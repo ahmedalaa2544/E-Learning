@@ -2,7 +2,6 @@ import { asyncHandler } from "../../utils/asyncHandling.js";
 import workshopModel from "../../../DB/model/workshop.model.js";
 import categoryModel from "../../../DB/model/category.model.js";
 import subCategoryModel from "../../../DB/model/subCategory.model.js";
-import slugify from "slugify";
 import upload, { deleteBlob } from "../../utils/azureServices.js";
 
 export const createWorkshop = asyncHandler(async (req, res, next) => {
@@ -11,7 +10,14 @@ export const createWorkshop = asyncHandler(async (req, res, next) => {
   const instructor = req.user._id;
 
   // create workshop
-  const workshop = await workshopModel.create({ title, instructor });
+  let workshop = await workshopModel.create({ title, instructor });
+
+  // populate to send result
+  workshop = await workshopModel
+    .findById(workshop._id)
+    .populate({ path: "categoryId", select: "name" })
+    .populate({ path: "subCategoryId", select: "name" })
+    .populate({ path: "instructor", select: "userName" });
 
   // send response
   return res.status(201).json({
@@ -26,6 +32,7 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
   const { workshopId } = req.params;
   const {
     title,
+    subtitle,
     description,
     requirements,
     tags,
@@ -33,6 +40,8 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
     price,
     discount,
     durationInWeek,
+    startDay,
+    sessionTime,
     level,
     status,
     schedule,
@@ -44,7 +53,7 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
     return next(new Error("Input fields to update!", { cause: 400 }));
 
   // check workshop existence
-  const workshop = await workshopModel.findById(workshopId);
+  let workshop = await workshopModel.findById(workshopId);
   if (!workshop) return next(new Error("Workshop Not found!", { cause: 404 }));
 
   // only logged instructor can access workshop
@@ -55,63 +64,78 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
       })
     );
 
-  // update title if found
+  // update title if attached
   if (title) {
     workshop.title = title;
-    workshop.subtitle = slugify(title);
   }
 
-  // update description if found
+  // update subtitle if attached
+  if (subtitle) {
+    workshop.subtitle = subtitle;
+  }
+
+  // update description if attached
   if (description) {
     workshop.description = description;
   }
 
-  // update requirements if found
+  // update requirements if attached
   if (requirements) {
     workshop.requirements = requirements;
   }
 
-  // update tags if found
+  // update tags if attached
   if (tags) {
     workshop.tags = tags;
   }
 
-  // update languages if found
+  // update languages if attached
   if (languages) {
     workshop.languages = languages;
   }
 
-  // update price if found
+  // update price if attached
   if (price) {
     workshop.price = price;
   }
 
-  // update discount if found
+  // update discount if attached
   if (discount) {
     workshop.discount = discount;
   }
 
-  // update durationInWeek if found
+  // update durationInWeek if attached
   if (durationInWeek) {
     workshop.durationInWeek = durationInWeek;
   }
 
-  // update level if found
+  // update startDay if attached
+  if (startDay) {
+    workshop.startDay = startDay;
+  }
+
+  // update sessionTime if attached
+  if (sessionTime) {
+    workshop.sessionTime = sessionTime;
+  }
+
+  // update level if attached
   if (level) {
     workshop.level = level;
   }
 
-  // update status if found
-  if (status) {
-    workshop.status = status;
-  }
-
-  // update schedule if found
+  // update schedule if attached
   if (schedule) {
     workshop.schedule = schedule;
   }
 
-  // update category if found
+  // update status if attached
+  if (status) {
+    // validation only allow "Draft" & "Pending"
+    workshop.status = status;
+  }
+
+  // update category if attached
   if (categoryId) {
     const category = await categoryModel.findById(categoryId);
     if (!category)
@@ -120,7 +144,7 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
     workshop.categoryId = categoryId;
   }
 
-  // update subCategory if found
+  // update subCategory if attached
   if (subCategoryId) {
     const category = await subCategoryModel.findById(subCategoryId);
     if (!category)
@@ -129,8 +153,81 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
     workshop.subCategoryId = subCategoryId;
   }
 
+  // update promotionImage if attached
+  if (req.files?.promotionImage) {
+    // check if promotionImage uploaded before
+    if (workshop.promotionImage) {
+      // delete promotionImage from Azure cloud
+      await deleteBlob(workshop.promotionImage.blobName);
+    }
+
+    // Extract the extension for the promotion image.
+    const blobImageExtension = req.files.promotionImage[0].originalname
+      .split(".")
+      .pop();
+
+    // Define the path for the promotion image in the user's course directory.
+    const blobImageName = `Users\\${req.user.userName}_${
+      req.user._id
+    }\\Workshops\\${
+      title ? title : workshop.title
+    }_${workshopId}\\promotion_image.${blobImageExtension}`;
+
+    // Upload the promotion image and obtain its URL.
+    const promotionImageUrl = await upload(
+      req.files.promotionImage[0].path,
+      blobImageName,
+      "image",
+      blobImageExtension
+    );
+
+    // save changes in DB
+    workshop.promotionImage.blobName = blobImageName;
+    workshop.promotionImage.url = promotionImageUrl;
+  }
+
+  // update promotionVideo if attached
+  if (req.files?.promotionVideo) {
+    // check if promotionVideo uploaded before
+    if (workshop.promotionVideo) {
+      // delete promotionVideo from Azure cloud
+      await deleteBlob(workshop.promotionVideo.blobName);
+    }
+
+    // Extract the extension for the promotion Video.
+    const blobVideoExtension = req.files.promotionVideo[0].originalname
+      .split(".")
+      .pop();
+
+    // Define the path for the promotion Video in the user's course directory.
+    const blobVideoName = `Users\\${req.user.userName}_${
+      req.user._id
+    }\\Workshops\\${
+      title ? title : workshop.title
+    }_${workshopId}\\promotion_video.${blobVideoExtension}`;
+
+    // Upload the promotion Video and obtain its URL.
+    const promotionVideoUrl = await upload(
+      req.files.promotionVideo[0].path,
+      blobVideoName,
+      "video",
+      blobVideoExtension
+    );
+
+    // save changes in DB
+    workshop.promotionVideo.blobName = blobVideoName;
+    workshop.promotionVideo.url = promotionVideoUrl;
+  }
+
   // save all changes to DB
   await workshop.save();
+
+  // populate to send result
+  workshop = await workshopModel
+    .findById(workshopId)
+    .populate({ path: "categoryId", select: "name" })
+    .populate({ path: "subCategoryId", select: "name" })
+    .populate({ path: "instructor", select: "userName" });
 
   // send response
   return res.status(200).json({
@@ -144,6 +241,14 @@ export const uploadImageOrVideo = asyncHandler(async (req, res, next) => {
   // data
   const { workshopId } = req.params;
 
+  // check any file attached first
+  if (!req.files?.promotionImage && !req.files?.promotionVideo)
+    return next(
+      new Error("Attach PromotionImage or PromotionVideo to Upload!", {
+        cause: 400,
+      })
+    );
+
   // check workshop existence
   const workshop = await workshopModel.findById(workshopId);
   if (!workshop) return next(new Error("Workshop Not found!", { cause: 404 }));
@@ -156,72 +261,101 @@ export const uploadImageOrVideo = asyncHandler(async (req, res, next) => {
       })
     );
 
-  // check files exists
-  if (!req.files.promotionImage)
-    return next(new Error("Promotion Image not attached!", { cause: 400 }));
+  // Upload promotionImage if attached
+  if (req.files?.promotionImage) {
+    // check if promotionImage uploaded before
+    if (workshop.promotionImage) {
+      // delete promotionImage from Azure cloud
+      await deleteBlob(workshop.promotionImage.blobName);
+    }
 
-  if (!req.files.promotionVideo)
-    return next(new Error("Promotion Video not attached!", { cause: 400 }));
+    // Extract the extension for the promotion image.
+    const blobImageExtension = req.files.promotionImage[0].originalname
+      .split(".")
+      .pop();
 
-  ///////////////////// Upload Promotion Image ///////////////////
-  // Extract the extension for the promotion image.
-  const blobImageExtension = req.files.promotionImage[0].originalname
-    .split(".")
-    .pop();
+    // Define the path for the promotion image in the user's course directory.
+    const blobImageName = `Users\\${req.user.userName}_${req.user._id}\\Workshops\\${workshop.title}_${workshopId}\\promotion_image.${blobImageExtension}`;
 
-  // Define the path for the promotion image in the user's course directory.
-  const blobImageName = `Users\\${req.user.userName}_${req.userId}\\Workshops\\${workshop.title}_${workshopId}\\promotion_image.${blobImageExtension}`;
+    // Upload the promotion image and obtain its URL.
+    const promotionImageUrl = await upload(
+      req.files.promotionImage[0].path,
+      blobImageName,
+      "image",
+      blobImageExtension
+    );
 
-  // Upload the promotion image and obtain its URL.
-  const promotionImageUrl = await upload(
-    req.files.promotionImage[0].path,
-    blobImageName,
-    "image",
-    blobImageExtension
-  );
+    // save changes in DB
+    workshop.promotionImage.blobName = blobImageName;
+    workshop.promotionImage.url = promotionImageUrl;
+    await workshop.save();
+  }
 
-  // save changes in DB
-  workshop.promotionImage.blobName = blobImageName;
-  workshop.promotionImage.url = promotionImageUrl;
+  // Upload promotionVideo if attached
+  if (req.files?.promotionVideo) {
+    // check if promotionVideo uploaded before
+    if (workshop.promotionVideo) {
+      // delete promotionVideo from Azure cloud
+      await deleteBlob(workshop.promotionVideo.blobName);
+    }
 
-  ///////////////////// Upload Promotion Video ///////////////////
-  // Extract the extension for the promotion video.
-  const blobVideoExtension = req.files.promotionVideo[0].originalname
-    .split(".")
-    .pop();
+    // Extract the extension for the promotion video.
+    const blobVideoExtension = req.files.promotionVideo[0].originalname
+      .split(".")
+      .pop();
 
-  // Define the path for the promotion video in the user's course directory.
-  const blobVideoName = `Users\\${req.userId}\\Workshops\\${workshopId}\\promotion_video.${blobVideoExtension}`;
+    // Define the path for the promotion video in the user's course directory.
+    const blobVideoName = `Users\\${req.user.userName}_${req.user._id}\\Workshops\\${workshop.title}_${workshopId}\\promotion_video.${blobVideoExtension}`;
 
-  // Upload the promotion video and obtain its URL.
-  const promotionVideoUrl = await upload(
-    req.files.promotionVideo[0].path,
-    blobVideoName,
-    "video",
-    blobVideoExtension
-  );
+    // Upload the promotion video and obtain its URL.
+    const promotionVideoUrl = await upload(
+      req.files.promotionVideo[0].path,
+      blobVideoName,
+      "video",
+      blobVideoExtension
+    );
 
-  // save changes in DB
-  workshop.promotionVideo.blobName = blobVideoName;
-  workshop.promotionVideo.url = promotionVideoUrl;
-
-  await workshop.save();
+    // save changes in DB
+    workshop.promotionVideo.blobName = blobVideoName;
+    workshop.promotionVideo.url = promotionVideoUrl;
+    await workshop.save();
+  }
 
   // send response
-  return res.json({
+  return res.status(200).json({
     success: true,
-    message: "Promotion Image & Video Upoaded Successfully!",
-    results: workshop,
+    message: "Attached Files Uploaded Successfully!",
   });
 });
 
 export const getAllWorkshops = asyncHandler(async (req, res, next) => {
-  const workshops = await workshopModel.find();
+  // data
+  const { view } = req.query;
+
+  let workshops;
+
+  // get all workshops
+  if (view === "all") {
+    workshops = await workshopModel
+      .find()
+      .populate({ path: "categoryId", select: "name" })
+      .populate({ path: "subCategoryId", select: "name" })
+      .populate({ path: "instructor", select: "userName" });
+  }
+
+  // get all workshops of logged instructor
+  else if (view === "instructor") {
+    workshops = await workshopModel
+      .find({ instructor: req.user._id })
+      .populate({ path: "categoryId", select: "name" })
+      .populate({ path: "subCategoryId", select: "name" })
+      .populate({ path: "instructor", select: "userName" });
+  }
 
   return res.status(200).json({ success: true, results: workshops });
 });
 
-export const getWorkshop = asyncHandler(async (req, res, next) => {
+export const getSpecificWorkshop = asyncHandler(async (req, res, next) => {
   // data
   const { workshopId } = req.params;
 
@@ -264,9 +398,10 @@ export const deleteWorkshop = asyncHandler(async (req, res, next) => {
       new Error("Workshop is published, Deletion not allowed!", { cause: 405 })
     ); // 405 resourse exists but not allowed
 
-  // delete promotionImage & promotionVideo from Azure cloud
+  // delete promotionImage from Azure cloud
   await deleteBlob(workshop.promotionImage.blobName);
 
+  // delete promotionVideo from Azure cloud
   await deleteBlob(workshop.promotionVideo.blobName);
 
   // delete workshop from DB
@@ -276,5 +411,60 @@ export const deleteWorkshop = asyncHandler(async (req, res, next) => {
   return res.status(200).json({
     success: true,
     message: "Workshop Deleted Successfully!",
+  });
+});
+
+export const publishWorkshop = asyncHandler(async (req, res, next) => {
+  // data
+  const { workshopId } = req.params;
+
+  // check workshop existence
+  const workshop = await workshopModel.findById(workshopId);
+  if (!workshop) return next(new Error("Workshop Not found!", { cause: 404 }));
+
+  // only logged instructor can access workshop
+  if (!workshop.instructor.equals(req.user._id))
+    return next(
+      new Error("Only logged instructor can deal with workshop!", {
+        cause: 401,
+      })
+    );
+
+  // check if workshop already published
+  if (workshop.status === "Published")
+    return next(new Error("Workshop Already Published!", { cause: 400 }));
+
+  // check work shop data is complete
+  if (
+    !workshop.title ||
+    !workshop.subtitle ||
+    !workshop.description ||
+    !workshop.requirements.length ||
+    !workshop.tags.length ||
+    !workshop.languages.length ||
+    !workshop.price ||
+    !workshop.durationInWeek ||
+    !workshop.startDay ||
+    !workshop.sessionTime ||
+    !workshop.level ||
+    !workshop.schedule.length ||
+    !workshop.promotionImage ||
+    !workshop.promotionVideo ||
+    !workshop.categoryId ||
+    !workshop.subCategoryId
+  )
+    return next(
+      new Error("Complete All Workshop Data to Publish!", { cause: 400 })
+    );
+
+  // publish workshop
+  await workshopModel.findByIdAndUpdate(workshopId, {
+    status: "Published",
+  });
+
+  // send response
+  return res.status(200).json({
+    success: true,
+    message: "Workshop Published Successfully!",
   });
 });
