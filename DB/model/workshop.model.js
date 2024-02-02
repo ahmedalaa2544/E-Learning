@@ -9,10 +9,19 @@ const workshopSchema = new Schema(
     tags: [{ type: String }],
     languages: [{ type: String }],
     price: { type: Number, min: 1 }, // client must use "finalPrice" not price
-    discount: { type: Number, min: 0, max: 100 },
+    discount: { type: Number, min: 0, max: 100, default: 0 },
     durationInWeek: { type: Number },
-    level: { type: String, enum: ["Beginner", "Medium", "Hard"] },
-    status: { type: String, enum: ["Draft", "Pending", "Published"] },
+    startDay: { type: String },
+    sessionTime: { type: String },
+    level: {
+      type: String,
+      enum: ["Beginner", "Intermediate", "Expert", "All Levels"],
+    },
+    status: {
+      type: String,
+      enum: ["Draft", "Pending", "Published"],
+      default: "Draft",
+    },
     schedule: [
       {
         type: String,
@@ -40,7 +49,7 @@ const workshopSchema = new Schema(
     instructor: { type: Types.ObjectId, ref: "User" },
   },
   {
-    // id: false,
+    id: false,
     timestamps: true, // used as start date
     toJSON: { virtuals: true }, // includes id & _id
     toObject: { virtuals: true },
