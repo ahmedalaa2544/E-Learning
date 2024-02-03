@@ -10,14 +10,7 @@ export const createWorkshop = asyncHandler(async (req, res, next) => {
   const instructor = req.user._id;
 
   // create workshop
-  let workshop = await workshopModel.create({ title, instructor });
-
-  // populate to send result
-  workshop = await workshopModel
-    .findById(workshop._id)
-    .populate({ path: "categoryId", select: "name" })
-    .populate({ path: "subCategoryId", select: "name" })
-    .populate({ path: "instructor", select: "userName" });
+  const workshop = await workshopModel.create({ title, instructor });
 
   // send response
   return res.status(201).json({
@@ -53,7 +46,7 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
     return next(new Error("Input fields to update!", { cause: 400 }));
 
   // check workshop existence
-  let workshop = await workshopModel.findById(workshopId);
+  const workshop = await workshopModel.findById(workshopId);
   if (!workshop) return next(new Error("Workshop Not found!", { cause: 404 }));
 
   // only logged instructor can access workshop
@@ -222,13 +215,6 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
   // save all changes to DB
   await workshop.save();
 
-  // populate to send result
-  workshop = await workshopModel
-    .findById(workshopId)
-    .populate({ path: "categoryId", select: "name" })
-    .populate({ path: "subCategoryId", select: "name" })
-    .populate({ path: "instructor", select: "userName" });
-
   // send response
   return res.status(200).json({
     success: true,
@@ -336,20 +322,12 @@ export const getAllWorkshops = asyncHandler(async (req, res, next) => {
 
   // get all workshops
   if (view === "all") {
-    workshops = await workshopModel
-      .find()
-      .populate({ path: "categoryId", select: "name" })
-      .populate({ path: "subCategoryId", select: "name" })
-      .populate({ path: "instructor", select: "userName" });
+    workshops = await workshopModel.find();
   }
 
   // get all workshops of logged instructor
   else if (view === "instructor") {
-    workshops = await workshopModel
-      .find({ instructor: req.user._id })
-      .populate({ path: "categoryId", select: "name" })
-      .populate({ path: "subCategoryId", select: "name" })
-      .populate({ path: "instructor", select: "userName" });
+    workshops = await workshopModel.find({ instructor: req.user._id });
   }
 
   return res.status(200).json({ success: true, results: workshops });
@@ -360,11 +338,7 @@ export const getSpecificWorkshop = asyncHandler(async (req, res, next) => {
   const { workshopId } = req.params;
 
   // check workshop existence
-  const workshop = await workshopModel
-    .findById(workshopId)
-    .populate({ path: "categoryId", select: "name" })
-    .populate({ path: "subCategoryId", select: "name" })
-    .populate({ path: "instructor", select: "userName" });
+  const workshop = await workshopModel.findById(workshopId);
 
   if (!workshop) return next(new Error("Workshop not found!", { cause: 404 }));
 

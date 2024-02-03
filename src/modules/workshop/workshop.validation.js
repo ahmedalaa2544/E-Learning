@@ -27,6 +27,8 @@ export const updateWorkshopSchema = joi
     price: joi.number().min(0),
     discount: joi.number().min(0).max(100),
     durationInWeek: joi.number(),
+    startDay: joi.string(),
+    sessionTime: joi.string(),
     level: joi
       .string()
       .valid("Beginner", "Intermediate", "Expert", "All Levels"),
