@@ -61,18 +61,6 @@ export const editCourse = asyncHandler(async (req, res, next) => {
     description,
     level,
   } = req.body;
-
-  // Retrieve the identifiers (IDs) for the specified category and subcategory.
-
-  const categoryId = (await Category.findOne({ name: category }))._id;
-
-  const subCategoryId = (
-    await subCategoryModel.findOne({
-      name: subCategory,
-      categoryId: categoryId,
-    })
-  )._id;
-
   // Extract courseId from the request parameters.
   const { courseId } = req.params;
   // Initialize variables for cover image and promotional video URLs.
@@ -80,6 +68,28 @@ export const editCourse = asyncHandler(async (req, res, next) => {
   let promotionalVideoUrl;
   let blobImageName;
   let blobVideoName;
+  let categoryId, subCategoryId;
+
+  // Check if neither the 'upload' nor 'delete' query parameters are provided in the request.
+  if (req.query.upload === undefined && req.query.delete === undefined) {
+    // Retrieve the identifiers (IDs) for the specified category and subcategory.
+    // Find the category ID based on the provided category name.
+    categoryId = (await Category.findOne({ name: category }))._id;
+
+    // Find the subcategory ID based on the provided subcategory name and its association with the category.
+    subCategoryId = (
+      await subCategoryModel.findOne({
+        name: subCategory,
+        categoryId: categoryId,
+      })
+    )._id;
+  } else {
+    // If either 'upload' or 'delete' query parameter is provided, use the category and subcategory from the existing course.
+
+    // Use the category and subcategory IDs from the existing course.
+    categoryId = req.course.category;
+    subCategoryId = req.course.subcategory;
+  }
 
   // Check if the request includes a query parameter for uploading a cover image.
   if (req.query.upload === "coverImage") {
