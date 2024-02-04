@@ -14,13 +14,4 @@ router.post(
 
 router.get("/", subCategoryController.getSubCateg);
 
-/**
- * Route to retrieve courses associated with a specific subCategory.
- */
-router.get(
-  "/:subCategoryId",
-  validation(validators.getSubCategoryCoursesSchema),
-  subCategoryController.getSubCategoryCourses
-);
-
 export default router;
