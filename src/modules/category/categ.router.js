@@ -17,13 +17,4 @@ router.post(
 
 router.get("/", categoryController.getCateg);
 
-/**
- * Route to retrieve courses associated with a specific category.
- */
-router.get(
-  "/:categoryId",
-  validation(validators.getCategoryCoursesSchema),
-  categoryController.getCategoryCourses
-);
-
 export default router;

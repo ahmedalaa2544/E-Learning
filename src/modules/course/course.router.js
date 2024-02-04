@@ -88,4 +88,20 @@ router.get(
   courseController.getCourses
 );
 
+/**
+ * Route to retrieve courses associated with a specific category.
+ */
+router.get(
+  "/category/:categoryId/subCategory/",
+  validation(validators.getCoursesWithCategSchema),
+  courseController.getCoursesWithCategAndSubCateg
+);
+/**
+ * Route to retrieve courses associated with a specific category and subCategory.
+ */
+router.get(
+  "/category/:categoryId/subCategory/:subCategoryId",
+  validation(validators.getCoursesWithCategAndSubCategSchema),
+  courseController.getCoursesWithCategAndSubCateg
+);
 export default router;

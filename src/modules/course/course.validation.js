@@ -37,3 +37,16 @@ export const getCourseSchema = joi
     courseId: joi.string().custom(isValidObjectId).required(),
   })
   .required();
+
+export const getCoursesWithCategSchema = joi
+  .object({
+    categoryId: joi.string().custom(isValidObjectId).required(),
+  })
+  .required();
+
+export const getCoursesWithCategAndSubCategSchema = joi
+  .object({
+    categoryId: joi.string().custom(isValidObjectId).required(),
+    subCategoryId: joi.string().custom(isValidObjectId).required(),
+  })
+  .required();
