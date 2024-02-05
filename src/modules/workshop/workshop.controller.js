@@ -42,7 +42,7 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
     subCategoryId,
   } = req.body;
 
-  if (!Object.keys(req.body).length)
+  if (!Object.keys(req.body).length && !Object.keys(req.files).length)
     return next(new Error("Input fields to update!", { cause: 400 }));
 
   // check workshop existence
