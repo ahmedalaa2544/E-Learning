@@ -39,6 +39,14 @@ router.patch(
   workshopController.updateWorkshop
 );
 
+// Get All Rooms of Workshop
+// router.get(
+//   "/:workshopId/allRooms",
+//   isAuth,
+//   validation(workshopValidation.getWorkshopRoomsSchema),
+//   workshopController.getWorkshopRooms
+// );
+
 // Get Specific Workshop
 router.get(
   "/:workshopId",
@@ -48,7 +56,6 @@ router.get(
 );
 
 // Get All Workshops
-
 router.get(
   "/",
   isAuth,
