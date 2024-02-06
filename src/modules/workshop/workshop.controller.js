@@ -3,6 +3,7 @@ import workshopModel from "../../../DB/model/workshop.model.js";
 import categoryModel from "../../../DB/model/category.model.js";
 import subCategoryModel from "../../../DB/model/subCategory.model.js";
 import upload, { deleteBlob } from "../../utils/azureServices.js";
+import roomModel from "../../../DB/model/room.model.js";
 
 export const createWorkshop = asyncHandler(async (req, res, next) => {
   // data
@@ -311,7 +312,7 @@ export const uploadImageOrVideo = asyncHandler(async (req, res, next) => {
   return res.status(200).json({
     success: true,
     message: "Attached Files Uploaded Successfully!",
-    results: workshop
+    results: workshop,
   });
 });
 
@@ -442,4 +443,24 @@ export const publishWorkshop = asyncHandler(async (req, res, next) => {
     success: true,
     message: "Workshop Published Successfully!",
   });
+});
+
+export const getWorkshopRooms = asyncHandler(async (req, res, next) => {
+  // data
+  const { workshopId } = req.params;
+
+  // check workshop existence
+  const workshop = await workshopModel.findById(workshopId);
+  if (!workshop) return next(new Error("Workshop Not found!", { cause: 404 }));
+
+  // fetch workshop rooms
+  const rooms = await roomModel.find({ _id: { $in: workshop.rooms } });
+
+  return res
+    .status(200)
+    .json({
+      success: true,
+      message: "All Specified Workshop Rooms",
+      results: rooms,
+    });
 });

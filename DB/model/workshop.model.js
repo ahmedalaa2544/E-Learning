@@ -47,6 +47,7 @@ const workshopSchema = new Schema(
     categoryId: { type: Types.ObjectId, ref: "Category" },
     subCategoryId: { type: Types.ObjectId, ref: "SubCategory" },
     instructor: { type: Types.ObjectId, ref: "User" },
+    rooms: [{ type: Types.ObjectId, ref: "Room" }],
   },
   {
     id: false,

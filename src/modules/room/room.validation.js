@@ -7,7 +7,7 @@ export const createRoomSchema = joi
   .object({
     duration: joi.number().min(60).max(600),
     maximumParticipants: joi.number().min(0).max(20),
-    workshopId: objectId.required(),
+    workshopId: objectId,
   })
   .required();
 

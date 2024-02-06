@@ -40,12 +40,12 @@ router.patch(
 );
 
 // Get All Rooms of Workshop
-// router.get(
-//   "/:workshopId/allRooms",
-//   isAuth,
-//   validation(workshopValidation.getWorkshopRoomsSchema),
-//   workshopController.getWorkshopRooms
-// );
+router.get(
+  "/:workshopId/allRooms",
+  isAuth,
+  validation(workshopValidation.getWorkshopRoomsSchema),
+  workshopController.getWorkshopRooms
+);
 
 // Get Specific Workshop
 router.get(
