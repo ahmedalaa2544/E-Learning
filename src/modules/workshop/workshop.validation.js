@@ -9,6 +9,12 @@ export const workshopIdSchema = joi
   })
   .required();
 
+export const getWorkshopRoomsSchema = joi
+  .object({
+    workshopId: objectId.required(),
+  })
+  .required();
+
 export const createWorkshopSchema = joi
   .object({
     title: joi.string().required(),

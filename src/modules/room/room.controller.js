@@ -9,8 +9,11 @@ export const createRoom = asyncHandler(async (req, res, next) => {
   const { duration, maximumParticipants, workshopId } = req.body;
 
   // check workshop existence
-  const workshop = await workshopModel.findById(workshopId);
-  if (!workshop) return next(new Error("Workshop Not found!", { cause: 404 }));
+  if (workshopId) {
+    const workshop = await workshopModel.findById(workshopId);
+    if (!workshop)
+      return next(new Error("Workshop Not found!", { cause: 404 }));
+  }
 
   // generate room name
   const roomName = randomstring.generate({
@@ -52,8 +55,16 @@ export const createRoom = asyncHandler(async (req, res, next) => {
     maxParticipants,
     activeRecording,
     turnPassword,
-    workshopId,
+    ...(workshopId && { workshopId }),
+    ...(workshopId && { roomType: "Public" }),
   });
+
+  // add room to workshop if public
+  if (workshopId) {
+    await workshopModel.findByIdAndUpdate(workshopId, {
+      $push: { rooms: room._id },
+    });
+  }
 
   // send response
   return res.status(201).json({
@@ -92,41 +103,19 @@ export const joinRoom = asyncHandler(async (req, res, next) => {
   });
 });
 
-export const getAllRooms = asyncHandler(async (req, res, next) => {
-  // initialize RoomServiceClient
-  const roomService = new RoomServiceClient(
-    process.env.LIVEKIT_WEBSOCKET_URL,
-    process.env.LIVEKIT_API_KEY,
-    process.env.LIVEKIT_SECRET_KEY
-  );
-
-  const rooms = await roomService.listRooms();
-
-  return rooms
-    ? res.status(200).json({ success: true, message: "All Rooms", rooms })
-    : null;
-});
-
 export const getSpecificRoom = asyncHandler(async (req, res, next) => {
   // data
-  const {roomId} = req.params
+  const { roomId } = req.params;
 
   // check room existence
   const room = await roomModel.findById(roomId);
   if (!room) return next(new Error("Room not found!", { cause: 404 }));
-  
-  // initialize RoomServiceClient
-  const roomService = new RoomServiceClient(
-    process.env.LIVEKIT_WEBSOCKET_URL,
-    process.env.LIVEKIT_API_KEY,
-    process.env.LIVEKIT_SECRET_KEY
-  );
 
-  const rooms = await roomService.listRooms();
-
-  return rooms
-    ? res.status(200).json({ success: true, message: "All Rooms", rooms })
-    : null;
+  return res.status(200).json({
+    success: true,
+    message: "Room Found Successfully!",
+    results: room,
+  });
 });
 
 export const deleteRoom = asyncHandler(async (req, res, next) => {
@@ -139,7 +128,7 @@ export const deleteRoom = asyncHandler(async (req, res, next) => {
 
   // only workshop instructor can delete room
   const workshop = await workshopModel.findById(room.workshopId);
-  if (!workshop.instructor.equals(req.user._id))
+  if (workshop && !workshop.instructor.equals(req.user._id))
     return next(
       new Error("Only workshop instructor can delete room", { cause: 405 })
     );
@@ -154,11 +143,41 @@ export const deleteRoom = asyncHandler(async (req, res, next) => {
   // delete room from cloud
   await roomService.deleteRoom(room.roomName);
 
+  // delelte room from workshop
+  if (workshop) {
+    await workshopModel.findByIdAndUpdate(workshop._id, {
+      $pull: { rooms: roomId },
+    });
+  }
+
   // delete room from DB
   await roomModel.findByIdAndDelete(roomId);
 
-  return res.status(204).json({
+  return res.status(200).json({
     success: true,
     message: `Room ${room.roomName} Deleted Successfully!`,
   });
+});
+
+export const getOnlineRooms = asyncHandler(async (req, res, next) => {
+  // initialize RoomServiceClient
+  const roomService = new RoomServiceClient(
+    process.env.LIVEKIT_WEBSOCKET_URL,
+    process.env.LIVEKIT_API_KEY,
+    process.env.LIVEKIT_SECRET_KEY
+  );
+
+  // online rooms on cloud
+  const cloudOnlineRooms = await roomService.listRooms();
+
+  // extract sessionIds
+  let sessionIds = cloudOnlineRooms?.map((session) => session.sid);
+
+  // online rooms documents
+  const rooms = await roomModel.find({ sessionId: { $in: sessionIds } });
+
+  // send response
+  return res
+    .status(200)
+    .json({ success: true, message: "All Online Rooms", results: rooms });
 });

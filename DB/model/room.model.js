@@ -9,6 +9,8 @@ const roomSchema = new Schema(
     activeRecording: { type: Boolean, default: false },
     metaData: { type: String },
     turnPassword: { type: String },
+    // Private: not assigned to workshop
+    roomType: { type: String, enum: ["Private", "Public"], default: "Private" }, // belong to workshop or not
     participants: [{ type: Types.ObjectId, ref: "User" }],
     publishers: [{ type: Types.ObjectId, ref: "User" }],
     workshopId: { type: Types.ObjectId, ref: "Workshop" },

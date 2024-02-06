@@ -21,6 +21,9 @@ router.post(
   roomController.joinRoom
 );
 
+// Get All Online Rooms
+router.get("/online", isAuth, roomController.getOnlineRooms);
+
 // Get Specific Room
 router.get(
   "/:roomId",
@@ -28,8 +31,6 @@ router.get(
   validation(roomValidation.getSpecificRoomSchema),
   roomController.getSpecificRoom
 );
-
-router.get("/getAllRooms", isAuth, roomController.getAllRooms);
 
 // Delete Room
 router.delete(
