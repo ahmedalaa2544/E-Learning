@@ -13,6 +13,12 @@ export const createRoom = asyncHandler(async (req, res, next) => {
     const workshop = await workshopModel.findById(workshopId);
     if (!workshop)
       return next(new Error("Workshop Not found!", { cause: 404 }));
+
+    // Only workshop instructor can create room in workshop
+    if (!workshop.instructor.equals(req.user._id))
+      return next(
+        new Error("Only Workshop instructor can create room!", { cause: 401 })
+      );
   }
 
   // generate room name
