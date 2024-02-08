@@ -28,4 +28,8 @@ router.patch(
   userController.rmWishlist
 );
 
+router.get("/wishlist", isAuth, userController.getWishlist);
+
+router.get("/courses", isAuth, userController.getCourses);
+
 export default router;

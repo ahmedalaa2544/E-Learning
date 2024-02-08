@@ -41,10 +41,29 @@ export const addWishlist = asyncHandler(async (req, res, next) => {
 export const rmWishlist = asyncHandler(async (req, res, next) => {
   // recieve data
   const { courseId } = req.params;
-  // add to wishlist
+  // chcek course in wishlist
+  if (!req.user.wishlist.includes(courseId))
+    return next(new Error("Course not exist in ur wishlist", { cause: 404 }));
+  // remove
   await userModel.updateOne(
     { _id: req.user.id },
     { $pull: { wishlist: courseId } }
   );
   return res.status(200).json({ message: "Done" });
+});
+
+export const getWishlist = asyncHandler(async (req, res, next) => {
+  const { wishlist } = await userModel
+    .findById(req.user.id)
+    .populate([{ path: "wishlist" }]);
+  return res.status(200).json({ message: "Done", wishlist });
+});
+
+export const getCourses = asyncHandler(async (req, res, next) => {
+  // get courses
+  const { coursesBought } = await userModel
+    .findById(req.user.id)
+    .populate([{ path: "coursesBought" }]);
+  // return response
+  return res.status(200).json({ message: "Done", coursesBought });
 });
