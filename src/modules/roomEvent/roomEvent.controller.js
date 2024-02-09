@@ -13,11 +13,8 @@ export const room_started = asyncHandler(async (req, res, next) => {
   const event = receiver.receive(req.body, req.get("Authorization"));
 
   // update room statur
-  // await roomModel.findOneAndUpdate(
-  //   { sessionId: "RM_hycBMAjmt6Ub" },
-  //   {
-  //     roomStatus: "started",
-  //   }
-  // );
+  await roomModel.create({
+    roomName: "eslam",
+  });
   console.log(event);
 });
