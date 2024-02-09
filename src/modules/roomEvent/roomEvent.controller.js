@@ -1,3 +1,4 @@
+import roomModel from "../../../DB/model/room.model.js";
 import { asyncHandler } from "../../utils/asyncHandling.js";
 import { WebhookReceiver } from "livekit-server-sdk";
 
@@ -11,5 +12,12 @@ export const room_started = asyncHandler(async (req, res, next) => {
   // event is a WebhookEvent object
   const event = receiver.receive(req.body, req.get("Authorization"));
 
-  console.log("event", event);
+  // update room statur
+  // await roomModel.findOneAndUpdate(
+  //   { sessionId: "RM_hycBMAjmt6Ub" },
+  //   {
+  //     roomStatus: "started",
+  //   }
+  // );
+  console.log(event);
 });

@@ -20,7 +20,7 @@ const appRouter = (app, express) => {
     if (req.originalUrl.includes("/order/webhook")) {
       return next();
     } else if (req.originalUrl.includes("/roomEvent")) {
-      express.raw({ type: "application/webhook+json" });
+      return next();
     } else {
       express.json()(req, res, next);
     }
