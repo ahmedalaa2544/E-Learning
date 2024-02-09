@@ -15,10 +15,10 @@ export const createRoom = asyncHandler(async (req, res, next) => {
       return next(new Error("Workshop Not found!", { cause: 404 }));
 
     // Only workshop instructor can create room in workshop
-    // if (!workshop.instructor.equals(req.user._id))
-    //   return next(
-    //     new Error("Only Workshop instructor can create room!", { cause: 401 })
-    //   );
+    if (!workshop.instructor.equals(req.user._id))
+      return next(
+        new Error("Only Workshop instructor can create room!", { cause: 401 })
+      );
   }
 
   // generate room name
@@ -134,10 +134,10 @@ export const deleteRoom = asyncHandler(async (req, res, next) => {
 
   // only workshop instructor can delete room
   const workshop = await workshopModel.findById(room.workshopId);
-  if (workshop && !workshop.instructor.equals(req.user._id))
-    return next(
-      new Error("Only workshop instructor can delete room", { cause: 405 })
-    );
+  // if (workshop && !workshop.instructor.equals(req.user._id))
+  //   return next(
+  //     new Error("Only workshop instructor can delete room", { cause: 405 })
+  //   );
 
   // initialize RoomServiceClient
   const roomService = new RoomServiceClient(
