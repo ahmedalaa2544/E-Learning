@@ -1,16 +1,20 @@
 import { Router } from "express";
-import * as roomEventController from "./roomEvent.controller.js";
-
 const router = Router();
+import * as roomEventController from "./roomEvent.controller.js";
+import express from "express";
 
 /************ WebHooks ************/
 
 // room_started Event
-router.post("/room_started", roomEventController.room_started);
+router.post(
+  "/room_started",
+  express.raw({ type: "application/webhook+json" }),
+  roomEventController.room_started
+);
 
 // room_finished Event
 // router.post("/room_finished", roomEventController.room_finished);
-// 
+
 // participant_joined Event
 // router.post("/participant_joined", roomEventController.participant_joined);
 
