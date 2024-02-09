@@ -3,7 +3,8 @@ import authRouter from "./modules/auth/auth.router.js";
 import userRouter from "./modules/user/user.router.js";
 import uploadRouter from "./modules/upload/upload.router.js";
 import workshopRouter from "./modules/workshop/workshop.router.js";
-import roomRouter from "./modules/room/room.router.js"
+import roomRouter from "./modules/room/room.router.js";
+import roomEventRouter from "./modules/roomEvent/roomEvent.router.js";
 import courseRouter from "./modules/course/course.router.js";
 import categRouter from "./modules/category/categ.router.js";
 import cartRouter from "./modules/cart/cart.router.js";
@@ -18,8 +19,11 @@ const appRouter = (app, express) => {
   app.use((req, res, next) => {
     if (req.originalUrl.includes("/order/webhook")) {
       return next();
+    } else if (req.originalUrl.includes("/roomEvent")) {
+      express.raw({ type: "application/webhook+json" });
+    } else {
+      express.json()(req, res, next);
     }
-    express.json()(req, res, next);
   });
 
   app.use("/auth", authRouter);
@@ -28,6 +32,7 @@ const appRouter = (app, express) => {
   app.use("/course", courseRouter);
   app.use("/workshop", workshopRouter);
   app.use("/room", roomRouter);
+  app.use("/roomEvent", roomEventRouter);
   app.use("/category", categRouter);
   app.use("/cart", cartRouter);
   app.use("/order", orderRouter);
