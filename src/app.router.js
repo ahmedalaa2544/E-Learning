@@ -17,13 +17,13 @@ const appRouter = (app, express) => {
   app.use(cors({}));
 
   app.use((req, res, next) => {
-    if (req.originalUrl.includes("/order/webhook")) {
+    if (
+      req.originalUrl.includes("/order/webhook") ||
+      req.originalUrl.includes("/roomEvent")
+    ) {
       return next();
-    } else if (req.originalUrl.includes("/roomEvent")) {
-      express.raw({ type: "application/webhook+json" });
-    } else {
-      express.json()(req, res, next);
     }
+    express.json()(req, res, next);
   });
 
   app.use("/auth", authRouter);
