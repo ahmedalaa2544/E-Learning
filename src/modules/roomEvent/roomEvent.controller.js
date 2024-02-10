@@ -12,10 +12,10 @@ export const room_started = asyncHandler(async (req, res, next) => {
   // event is a WebhookEvent object
   const event = receiver.receive(req.body, req.get("Authorization"));
 
-  // test webhook
-  await roomModel.create({
-    roomName: "eslam",
-  });
+  // // test webhook
+  // await roomModel.create({
+  //   roomName: "eslam",
+  // });
 
 });
 
@@ -30,8 +30,8 @@ export const room_finished = asyncHandler(async (req, res, next) => {
   const event = receiver.receive(req.body, req.get("Authorization"));
   
   // test webhook
-  await roomModel.create({
-    roomName: "eslam",
-  });
-  console.log(event);
+  // await roomModel.create({
+  //   roomName: "eslam",
+  // });
+  // console.log(event);
 });
