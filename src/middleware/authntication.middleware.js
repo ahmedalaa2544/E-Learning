@@ -8,7 +8,7 @@ const isAuth = asyncHandler(async (req, res, next) => {
   let { token } = req.headers;
 
   if (!token?.startsWith(process.env.BEARER_TOKEN)) {
-    return next(new Error("required valid token"), { cause: 401 });
+    return next(new Error("required valid token", { cause: 401 }));
   }
   // check payload
   token = token.split(process.env.BEARER_TOKEN)[1];
