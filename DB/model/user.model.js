@@ -40,7 +40,7 @@ const userSchmea = new Schema(
       url: { type: String },
     },
     coursesBought: {
-      type: [{ type: Types.ObjectId, ref: "Course" }],
+      type: [{ type: Types.ObjectId, ref: ["Workshop", "Course"] }],
     },
     wishlist: {
       type: [{ type: Types.ObjectId, ref: "Course" }],

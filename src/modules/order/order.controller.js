@@ -25,6 +25,10 @@ export const createOrder = asyncHandler(async (req, res, next) => {
       );
     }
 
+    if (!cart.course[i].price) {
+      cart.course[i].price = 0;
+    }
+
     orderCourses.push({
       courseId: cart.course[i].courseId,
       coursePrice: cart.course[i].price,

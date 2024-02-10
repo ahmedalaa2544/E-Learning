@@ -6,6 +6,11 @@ import tokenModel from "../../../DB/model/token.model.js";
 import upload, { deleteBlob } from "../../utils/azureServices.js";
 import workshopModel from "../../../DB/model/workshop.model.js";
 
+export const getUser = asyncHandler(async (req, res, next) => {
+  const user = await userModel.findById(req.user._id);
+  return res.status(200).json({ message: "Done", user });
+});
+
 export const updateProfile = asyncHandler(async (req, res, next) => {
   // const { fullName, gender, phone, age } = req.body;
   // update profile
@@ -63,12 +68,17 @@ export const getWishlist = asyncHandler(async (req, res, next) => {
 
 export const getCourses = asyncHandler(async (req, res, next) => {
   // get courses
-  const { coursesBought } = await userModel
+  const courses = await userModel
     .findById(req.user.id)
-    .populate([{ path: "coursesBought" }]);
+    .populate([{ path: "coursesBought", model: "Course" }]);
+  // get workshops
+  const workshop = await userModel
+    .findById(req.user.id)
+    .populate([{ path: "coursesBought", model: "Workshop" }]);
   // return response
-  return res.status(200).json({ message: "Done", coursesBought });
+  return res.status(200).json({ message: "Done", courses, workshop });
 });
+
 export const getCreatedCourses = asyncHandler(async (req, res, next) => {
   // get courses
   const courses = await courseModel.find({ createdBy: req.user._id });
