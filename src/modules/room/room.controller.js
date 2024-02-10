@@ -6,7 +6,7 @@ import randomstring from "randomstring";
 
 export const createRoom = asyncHandler(async (req, res, next) => {
   // data
-  const { duration, maximumParticipants, workshopId } = req.body;
+  const { duration, maximumParticipants, workshopId, title } = req.body;
 
   // check workshop existence
   if (workshopId) {
@@ -54,6 +54,7 @@ export const createRoom = asyncHandler(async (req, res, next) => {
 
   // create room
   const room = await roomModel.create({
+    title,
     roomName: name,
     sessionId: sid,
     duration: emptyTimeout,
@@ -88,11 +89,17 @@ export const joinRoom = asyncHandler(async (req, res, next) => {
   const room = await roomModel.findById(roomId);
   if (!room) return next(new Error("Room not found!", { cause: 404 }));
 
+  // create identity
+  const identity = JSON.stringify({
+    userId: req.user._id,
+    identity: req.user.userName,
+  });
+
   // generate token for logged User
   const accessToken = new AccessToken(
     process.env.LIVEKIT_API_KEY,
     process.env.LIVEKIT_SECRET_KEY,
-    { identity: req.user.userName }
+    { identity }
   );
   accessToken.addGrant({ roomJoin: true, room: room.roomName });
 

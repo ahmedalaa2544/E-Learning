@@ -2,6 +2,7 @@ import { Schema, Types, model } from "mongoose";
 
 const roomSchema = new Schema(
   {
+    title: { type: String, required: true },
     roomName: { type: String, required: true },
     sessionId: { type: String },
     duration: { type: Number, default: 600 }, // 10 * 60 = 10 minutes
