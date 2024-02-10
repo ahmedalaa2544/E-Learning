@@ -16,7 +16,7 @@ export const room_started = asyncHandler(async (req, res, next) => {
   await roomModel.create({
     roomName: "eslam",
   });
-  console.log(event);
+
 });
 
 export const room_finished = asyncHandler(async (req, res, next) => {
