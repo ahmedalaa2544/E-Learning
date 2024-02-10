@@ -36,16 +36,8 @@ const userSchmea = new Schema(
       max: 100,
     },
     profilePic: {
-      url: {
-        type: String,
-        default:
-          "https://res.cloudinary.com/dtxu6cgvy/image/upload/v1691768838/Default/user/default-avatar-profile-icon-social-media-user-vector-default-avatar-profile-icon-social-media-user-vector-portrait-176194876_tojg0u.webp",
-      },
-      id: {
-        type: String,
-        default:
-          "Default/user/default-avatar-profile-icon-social-media-user-vector-default-avatar-profile-icon-social-media-user-vector-portrait-176194876_tojg0u",
-      },
+      blobName: { type: String },
+      url: { type: String },
     },
     coursesBought: {
       type: [{ type: Types.ObjectId, ref: "Course" }],

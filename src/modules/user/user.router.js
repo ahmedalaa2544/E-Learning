@@ -4,6 +4,7 @@ import * as userController from "./user.controller.js";
 import { validation } from "../../middleware/validation.js";
 import * as validators from "./user.validation.js";
 import isAuth from "../../middleware/authntication.middleware.js";
+import { customValidation, fileUpload } from "../../utils/multer.js";
 
 router.patch(
   "/updateProfile",
@@ -31,5 +32,12 @@ router.patch(
 router.get("/wishlist", isAuth, userController.getWishlist);
 
 router.get("/courses", isAuth, userController.getCourses);
+
+router.put(
+  "/uploadPic",
+  isAuth,
+  fileUpload(customValidation.image).single("image"),
+  userController.uploadPic
+);
 
 export default router;

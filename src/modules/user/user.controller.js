@@ -67,3 +67,39 @@ export const getCourses = asyncHandler(async (req, res, next) => {
   // return response
   return res.status(200).json({ message: "Done", coursesBought });
 });
+
+export const uploadPic = asyncHandler(async (req, res, next) => {
+  // check image
+  if (!req.file) return next(new Error("image is required", { cause: 404 }));
+
+  // Upload image if attached
+  if (req.file?.image) {
+    // check if Image uploaded before
+    if (req.user.profilePic) {
+      // delete promotionImage from Azure cloud
+      await deleteBlob(req.user.profilePic.blobName);
+    }
+
+    // Extract the extension for the promotion image.
+    const blobImageExtension = req.file.image.originalname.split(".").pop();
+
+    // Define the path for the promotion image in the user's course directory.
+    const blobImageName = `Users\\${req.user.userName}_${req.user._id}\\profilePic\\image.${blobImageExtension}`;
+
+    // Upload image and obtain its URL.
+    const imageUrl = await upload(
+      req.file.image.path,
+      blobImageName,
+      "image",
+      blobImageExtension
+    );
+
+    // save changes in DB
+    req.user.profilePic.blobName = blobImageName;
+    req.user.profilePic.url = imageUrl;
+    await req.user.save();
+  }
+
+  // send response
+  return res.status(200).json({ message: "Done", results: req.user });
+});
