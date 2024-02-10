@@ -4,6 +4,7 @@ import { asyncHandler } from "../../utils/asyncHandling.js";
 import Cryptr from "cryptr";
 import tokenModel from "../../../DB/model/token.model.js";
 import upload, { deleteBlob } from "../../utils/azureServices.js";
+import workshopModel from "../../../DB/model/workshop.model.js";
 
 export const updateProfile = asyncHandler(async (req, res, next) => {
   // const { fullName, gender, phone, age } = req.body;
@@ -67,6 +68,13 @@ export const getCourses = asyncHandler(async (req, res, next) => {
     .populate([{ path: "coursesBought" }]);
   // return response
   return res.status(200).json({ message: "Done", coursesBought });
+});
+export const getCreatedCourses = asyncHandler(async (req, res, next) => {
+  // get courses
+  const courses = await courseModel.find({ createdBy: req.user._id });
+  const workshop = await workshopModel.find({ instructor: req.user._id });
+  // return response
+  return res.status(200).json({ message: "Done", courses, workshop });
 });
 
 export const uploadPic = asyncHandler(async (req, res, next) => {

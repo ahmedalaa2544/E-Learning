@@ -31,7 +31,9 @@ router.patch(
 
 router.get("/wishlist", isAuth, userController.getWishlist);
 
-router.get("/courses", isAuth, userController.getCourses);
+router.get("/BoughtCourses", isAuth, userController.getCourses);
+
+router.get("/createCourses", isAuth, userController.getCreatedCourses);
 
 router.put(
   "/uploadPic",
