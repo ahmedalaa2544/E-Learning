@@ -15,7 +15,7 @@ router.post(
 // room_finished Event
 router.post(
   "/room_finished",
-  express.raw({ type: "application/json" }),
+  express.raw({ type: "application/webhook+json" }),
   roomEventController.room_finished
 );
 
