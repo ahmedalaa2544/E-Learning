@@ -5,6 +5,7 @@ const objectId = joi.string().custom(isValidObjectId);
 
 export const createRoomSchema = joi
   .object({
+    title: joi.string().required(),
     duration: joi.number().min(60).max(600),
     maximumParticipants: joi.number().min(0).max(20),
     workshopId: objectId,
