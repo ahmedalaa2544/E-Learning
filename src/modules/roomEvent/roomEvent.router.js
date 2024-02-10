@@ -13,7 +13,11 @@ router.post(
 );
 
 // room_finished Event
-// router.post("/room_finished", roomEventController.room_finished);
+router.post(
+  "/room_finished",
+  express.raw({ type: "application/json" }),
+  roomEventController.room_finished
+);
 
 // participant_joined Event
 // router.post("/participant_joined", roomEventController.participant_joined);
