@@ -2,11 +2,13 @@ import cartModel from "../../../DB/model/cart.model.js";
 import userModel from "../../../DB/model/user.model.js";
 import { asyncHandler } from "../../utils/asyncHandling.js";
 import courseModel from "../../../DB/model/course.model.js";
+import workshopModel from "../../../DB/model/workshop.model.js";
 
 export const addToCart = asyncHandler(async (req, res, next) => {
   // check existence course
   const course = await courseModel.findById(req.params.courseId);
-  if (!course) {
+  const workshop = await workshopModel.findById(req.params.courseId);
+  if (!(course || workshop)) {
     return next(new Error("Course not found", { cause: 404 }));
   }
 
@@ -35,8 +37,8 @@ export const addToCart = asyncHandler(async (req, res, next) => {
       $push: {
         course: {
           courseId: req.params.courseId,
-          price: course.price,
-          name: course.title,
+          price: course ? course.price : workshop.price,
+          name: course ? course.title : workshop.title,
         },
       },
     },
@@ -49,7 +51,9 @@ export const addToCart = asyncHandler(async (req, res, next) => {
 export const removeFromCart = asyncHandler(async (req, res, next) => {
   // check course
   const course = await courseModel.findById(req.params.courseId);
-  if (!course) {
+  const workshop = await workshopModel.findById(req.params.courseId);
+
+  if (!(course || workshop)) {
     return next(new Error("Course not found", { cause: 404 }));
   }
   // check course in cart
