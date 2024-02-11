@@ -29,9 +29,5 @@ export const room_finished = asyncHandler(async (req, res, next) => {
   // event is a WebhookEvent object
   const event = receiver.receive(req.body, req.get("Authorization"));
   
-  // test webhook
-  // await roomModel.create({
-  //   roomName: "eslam",
-  // });
-  // console.log(event);
+
 });
