@@ -19,6 +19,13 @@ router.patch(
   cartController.removeFromCart
 );
 
+router.put(
+  "/coupon/:name",
+  isAuth,
+  validation(validators.couponSchema),
+  cartController.addCoupon
+);
+
 router.get("/", isAuth, cartController.getCart);
 
 export default router;

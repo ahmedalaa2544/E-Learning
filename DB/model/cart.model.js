@@ -11,6 +11,7 @@ const cartSchema = new Schema(
         name: String,
       },
     ],
+    coupon: { type: Types.ObjectId, ref: "Coupon" },
   },
   { timestamps: true }
 );

@@ -4,12 +4,24 @@ import cartModel from "../../../DB/model/cart.model.js";
 import { asyncHandler } from "../../utils/asyncHandling.js";
 import Stripe from "stripe";
 import userModel from "../../../DB/model/user.model.js";
+import couponModel from "../../../DB/model/coupon.model.js";
 //
 export const createOrder = asyncHandler(async (req, res, next) => {
   //Check Cart
   const cart = await cartModel.findOne({ user: req.user.id });
   if (cart.course.length < 1) {
     return next(new Error("Cart is empty", { cause: 404 }));
+  }
+  let checkCoupon;
+  // Check Coupon
+  if (cart.coupon) {
+    checkCoupon = await couponModel.findOne({
+      _id: cart.coupon,
+      expireAt: { $gt: Date.now() },
+    });
+    if (checkCoupon.name == undefined) {
+      return next(new Error("inVaild Coupon", { cause: 404 }));
+    }
   }
   let orderCourses = [];
   let orderPrice = 0;
@@ -48,6 +60,14 @@ export const createOrder = asyncHandler(async (req, res, next) => {
 
   //Payment
   const stripe = new Stripe(process.env.STRIPE_KEY);
+  let existCoupon;
+  if (checkCoupon.name !== undefined) {
+    existCoupon = await stripe.coupons.create({
+      percent_off: checkCoupon.discount,
+      duration: "once",
+    });
+  }
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     mode: "payment",
@@ -60,12 +80,14 @@ export const createOrder = asyncHandler(async (req, res, next) => {
           currency: "EGP",
           product_data: {
             name: course.name,
+            image: course.coverImageUrl,
           },
           unit_amount: course.coursePrice * 100, //cent
         },
         quantity: 1,
       };
     }),
+    discounts: existCoupon ? [{ coupon: existCoupon.id }] : [],
   });
 
   return res.status(200).json({ message: "Done", result: session.url, order });
