@@ -6,3 +6,9 @@ export const courseId = joi
     courseId: joi.string().custom(isValidObjectId).required(),
   })
   .required();
+
+export const couponSchema = joi
+  .object({
+    name: joi.string().length(5).required(),
+  })
+  .required();

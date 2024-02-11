@@ -9,6 +9,7 @@ import courseRouter from "./modules/course/course.router.js";
 import categRouter from "./modules/category/categ.router.js";
 import cartRouter from "./modules/cart/cart.router.js";
 import orderRouter from "./modules/order/order.router.js";
+import couponRouter from "./modules/coupon/coupon.router.js";
 import { globalErrorHandler } from "./utils/asyncHandling.js";
 import cors from "cors";
 
@@ -36,6 +37,7 @@ const appRouter = (app, express) => {
   app.use("/category", categRouter);
   app.use("/cart", cartRouter);
   app.use("/order", orderRouter);
+  app.use("/coupon", couponRouter);
 
   app.all("*", (req, res) => {
     return res.status(404).json({ message: "invalid Path" });

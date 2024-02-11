@@ -3,6 +3,7 @@ import userModel from "../../../DB/model/user.model.js";
 import { asyncHandler } from "../../utils/asyncHandling.js";
 import courseModel from "../../../DB/model/course.model.js";
 import workshopModel from "../../../DB/model/workshop.model.js";
+import couponModel from "../../../DB/model/coupon.model.js";
 
 export const addToCart = asyncHandler(async (req, res, next) => {
   // check existence course
@@ -76,7 +77,26 @@ export const removeFromCart = asyncHandler(async (req, res, next) => {
   return res.status(200).json({ message: "Done", remove });
 });
 
+export const addCoupon = asyncHandler(async (req, res, next) => {
+  const chcekCoupon = await couponModel.findOne({ name: req.params.name });
+  if (!chcekCoupon) {
+    return next(new Error("Coupon not found", { cause: 404 }));
+  }
+  const cart = await cartModel.findOneAndUpdate(
+    { user: req.user.id },
+    {
+      coupon: chcekCoupon._id,
+    },
+    { new: true }
+  );
+  // response
+  return res.status(200).json({ message: "Done", cart });
+});
+
 export const getCart = asyncHandler(async (req, res) => {
-  const cart = await cartModel.findOne({ user: req.user.id });
+  const cart = await cartModel
+    .findOne({ user: req.user.id })
+    .populate({ path: "coupon" });
+
   return res.status(200).json({ message: "Done", cart });
 });
