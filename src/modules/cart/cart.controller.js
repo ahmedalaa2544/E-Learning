@@ -93,6 +93,16 @@ export const addCoupon = asyncHandler(async (req, res, next) => {
   return res.status(200).json({ message: "Done", cart });
 });
 
+export const delCoupon = asyncHandler(async (req, res, next) => {
+  const cart = await cartModel.findOneAndUpdate(
+    { user: req.user.id },
+    { $unset: { coupon: "" } },
+    { new: true }
+  );
+  // response
+  return res.status(200).json({ message: "Done", cart });
+});
+
 export const getCart = asyncHandler(async (req, res) => {
   const cart = await cartModel
     .findOne({ user: req.user.id })
