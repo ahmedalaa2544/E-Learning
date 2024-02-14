@@ -12,11 +12,13 @@ export const room_started = asyncHandler(async (req, res, next) => {
   // event is a WebhookEvent object
   const event = receiver.receive(req.body, req.get("Authorization"));
 
-  // // test webhook
-  // await roomModel.create({
-  //   roomName: "eslam",
-  // });
-
+  // edit room status
+  await roomModel.findOneAndUpdate(
+    { sessionId: event?.room?.sid },
+    {
+      roomStatus: "Started",
+    }
+  );
 });
 
 export const room_finished = asyncHandler(async (req, res, next) => {
@@ -28,6 +30,12 @@ export const room_finished = asyncHandler(async (req, res, next) => {
 
   // event is a WebhookEvent object
   const event = receiver.receive(req.body, req.get("Authorization"));
-  
 
+  // edit room status
+  await roomModel.findOneAndUpdate(
+    { sessionId: event?.room?.sid },
+    {
+      roomStatus: "Finshed",
+    }
+  );
 });

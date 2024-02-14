@@ -20,7 +20,7 @@ const roomSchema = new Schema(
     ],
     publishers: [{ type: Types.ObjectId, ref: "User" }],
     workshopId: { type: Types.ObjectId, ref: "Workshop" },
-    roomStatus: { type: String },
+    roomStatus: { type: String, enum: ["Started", "Finshed"] },
   },
   { timestamps: true }
 );
