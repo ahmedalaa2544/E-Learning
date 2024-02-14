@@ -26,6 +26,8 @@ router.put(
   cartController.addCoupon
 );
 
+router.delete("/coupon", isAuth, cartController.delCoupon);
+
 router.get("/", isAuth, cartController.getCart);
 
 export default router;

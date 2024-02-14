@@ -11,8 +11,8 @@ export const getUser = asyncHandler(async (req, res, next) => {
   const cryptr = new Cryptr(process.env.CRPTO_PHONE);
   const decryptedPhone = cryptr.decrypt(user.phone);
   user.phone = decryptedPhone;
-  user.save();
-  return res.status(200).json({ message: "Done", user });
+  const newUser = user;
+  return res.status(200).json({ message: "Done", newUser });
 });
 
 export const updateProfile = asyncHandler(async (req, res, next) => {
