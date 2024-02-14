@@ -8,6 +8,10 @@ import workshopModel from "../../../DB/model/workshop.model.js";
 
 export const getUser = asyncHandler(async (req, res, next) => {
   const user = await userModel.findById(req.user._id);
+  const cryptr = new Cryptr(process.env.CRPTO_PHONE);
+  const decryptedPhone = cryptr.decrypt(user.phone);
+  user.phone = decryptedPhone;
+  user.save();
   return res.status(200).json({ message: "Done", user });
 });
 
