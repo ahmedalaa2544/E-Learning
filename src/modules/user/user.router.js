@@ -12,6 +12,7 @@ router.patch(
   "/updateProfile",
   isAuth,
   validation(validators.updateSchema),
+  fileUpload(customValidation.image).single("image"),
   userController.updateProfile
 );
 
@@ -36,12 +37,5 @@ router.get("/wishlist", isAuth, userController.getWishlist);
 router.get("/BoughtCourses", isAuth, userController.getCourses);
 
 router.get("/createCourses", isAuth, userController.getCreatedCourses);
-
-router.put(
-  "/uploadPic",
-  isAuth,
-  fileUpload(customValidation.image).single("image"),
-  userController.uploadPic
-);
 
 export default router;
