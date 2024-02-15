@@ -14,7 +14,7 @@ export const room_started = asyncHandler(async (req, res, next) => {
   const response = receiver.receive(req.body, req.get("Authorization"));
 
   // edit room status
-  await roomModel.findOneAndUpdate(
+  const room = await roomModel.findOneAndUpdate(
     { sessionId: response?.room?.sid },
     {
       roomStatus: "Started",
@@ -22,6 +22,13 @@ export const room_started = asyncHandler(async (req, res, next) => {
       createdAt: response?.createdAt,
     }
   );
+
+  // send response
+  return res.status(200).json({
+    success: true,
+    message: "Room Started Successfully!",
+    results: room,
+  });
 });
 
 export const room_finished = asyncHandler(async (req, res, next) => {
@@ -35,12 +42,19 @@ export const room_finished = asyncHandler(async (req, res, next) => {
   const response = receiver.receive(req.body, req.get("Authorization"));
 
   // edit room status
-  await roomModel.findOneAndUpdate(
+  const room = await roomModel.findOneAndUpdate(
     { sessionId: response?.room?.sid },
     {
       roomStatus: "Finshed",
     }
   );
+
+  // send response
+  return res.status(200).json({
+    success: true,
+    message: "Room Finshed Successfully!",
+    results: room,
+  });
 });
 
 export const participant_joined = asyncHandler(async (req, res, next) => {
