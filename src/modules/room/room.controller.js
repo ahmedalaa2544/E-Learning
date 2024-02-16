@@ -92,7 +92,7 @@ export const joinRoom = asyncHandler(async (req, res, next) => {
   // create identity
   const identity = JSON.stringify({
     userId: req.user._id,
-    identity: req.user.userName,
+    userName: req.user.userName,
   });
 
   // generate token for logged User
@@ -102,11 +102,6 @@ export const joinRoom = asyncHandler(async (req, res, next) => {
     { identity }
   );
   accessToken.addGrant({ roomJoin: true, room: room.roomName });
-
-  // add logged user to participants of room
-  await roomModel.findByIdAndUpdate(roomId, {
-    $push: { participants: req.user._id },
-  });
 
   // send response
   return res.status(201).json({

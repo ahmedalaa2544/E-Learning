@@ -70,8 +70,14 @@ export const participant_joined = asyncHandler(async (req, res, next) => {
     room,
   } = receiver.receive(req.body, req.get("Authorization"));
 
+  // parsing identity info from string to object {userId, identity}
+  const identityInfo = JSON.parse(identity);
+
   // check participant existence
-  const participantExists = await participantModel.find({ participantId: sid });
+  const participantExists = await participantModel.find({
+    "identity.userId": identityInfo.userId,
+  });
+
   if (participantExists) {
     participantExists.status.push("Joined");
     await participantExists.save();
@@ -87,7 +93,7 @@ export const participant_joined = asyncHandler(async (req, res, next) => {
   // create new participant
   const participant = await participantModel.create({
     participantId: sid,
-    identity,
+    identity: identityInfo,
     status: ["Joined"],
     joinedAt,
     version,
@@ -99,7 +105,7 @@ export const participant_joined = asyncHandler(async (req, res, next) => {
   await roomModel.findOneAndUpdate(
     { sessionId: room.sid },
     {
-      $push: { participants: participant },
+      $push: { participants: participant._id },
     }
   );
 

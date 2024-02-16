@@ -3,7 +3,10 @@ import { Schema, Types, model } from "mongoose";
 const participantSchema = new Schema(
   {
     participantId: { type: String },
-    identity: { type: String },
+    identity: {
+      userId: { type: Types.ObjectId, ref: "User" },
+      userName: { type: String },
+    },
     status: [{ type: String }],
     joinedAt: { type: String },
     version: { type: Number },
@@ -12,6 +15,7 @@ const participantSchema = new Schema(
       canPublish: { type: Boolean },
     },
     region: { type: String },
+    tracks: [{ type: Types.ObjectId, ref: "Track" }],
   },
   { timestamps: true }
 );
