@@ -41,10 +41,10 @@ router.post(
 );
 
 // track_unpublished Event
-// router.post(
-//   "/track_unpublished",
-//   express.raw({ type: "application/webhook+json" }),
-//   roomEventController.track_unpublished
-// );
+router.post(
+  "/track_unpublished",
+  express.raw({ type: "application/webhook+json" }),
+  roomEventController.track_unpublished
+);
 
 export default router;
