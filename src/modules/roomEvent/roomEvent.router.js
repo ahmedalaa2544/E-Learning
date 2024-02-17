@@ -34,11 +34,11 @@ router.post(
 );
 
 // track_published Event
-// router.post(
-//   "/track_published",
-//   express.raw({ type: "application/webhook+json" }),
-//   roomEventController.track_published
-// );
+router.post(
+  "/track_published",
+  express.raw({ type: "application/webhook+json" }),
+  roomEventController.track_published
+);
 
 // track_unpublished Event
 // router.post(

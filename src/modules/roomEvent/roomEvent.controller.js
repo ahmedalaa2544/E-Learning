@@ -2,6 +2,7 @@ import { asyncHandler } from "../../utils/asyncHandling.js";
 import { WebhookReceiver } from "livekit-server-sdk";
 import participantModel from "../../../DB/model/participant.model.js";
 import roomModel from "../../../DB/model/room.model.js";
+import trackModel from "../../../DB/model/track.model.js";
 
 export const room_started = asyncHandler(async (req, res, next) => {
   // create receiver
@@ -144,6 +145,53 @@ export const participant_left = asyncHandler(async (req, res, next) => {
   return res.status(200).json({
     success: true,
     message: "Participant Left Successfully!",
+    results: participantExists,
+  });
+});
+
+export const track_published = asyncHandler(async (req, res, next) => {
+  // create receiver
+  const receiver = new WebhookReceiver(
+    process.env.LIVEKIT_API_KEY,
+    process.env.LIVEKIT_SECRET_KEY
+  );
+
+  // response is a WebhookEvent object
+  const {
+    participant,
+    room,
+    track: { sid, type, name, source, mimeType, mid, stream },
+  } = receiver.receive(req.body, req.get("Authorization"));
+
+  // check participant existence
+  const trackExists = await trackModel.find({ trackId: sid });
+  if (trackExists)
+    return next(new Error("Track already exists!", { cause: 409 }));
+
+  // create new track
+  const track = await trackModel.create({
+    trackId: sid,
+    type,
+    name,
+    source,
+    mimeType,
+    mid,
+    stream,
+    publishStatus: "Published",
+  });
+
+  // add the track to its participant
+  await participantModel.findOneAndUpdate(
+    { identity: participant.identity },
+    {
+      $push: { tracks: track._id },
+    }
+  );
+
+  // send response
+  return res.status(200).json({
+    success: true,
+    message: "Track Published Successfully!",
     results: participantExists,
   });
 });
