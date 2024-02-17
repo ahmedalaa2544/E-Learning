@@ -159,7 +159,6 @@ export const track_published = asyncHandler(async (req, res, next) => {
   // response is a WebhookEvent object
   const {
     participant,
-    room,
     track: { sid, type, name, source, mimeType, mid, stream },
   } = receiver.receive(req.body, req.get("Authorization"));
 
@@ -192,6 +191,53 @@ export const track_published = asyncHandler(async (req, res, next) => {
   return res.status(200).json({
     success: true,
     message: "Track Published Successfully!",
-    results: participantExists,
+    results: track,
+  });
+});
+
+export const track_unpublished = asyncHandler(async (req, res, next) => {
+  // create receiver
+  const receiver = new WebhookReceiver(
+    process.env.LIVEKIT_API_KEY,
+    process.env.LIVEKIT_SECRET_KEY
+  );
+
+  // response is a WebhookEvent object
+  const {
+    track: {
+      sid,
+      type,
+      source,
+      mimeType,
+      mid,
+      stream,
+      width,
+      height,
+      simulcast,
+    },
+  } = receiver.receive(req.body, req.get("Authorization"));
+
+  // check track existence
+  const trackExists = await trackModel.find({ trackId: sid });
+  if (!trackExists) return next(new Error("Track not found!", { cause: 404 }));
+
+  // update track data
+  const track = await trackModel.findByIdAndUpdate(trackExists._id, {
+    type,
+    source,
+    mimeType,
+    mid,
+    stream,
+    width,
+    height,
+    simulcast,
+    publishStatus: "UnPublished",
+  });
+
+  // send response
+  return res.status(200).json({
+    success: true,
+    message: "Track UnPublished Successfully!",
+    results: track,
   });
 });
