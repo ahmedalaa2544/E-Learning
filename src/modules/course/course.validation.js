@@ -50,3 +50,17 @@ export const getCoursesWithCategAndSubCategSchema = joi
     subCategoryId: joi.string().custom(isValidObjectId).required(),
   })
   .required();
+
+export const createRatingSchema = joi
+  .object({
+    courseId: joi.string().custom(isValidObjectId).required(),
+    rating: joi.number().integer().min(1).max(5).required(),
+  })
+  .required();
+
+export const createcommentSchema = joi
+  .object({
+    courseId: joi.string().custom(isValidObjectId).required(),
+    comment: joi.string().min(3).max(120).required(),
+  })
+  .required();

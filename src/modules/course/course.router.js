@@ -96,6 +96,7 @@ router.get(
   validation(validators.getCoursesWithCategSchema),
   courseController.getCoursesWithCategAndSubCateg
 );
+
 /**
  * Route to retrieve courses associated with a specific category and subCategory.
  */
@@ -104,4 +105,24 @@ router.get(
   validation(validators.getCoursesWithCategAndSubCategSchema),
   courseController.getCoursesWithCategAndSubCateg
 );
+/**
+ * Route for posting a rating for a specific course.
+ */
+router.post(
+  "/:courseId/rating",
+  isAuthenticated,
+  validation(validators.createRatingSchema),
+  courseController.postRating
+);
+
+/**
+ * Route for posting a comment for a specific course.
+ */
+router.post(
+  "/:courseId/comment",
+  isAuthenticated,
+  validation(validators.createcommentSchema),
+  courseController.postComment
+);
+
 export default router;

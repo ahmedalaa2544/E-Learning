@@ -132,8 +132,23 @@ const courseSchema = new Schema(
       default: "Draft",
     },
   },
-  { timestamps: true }
+  {
+    id: false,
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
+// *************** Virtuals ************ //
+courseSchema.virtual("finalPrice").get(function () {
+  if (this.price) {
+    return Number.parseFloat(
+      this.price - (this.price * this.discount || 0) / 100
+    ).toFixed(2);
+  } else {
+    return 0;
+  }
+});
 
 const courseModel = model("Course", courseSchema);
 export default courseModel;
