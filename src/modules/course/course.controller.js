@@ -6,12 +6,14 @@ import Video from "../../../DB/model/video.model.js";
 import Article from "../../../DB/model/article.model.js";
 import Category from "../../../DB/model/category.model.js";
 import subCategoryModel from "../../../DB/model/subCategory.model.js";
+import ratingModel from "../../../DB/model/rating.model.js";
+import commentModel from "../../../DB/model/comment.model.js";
+
 import upload, {
   deleteDirectory,
   deleteBlob,
   generateSASUrl,
 } from "../../utils/azureServices.js";
-import mongoose from "mongoose";
 /**
  * Create a new course with the provided title.
  *
@@ -283,6 +285,21 @@ export const getCourse = asyncHandler(async (req, res, next) => {
   if (!fetchedCourse) {
     return next(new Error("Course not found"), { cause: 404 });
   }
+
+  // Calculate the average rating for the course
+  const ratings = await ratingModel.find({ course: courseId });
+  let sum = 0;
+  ratings.map((rating) => {
+    sum += rating.rating;
+  });
+  const courseRating = sum / ratings.length;
+
+  // Retrieve comments associated with the course
+  const courseComments = await commentModel.find({ course: courseId });
+  // courseComments = courseComments.map((comment) => {
+  //   return { ...comment._doc, course: undefined };
+  // });
+
   // Extract the blob name associated with the course's cover image and generate a Shared Access Signature (SAS) URL with read access and a 60-minute expiry.
   const blobImageName = fetchedCourse.coverImageBlobName;
   const { accountSasTokenUrl: imageUrl } = await generateSASUrl(
@@ -308,6 +325,9 @@ export const getCourse = asyncHandler(async (req, res, next) => {
           coverImageBlobName: undefined,
           promotionalVideoUrl: videoUrl,
           promotionalVideoBlobName: undefined,
+          rating: courseRating,
+          comments: courseComments,
+          finalPrice: fetchedCourse.finalPrice,
         },
       })
     : res.status(500).json({ message: "Something went wrong" });
@@ -477,3 +497,68 @@ export const getCoursesWithCategAndSubCateg = asyncHandler(
       : res.status(500).json({ message: "Something went wrong" });
   }
 );
+
+/**
+ * Handle the process of posting a rating for a specific course.
+ *
+ * @param {Object} req - Express request object containing rating data in the request body and the course ID in the URL parameters.
+ * @param {Object} res - Express response object.
+ * @param {Function} next - Express next middleware function.
+ * @returns {Object} - JSON response indicating the success or failure of the rating posting process.
+ */
+export const postRating = asyncHandler(async (req, res, next) => {
+  // Extract rating and course ID from the request body and parameters
+  const { rating } = req.body;
+  const { courseId } = req.params;
+
+  let rate;
+
+  // Check if the user has already rated the course
+  if (!ratingModel.findOne({ user: req.userId })) {
+    // If not, create a new rating record
+    rate = new ratingModel({
+      course: courseId,
+      user: req.userId,
+      rating: rating,
+    });
+    await createdRating.save(); // Save the newly created rating
+  } else {
+    // If the user has already rated the course, update their existing rating
+    rate = await ratingModel.findOneAndUpdate(
+      { user: req.userId },
+      { rating: rating }
+    );
+  }
+
+  // Return a JSON response indicating the success or failure of the rating posting process
+  return rate
+    ? res.status(200).json({ message: "Done" })
+    : res.status(500).json({ message: "Something went wrong" });
+});
+
+/**
+ * Handles the process of posting a comment for a specific course.
+ *
+ * @param {Object} req - The Express request object containing the course ID in the URL parameters and the comment data in the request body.
+ * @param {Object} res - The Express response object used to send back the response.
+ * @param {Function} next - The next middleware function in the Express middleware chain.
+ * @returns {Object} - JSON response indicating the success or failure of the comment posting process.
+ */
+export const postComment = asyncHandler(async (req, res, next) => {
+  // Extract course ID and comment data from the request
+  const { courseId } = req.params;
+  const { comment } = req.body;
+
+  // Create a new comment record
+  const createdComment = new commentModel({
+    course: courseId,
+    user: req.userId,
+    comment: comment,
+  });
+  await createdComment.save(); // Save the newly created comment
+
+  // Return a JSON response indicating the success or failure of the comment posting process
+  return createdComment
+    ? res.status(200).json({ message: "Comment posted successfully" })
+    : res.status(500).json({ message: "Failed to post comment" });
+});
