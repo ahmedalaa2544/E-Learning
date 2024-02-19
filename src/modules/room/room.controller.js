@@ -189,3 +189,7 @@ export const getOnlineRooms = asyncHandler(async (req, res, next) => {
     .status(200)
     .json({ success: true, message: "All Online Rooms", results: rooms });
 });
+
+export const recordRoom = asyncHandler(async(req, res, next)=> {
+  
+})

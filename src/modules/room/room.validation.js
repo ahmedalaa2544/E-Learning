@@ -12,19 +12,7 @@ export const createRoomSchema = joi
   })
   .required();
 
-export const joinRoomSchema = joi
-  .object({
-    roomId: objectId.required(),
-  })
-  .required();
-
-export const getSpecificRoomSchema = joi
-  .object({
-    roomId: objectId.required(),
-  })
-  .required();
-
-export const deleteRoomSchema = joi
+export const roomIdSchema = joi
   .object({
     roomId: objectId.required(),
   })

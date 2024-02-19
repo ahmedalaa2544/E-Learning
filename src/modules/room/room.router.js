@@ -17,7 +17,7 @@ router.post(
 router.post(
   "/join",
   isAuth,
-  validation(roomValidation.joinRoomSchema),
+  validation(roomValidation.roomIdSchema),
   roomController.joinRoom
 );
 
@@ -28,7 +28,7 @@ router.get("/online", isAuth, roomController.getOnlineRooms);
 router.get(
   "/:roomId",
   isAuth,
-  validation(roomValidation.getSpecificRoomSchema),
+  validation(roomValidation.roomIdSchema),
   roomController.getSpecificRoom
 );
 
@@ -36,8 +36,16 @@ router.get(
 router.delete(
   "/:roomId",
   isAuth,
-  validation(roomValidation.deleteRoomSchema),
+  validation(roomValidation.roomIdSchema),
   roomController.deleteRoom
+);
+
+// Record Room
+router.post(
+  "/record",
+  isAuth,
+  validation(roomValidation.roomIdSchema),
+  roomController.recordRoom
 );
 
 export default router;
