@@ -510,18 +510,17 @@ export const postRating = asyncHandler(async (req, res, next) => {
   // Extract rating and course ID from the request body and parameters
   const { rating } = req.body;
   const { courseId } = req.params;
-
   let rate;
 
   // Check if the user has already rated the course
-  if (!ratingModel.findOne({ user: req.userId })) {
+  if (!(await ratingModel.findOne({ user: req.userId }))) {
     // If not, create a new rating record
     rate = new ratingModel({
       course: courseId,
       user: req.userId,
       rating: rating,
     });
-    await createdRating.save(); // Save the newly created rating
+    await rate.save(); // Save the newly created rating
   } else {
     // If the user has already rated the course, update their existing rating
     rate = await ratingModel.findOneAndUpdate(
@@ -529,7 +528,6 @@ export const postRating = asyncHandler(async (req, res, next) => {
       { rating: rating }
     );
   }
-
   // Return a JSON response indicating the success or failure of the rating posting process
   return rate
     ? res.status(200).json({ message: "Done" })
@@ -559,6 +557,6 @@ export const postComment = asyncHandler(async (req, res, next) => {
 
   // Return a JSON response indicating the success or failure of the comment posting process
   return createdComment
-    ? res.status(200).json({ message: "Comment posted successfully" })
+    ? res.status(200).json({ message: "Done" })
     : res.status(500).json({ message: "Failed to post comment" });
 });
