@@ -8,6 +8,7 @@ import Category from "../../../DB/model/category.model.js";
 import subCategoryModel from "../../../DB/model/subCategory.model.js";
 import ratingModel from "../../../DB/model/rating.model.js";
 import commentModel from "../../../DB/model/comment.model.js";
+import userModel from "../../../DB/model/user.model.js";
 
 import upload, {
   deleteDirectory,
@@ -279,8 +280,9 @@ export const getCourse = asyncHandler(async (req, res, next) => {
   const { courseId } = req.params;
 
   // Find the course in the database by its ID.
-  const fetchedCourse = await Course.findById(courseId);
-
+  const fetchedCourse = await Course.findById(courseId).populate([
+    { path: "instructors", select: "userName profilePic" },
+  ]);
   // If the course is not found, invoke the error middleware with a 404 status.
   if (!fetchedCourse) {
     return next(new Error("Course not found"), { cause: 404 });
@@ -559,4 +561,22 @@ export const postComment = asyncHandler(async (req, res, next) => {
   return createdComment
     ? res.status(200).json({ message: "Done" })
     : res.status(500).json({ message: "Failed to post comment" });
+});
+
+export const addInstructor = asyncHandler(async (req, res, next) => {
+  // check instruction
+  const checkInst = await userModel.findById(req.params.instructorId);
+  if (!checkInst) {
+    return next(new Error("instructor not found", { cause: 404 }));
+  }
+  const course = await Course.findByIdAndUpdate(
+    req.params.courseId,
+    {
+      $push: { instructors: req.params.instructorId },
+    },
+    { new: true }
+  );
+
+  // response
+  return res.status(200).json({ message: "Done", course });
 });
