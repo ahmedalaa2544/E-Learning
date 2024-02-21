@@ -64,3 +64,10 @@ export const createcommentSchema = joi
     comment: joi.string().min(3).max(120).required(),
   })
   .required();
+
+export const instructorSchema = joi
+  .object({
+    instructorId: joi.string().custom(isValidObjectId).required(),
+    courseId: joi.string().custom(isValidObjectId).required(),
+  })
+  .required();

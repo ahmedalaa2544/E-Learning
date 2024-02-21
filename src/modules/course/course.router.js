@@ -125,4 +125,13 @@ router.post(
   courseController.postComment
 );
 
+// dead logic
+router.patch(
+  "/:courseId/instructor/:instructorId",
+  isAuthenticated,
+  isAuthorized,
+  validation(validators.instructorSchema),
+  courseController.addInstructor
+);
+
 export default router;
