@@ -1,7 +1,15 @@
 import { asyncHandler } from "../../utils/asyncHandling.js";
 import roomModel from "../../../DB/model/room.model.js";
 import workshopModel from "../../../DB/model/workshop.model.js";
-import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
+import {
+  AccessToken,
+  RoomServiceClient,
+  EgressClient,
+  EncodedFileOutput,
+  EncodedFileType,
+} from "livekit-server-sdk";
+
+// import AzureBlobUpload from "livekit-server-sdk";
 import randomstring from "randomstring";
 
 export const createRoom = asyncHandler(async (req, res, next) => {
@@ -190,6 +198,47 @@ export const getOnlineRooms = asyncHandler(async (req, res, next) => {
     .json({ success: true, message: "All Online Rooms", results: rooms });
 });
 
-export const recordRoom = asyncHandler(async(req, res, next)=> {
-  
-})
+export const recordRoom = asyncHandler(async (req, res, next) => {
+  // recieve data
+  const { roomId } = req.params;
+
+  // check room existence
+  const room = await roomModel.findById(roomId);
+  if (!room) return next(new Error("Room not found!", { cause: 404 }));
+
+  const egressClient = new EgressClient(
+    process.env.LIVEKIT_WEBSOCKET_URL,
+    process.env.LIVEKIT_API_KEY,
+    process.env.LIVEKIT_SECRET_KEY
+  );
+
+  const fileOutput = new EncodedFileOutput({
+    fileType: EncodedFileType.MP4,
+    filepath: "livekit-demo/room-composite-test.mp4",
+    output: {
+      case: "azure",
+      value: new AzureBlobUpload({
+        accountName: process.env.accountName,
+        accountKey: process.env.accountKey,
+        containerName: process.env.MAIN_CONTAINER,
+      }),
+    },
+  });
+
+  const info = await egressClient.startRoomCompositeEgress(
+    room.roomName,
+    {
+      file: fileOutput,
+    },
+    {
+      layout: "speaker",
+      // uncomment to use your own templates
+      // customBaseUrl: 'https://my-template-url.com',
+    }
+  );
+
+  // send response
+  return res
+    .status(200)
+    .json({ success: true, message: "Recording Started Successfully!", info });
+});

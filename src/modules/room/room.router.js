@@ -42,7 +42,7 @@ router.delete(
 
 // Record Room
 router.post(
-  "/record",
+  "/record/:roomId",
   isAuth,
   validation(roomValidation.roomIdSchema),
   roomController.recordRoom

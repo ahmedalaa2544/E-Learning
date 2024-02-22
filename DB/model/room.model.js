@@ -7,7 +7,7 @@ const roomSchema = new Schema(
     sessionId: { type: String },
     duration: { type: Number, default: 600 }, // 10 * 60 = 10 minutes
     maxParticipants: { type: Number, default: 20 },
-    activeRecording: { type: Boolean, default: false },
+    activeRecording: { type: Boolean, default: true },
     metaData: { type: String },
     turnPassword: { type: String },
     // Private: not assigned to workshop
