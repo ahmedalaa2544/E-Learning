@@ -61,7 +61,7 @@ export const createOrder = asyncHandler(async (req, res, next) => {
   //Payment
   const stripe = new Stripe(process.env.STRIPE_KEY);
   let existCoupon;
-  if (checkCoupon.name !== undefined) {
+  if (checkCoupon?.name !== undefined) {
     existCoupon = await stripe.coupons.create({
       percent_off: checkCoupon.discount,
       duration: "once",
