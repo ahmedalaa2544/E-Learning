@@ -294,13 +294,35 @@ export const getCourse = asyncHandler(async (req, res, next) => {
   ratings.map((rating) => {
     sum += rating.rating;
   });
-  const courseRating = sum / ratings.length;
+  const courseRating = ratings.length > 0 ? sum / ratings.length : 0;
 
   // Retrieve comments associated with the course
-  const courseComments = await commentModel.find({ course: courseId });
-  // courseComments = courseComments.map((comment) => {
-  //   return { ...comment._doc, course: undefined };
-  // });
+  const courseComments = await commentModel
+    .find({ course: courseId })
+    .populate({ path: "user", select: "userName profilePic" })
+    .exec();
+
+  // Use Promise.all to concurrently process each comment and generate SAS URLs for user profile pictures.
+  const userMeta = await Promise.all(
+    courseComments.map(async (comment) => {
+      comment = comment._doc;
+      const { accountSasTokenUrl: urlProfilePic } = await generateSASUrl(
+        comment.user.profilePic.blobName,
+        "r",
+        "60"
+      );
+
+      // Modify comment.user.profilePic to contain only the URL property.
+      comment.user.profilePic = { url: urlProfilePic };
+
+      return {
+        ...comment,
+        rating: ratings.find(
+          (rating) => rating.user.toString() === comment.user._id.toString()
+        ).rating,
+      };
+    })
+  );
 
   // Extract the blob name associated with the course's cover image and generate a Shared Access Signature (SAS) URL with read access and a 60-minute expiry.
   const blobImageName = fetchedCourse.coverImageBlobName;
@@ -328,7 +350,8 @@ export const getCourse = asyncHandler(async (req, res, next) => {
           promotionalVideoUrl: videoUrl,
           promotionalVideoBlobName: undefined,
           rating: courseRating,
-          comments: courseComments,
+          numberOfRatings: ratings.length,
+          comments: userMeta,
           finalPrice: fetchedCourse.finalPrice,
         },
       })
