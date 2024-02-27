@@ -54,7 +54,6 @@ export const uploadVideo = async (
           blobVideoExtension
         );
       }
-
       // Resolve the Promise with the updated video details
       resolve({
         videoUrl: videoUrl,

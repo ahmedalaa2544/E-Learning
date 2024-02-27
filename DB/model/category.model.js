@@ -8,7 +8,12 @@ const categorySchema = new Schema(
       unique: true,
     },
   },
-  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
+  {
+    id: false,
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
 
 categorySchema.virtual("subCategory", {

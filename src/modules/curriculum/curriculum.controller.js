@@ -39,25 +39,43 @@ export const createVideo = asyncHandler(async (req, res, next) => {
 
   // Retrieve existing curriculums for the chapter
   let curriculums = await Curriculum.find({ chapter: chapterId });
-  // Send an immediate response to the client
-  res.status(200).json({
-    message: "Server Processing the Video",
-    video: {
-      course: courseId,
-      chapter: chapterId,
-      _id: videoId,
-      title: title,
-      description: description,
-    },
+  // Calculate the order value for the next curriculum by adding 1 to the number of existing curriculums.
+  const order = curriculums.length + 1;
+  // Create a new Video document in the database
+  const createdVideo = new Video({
+    _id: videoId,
+    course: courseId,
+    chapter: chapterId,
+    curriculum: curriculumId,
+    description: description,
   });
+
+  // Save the new Video document in the database
+  await createdVideo.save();
+
+  // Create a new Curriculum document for the video
+  const curriculum = new Curriculum({
+    _id: curriculumId,
+    course: courseId,
+    chapter: chapterId,
+    video: videoId,
+    type: "video",
+    title: title,
+    order: order,
+  });
+
+  // Save the new Curriculum document in the database
+  await curriculum.save();
+  // Send an immediate response to the client
+  curriculum
+    ? res
+        .status(200)
+        .json({ message: "Server Processing the Video", createdVideo })
+    : res.status(500).json({ message: "Something went wrong" });
 
   // Wait for the response to be sent, then perform additional actions
   onFinished(res, async (err, res) => {
-    // Calculate the order value for the next curriculum by adding 1 to the number of existing curriculums.
-    const order = curriculums.length + 1;
-
     let videoUrl, duration, blobVideoName;
-
     // Upload the video and retrieve information such as URL, duration, and blob name.
     ({ videoUrl, duration, blobVideoName } = await uploadVideo(
       req.files,
@@ -67,35 +85,12 @@ export const createVideo = asyncHandler(async (req, res, next) => {
       curriculumId,
       false
     ));
-
-    // Create a new Video document in the database
-    const createdVideo = new Video({
-      _id: videoId,
-      course: courseId,
-      chapter: chapterId,
-      curriculum: curriculumId,
-      description: description,
+    // Save in DataBase
+    await Video.findByIdAndUpdate(videoId, {
       ...(videoUrl && { url: videoUrl }),
       ...(blobVideoName && { blobName: blobVideoName }),
       ...(duration && { duration: duration }),
     });
-
-    // Save the new Video document in the database
-    await createdVideo.save();
-
-    // Create a new Curriculum document for the video
-    const curriculum = new Curriculum({
-      _id: curriculumId,
-      course: courseId,
-      chapter: chapterId,
-      video: videoId,
-      type: "video",
-      title: title,
-      order: order,
-    });
-
-    // Save the new Curriculum document in the database
-    await curriculum.save();
   });
 });
 
@@ -222,7 +217,6 @@ export const editCurriculum = asyncHandler(async (req, res, next) => {
  * @returns {Object} - Response indicating the success or failure of the video editing process.
  */
 export const editVideo = asyncHandler(async (req, res, next) => {
-  console.log("reach");
   // Extract parameters from the request
   const { courseId, chapterId, curriculumId } = req.params;
   const { title, describtion } = req.body;
@@ -241,11 +235,8 @@ export const editVideo = asyncHandler(async (req, res, next) => {
 
   // Declare variables to store video-related information.
   let videoUrl, duration, blobVideoName, resources, subtitles;
-  console.log(req.body.buffer);
   // Check if the request involves uploading a video.
   if (req.query.upload === "video") {
-    console.log("reach if");
-
     // Send an immediate response to the client
     res.status(200).json({ message: "Server Processing the Video" });
     // Wait for the response to be sent, then perform additional actions
@@ -259,11 +250,6 @@ export const editVideo = asyncHandler(async (req, res, next) => {
         curriculumId,
         video.blobName
       ));
-      req.on("end", () => {
-        // This event is triggered when the client has finished sending data
-        console.log("Client has finished sending data");
-        // Perform any additional processing or respond to the client
-      });
     });
   }
 
