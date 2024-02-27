@@ -18,5 +18,7 @@ export const fileUpload = (filterArray) => {
     }
     return cb(null, true);
   };
+  const storage = multer.memoryStorage();
+
   return multer({ storage: diskStorage({}), fileFilter });
 };

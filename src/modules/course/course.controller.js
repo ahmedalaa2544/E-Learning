@@ -4,8 +4,6 @@ import Chapter from "../../../DB/model/chapter.model.js";
 import Curriculum from "../../../DB/model/curriculum.model.js";
 import Video from "../../../DB/model/video.model.js";
 import Article from "../../../DB/model/article.model.js";
-import Category from "../../../DB/model/category.model.js";
-import subCategoryModel from "../../../DB/model/subCategory.model.js";
 import ratingModel from "../../../DB/model/rating.model.js";
 import commentModel from "../../../DB/model/comment.model.js";
 import userModel from "../../../DB/model/user.model.js";
@@ -71,28 +69,6 @@ export const editCourse = asyncHandler(async (req, res, next) => {
   let promotionalVideoUrl;
   let blobImageName;
   let blobVideoName;
-  let categoryId, subCategoryId;
-
-  // Check if neither the 'upload' nor 'delete' query parameters are provided in the request.
-  if (req.query.upload === undefined && req.query.delete === undefined) {
-    // Retrieve the identifiers (IDs) for the specified category and subcategory.
-    // Find the category ID based on the provided category name.
-    categoryId = (await Category.findOne({ name: category }))._id;
-
-    // Find the subcategory ID based on the provided subcategory name and its association with the category.
-    subCategoryId = (
-      await subCategoryModel.findOne({
-        name: subCategory,
-        categoryId: categoryId,
-      })
-    )._id;
-  } else {
-    // If either 'upload' or 'delete' query parameter is provided, use the category and subcategory from the existing course.
-
-    // Use the category and subcategory IDs from the existing course.
-    categoryId = req.course.category;
-    subCategoryId = req.course.subcategory;
-  }
 
   // Check if the request includes a query parameter for uploading a cover image.
   if (req.query.upload === "coverImage") {
@@ -118,6 +94,10 @@ export const editCourse = asyncHandler(async (req, res, next) => {
 
   // Check if the request includes a query parameter for uploading a promotional video.
   if (req.query.upload === "promotionalVideo") {
+    // if (req.course.promotionalVideoBlobName) {
+    //   console.log("enter");
+    //   deleteBlob(req.course.promotionalVideoBlobName);
+    // }
     // Check if a promotional video file is provided in the request.
     if (req.files?.promotionalVideo) {
       // Extract the extension for the promotional video.
@@ -183,8 +163,8 @@ export const editCourse = asyncHandler(async (req, res, next) => {
       promotionalVideoBlobName: blobVideoName,
       price: price,
       discount: discount,
-      category: categoryId,
-      subCategory: subCategoryId,
+      category: category,
+      subCategory: subCategory,
       tags: tags,
     }
   );

@@ -1,4 +1,6 @@
 import { asyncHandler } from "../../utils/asyncHandling.js";
+import onFinished from "on-finished";
+import streamifier from "streamifier";
 import Course from "../../../DB/model/course.model.js";
 import Chapter from "../../../DB/model/chapter.model.js";
 import Curriculum from "../../../DB/model/curriculum.model.js";
@@ -27,48 +29,74 @@ import { mergeSort } from "../../utils/dataSructures.js";
 export const createVideo = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { courseId, chapterId } = req.params;
-  const { title, describtion } = req.body;
+  const { title, description } = req.body;
+
   // Generate a unique videoId using MongoDB ObjectId
   const videoId = new mongoose.Types.ObjectId();
+
   // Generate a unique curriculumId using MongoDB ObjectId
   const curriculumId = new mongoose.Types.ObjectId();
+
+  // Retrieve existing curriculums for the chapter
   let curriculums = await Curriculum.find({ chapter: chapterId });
-
-  // Calculate the order value for the next curriculum by adding 1 to the number of existing curriculums.
-  const order = curriculums.length + 1;
-
-  // Create a new Video document in the database
-  const createdVideo = new Video({
-    _id: videoId,
-    course: courseId,
-    chapter: chapterId,
-    curriculum: curriculumId,
-    describtion: describtion,
-  });
-  // Save the new Video document in the database
-  await createdVideo.save();
-
-  // Create a new Curriculum document for the video
-  const curriculum = new Curriculum({
-    _id: curriculumId,
-    course: courseId,
-    chapter: chapterId,
-    type: "video",
-    title: title,
-    order: order,
-    video: createdVideo._id,
+  // Send an immediate response to the client
+  res.status(200).json({
+    message: "Server Processing the Video",
+    video: {
+      course: courseId,
+      chapter: chapterId,
+      _id: videoId,
+      title: title,
+      description: description,
+    },
   });
 
-  // Save the new Curriculum document in the database
-  await curriculum.save();
+  // Wait for the response to be sent, then perform additional actions
+  onFinished(res, async (err, res) => {
+    // Calculate the order value for the next curriculum by adding 1 to the number of existing curriculums.
+    const order = curriculums.length + 1;
 
-  // Send a response indicating the success or failure of the video creation process
-  return createdVideo
-    ? res.status(200).json({
-        message: "Done",
-        video: { ...createdVideo._doc, title: title },
-      })
-    : res.json({ message: "Something went wrong" });
+    let videoUrl, duration, blobVideoName;
+
+    // Upload the video and retrieve information such as URL, duration, and blob name.
+    ({ videoUrl, duration, blobVideoName } = await uploadVideo(
+      req.files,
+      req.userId,
+      courseId,
+      chapterId,
+      curriculumId,
+      false
+    ));
+
+    // Create a new Video document in the database
+    const createdVideo = new Video({
+      _id: videoId,
+      course: courseId,
+      chapter: chapterId,
+      curriculum: curriculumId,
+      description: description,
+      ...(videoUrl && { url: videoUrl }),
+      ...(blobVideoName && { blobName: blobVideoName }),
+      ...(duration && { duration: duration }),
+    });
+
+    // Save the new Video document in the database
+    await createdVideo.save();
+
+    // Create a new Curriculum document for the video
+    const curriculum = new Curriculum({
+      _id: curriculumId,
+      course: courseId,
+      chapter: chapterId,
+      video: videoId,
+      type: "video",
+      title: title,
+      order: order,
+    });
+
+    // Save the new Curriculum document in the database
+    await curriculum.save();
+  });
 });
 
 /**
@@ -194,35 +222,49 @@ export const editCurriculum = asyncHandler(async (req, res, next) => {
  * @returns {Object} - Response indicating the success or failure of the video editing process.
  */
 export const editVideo = asyncHandler(async (req, res, next) => {
+  console.log("reach");
   // Extract parameters from the request
-  const { courseId, chapterId, videoId, curriculumId } = req.params;
+  const { courseId, chapterId, curriculumId } = req.params;
   const { title, describtion } = req.body;
-  // Retrieve the existing video document based on videoId
-  const video = await Video.findById(videoId);
-  // Check if the video exists
-  if (!video) {
-    return next(new Error("Video not found"), { cause: 404 });
-  }
   // Retrieve the existing curriculum document based on curriculumId
   const curriculum = await Curriculum.findById(curriculumId);
   // Check if the curriculum exists
   if (!curriculum) {
     return next(new Error("Curriculum not found"), { cause: 404 });
   }
+  // Retrieve the existing video document based on videoId
+  const video = await Video.findById(curriculum.video);
+  // Check if the video exists
+  if (!video) {
+    return next(new Error("Video not found"), { cause: 404 });
+  }
+
   // Declare variables to store video-related information.
   let videoUrl, duration, blobVideoName, resources, subtitles;
-
+  console.log(req.body.buffer);
   // Check if the request involves uploading a video.
   if (req.query.upload === "video") {
-    // Upload the video and retrieve information such as URL, duration, and blob name.
-    ({ videoUrl, duration, blobVideoName } = await uploadVideo(
-      req.files,
-      req.userId,
-      courseId,
-      chapterId,
-      curriculumId,
-      video.blobName
-    ));
+    console.log("reach if");
+
+    // Send an immediate response to the client
+    res.status(200).json({ message: "Server Processing the Video" });
+    // Wait for the response to be sent, then perform additional actions
+    onFinished(res, async (err, res) => {
+      // Upload the video and retrieve information such as URL, duration, and blob name.
+      ({ videoUrl, duration, blobVideoName } = await uploadVideo(
+        req.files,
+        req.userId,
+        courseId,
+        chapterId,
+        curriculumId,
+        video.blobName
+      ));
+      req.on("end", () => {
+        // This event is triggered when the client has finished sending data
+        console.log("Client has finished sending data");
+        // Perform any additional processing or respond to the client
+      });
+    });
   }
 
   // Check if the request involves uploading resources.
@@ -261,7 +303,7 @@ export const editVideo = asyncHandler(async (req, res, next) => {
     await deleteBlob(videoBlobName);
     await deleteBlob(subtitlesBlobName);
     // Update the Video document in the database to remove video-related details.
-    await Video.findByIdAndUpdate(videoId, {
+    await Video.findByIdAndUpdate(curriculum.video, {
       url: "",
       blobName: "",
       duration: "",
@@ -286,12 +328,12 @@ export const editVideo = asyncHandler(async (req, res, next) => {
     const subtitlesBlobName = video.subtitles.blobName;
     await deleteBlob(subtitlesBlobName);
     // Update the Video document in the database to remove subtitle-related details.
-    await Video.findByIdAndUpdate(videoId, {
+    await Video.findByIdAndUpdate(curriculum.video, {
       subtitles: "",
     });
   }
   // Update the video document with the edited details
-  await Video.findByIdAndUpdate(videoId, {
+  await Video.findByIdAndUpdate(curriculum.video, {
     title: title,
     subtitles: subtitles,
     describtion: describtion,
@@ -305,11 +347,12 @@ export const editVideo = asyncHandler(async (req, res, next) => {
     title: title,
     resources: resources,
   });
-
   // Send a response indicating the success or failure of the video editing process
-  return editedCurriculum
-    ? res.status(200).json({ message: "Done" })
-    : res.json({ message: "Something went wrong" });
+  if (!res.headersSent) {
+    return editedCurriculum
+      ? res.status(200).json({ message: "Done" })
+      : res.json({ message: "Something went wrong" });
+  }
 });
 
 /**
@@ -322,20 +365,22 @@ export const editVideo = asyncHandler(async (req, res, next) => {
  */
 export const editArticle = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
-  const { courseId, chapterId, articleId, curriculumId } = req.params;
+  const { courseId, chapterId, curriculumId } = req.params;
   const { title, quillContent } = req.body;
-  // Retrieve the existing article document based on videoId
-  const article = await Article.findById(articleId);
-  // Check if the article exists
-  if (!article) {
-    return next(new Error("Article not found"), { cause: 404 });
-  }
   // Retrieve the existing curriculum document based on curriculumId
   const curriculum = await Curriculum.findById(curriculumId);
   // Check if the curriculum exists
   if (!curriculum) {
     return next(new Error("Curriculum not found"), { cause: 404 });
   }
+
+  // Retrieve the existing article document based on videoId
+  const article = await Article.findById(curriculum.article);
+  // Check if the article exists
+  if (!article) {
+    return next(new Error("Article not found"), { cause: 404 });
+  }
+
   let resources;
   // Check if the request involves uploading resources.
   if (req.query.upload === "resources") {
@@ -362,7 +407,7 @@ export const editArticle = asyncHandler(async (req, res, next) => {
     });
   }
   // Update the article document with the edited details
-  await Article.findByIdAndUpdate(articleId, {
+  await Article.findByIdAndUpdate(curriculum.article, {
     title: title,
     quillContent: quillContent,
     resources: resources,

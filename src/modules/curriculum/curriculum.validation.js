@@ -5,8 +5,8 @@ export const createVideoSchema = joi
   .object({
     courseId: joi.string().custom(isValidObjectId).required(),
     chapterId: joi.string().custom(isValidObjectId).required(),
-    title: joi.string(),
-    describtion: joi.string().allow(""),
+    // title: joi.string(),
+    // describtion: joi.string().allow(""),
   })
   .unknown(true);
 
@@ -32,9 +32,9 @@ export const editVideoSchema = joi
   .object({
     courseId: joi.string().custom(isValidObjectId).required(),
     chapterId: joi.string().custom(isValidObjectId).required(),
-    videoId: joi.string().custom(isValidObjectId).required(),
+    curriculumId: joi.string().custom(isValidObjectId).required(),
     title: joi.string(),
-    describtion: joi.string().allow(""),
+    descriPtion: joi.string().allow(""),
   })
   .unknown(true);
 
@@ -42,7 +42,7 @@ export const editArticleSchema = joi
   .object({
     courseId: joi.string().custom(isValidObjectId).required(),
     chapterId: joi.string().custom(isValidObjectId).required(),
-    articleId: joi.string().custom(isValidObjectId).required(),
+    curriculumId: joi.string().custom(isValidObjectId).required(),
     title: joi.string(),
     quillContent: joi.string().allow(""),
   })

@@ -13,6 +13,9 @@ router.post(
   isAuthenticated,
   isAuthorized,
   validation(validators.createVideoSchema),
+  fileUpload(customValidation.file.concat(customValidation.video)).fields([
+    { name: "video", maxCount: 1 },
+  ]),
   curriculumController.createVideo
 );
 
@@ -36,7 +39,7 @@ router.patch(
 
 // Edit an existing video in the curriculum
 router.patch(
-  "/:curriculumId/video/:videoId",
+  "/:curriculumId/video",
   isAuthenticated,
   isAuthorized,
   validation(validators.editVideoSchema),
@@ -50,7 +53,7 @@ router.patch(
 
 // Edit an existing article in the curriculum
 router.patch(
-  "/:curriculumId/article/:articleId",
+  "/:curriculumId/article",
   isAuthenticated,
   isAuthorized,
   validation(validators.editArticleSchema),

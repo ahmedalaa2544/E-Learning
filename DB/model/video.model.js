@@ -22,7 +22,7 @@ const videoSchema = new Schema(
         type: String,
       },
     },
-    describtion: {
+    description: {
       type: String,
       set: (value) => (value === "" ? null : value),
     },

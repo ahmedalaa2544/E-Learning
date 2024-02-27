@@ -97,9 +97,10 @@ export const generateSASUrl = async (
   const SIXTY_MINUTES = timerange * 60 * 1000;
   const NOW = new Date();
 
+  NOW.setMinutes(NOW.getMinutes() - 5);
   // Generate SAS URL for the blob with specified permissions and time limits
   const accountSasTokenUrl = await blockBlobClient.generateSasUrl({
-    startsOn: NOW,
+    // startsOn: NOW,
     expiresOn: new Date(new Date().valueOf() + SIXTY_MINUTES),
     permissions: BlobSASPermissions.parse(permissions),
     protocol: SASProtocol.Https,
@@ -162,10 +163,10 @@ const upload = async (
 
           // Create a BlockBlobClient using the SAS URL
           const blockBlobClient = new BlockBlobClient(accountSasTokenUrl);
-
           // Read the compressed file and upload its data to Azure Blob Storage
           const data = fs.readFileSync(outputFileName);
           await blockBlobClient.uploadData(data);
+          setTimeout(async () => {}, 1000);
 
           // Cleanup: Remove the temporary directory when the upload is complete
           temp.cleanup();
