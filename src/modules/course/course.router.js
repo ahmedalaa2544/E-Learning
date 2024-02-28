@@ -133,5 +133,15 @@ router.patch(
   validation(validators.instructorSchema),
   courseController.addInstructor
 );
+/**
+ * PATCH route to submit a course for publishing.
+ * */
 
+router.patch(
+  "/:courseId/submit",
+  isAuthenticated,
+  isAuthorized,
+  validation(validators.deleteCourseSchema),
+  courseController.submitCourse
+);
 export default router;
