@@ -393,7 +393,7 @@ export const getCourses = asyncHandler(async (req, res, next) => {
     // Handling for 'student' view (to be implemented if needed).
   } else if (req.query.view === undefined || "all") {
     // Retrieve all courses, regardless of the creator.
-    let courses = await Course.find()
+    let courses = await Course.find({ status: "Published" })
       .populate({ path: "category", select: "name" })
       .populate({ path: "subCategory", select: "name" })
       .exec();
@@ -463,7 +463,10 @@ export const getCoursesWithCategAndSubCateg = asyncHandler(
       });
     } else if (categoryId) {
       // Retrieve courses associated with the specified category.
-      courses = await Course.find({ category: categoryId });
+      courses = await Course.find({
+        status: "Published",
+        category: categoryId,
+      });
     }
 
     // Enrich each course's data with SAS URLs for cover images and promotional videos.
