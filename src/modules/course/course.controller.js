@@ -583,3 +583,48 @@ export const addInstructor = asyncHandler(async (req, res, next) => {
   // response
   return res.status(200).json({ message: "Done", course });
 });
+/**
+ * Controller function to submit a course for publishing.
+ *
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @returns {Object} - Response indicating the success or failure of submitting the course for publishing.
+ */
+export const submitCourse = asyncHandler(async (req, res, next) => {
+  // Extract course ID from the request
+  const { courseId } = req.params;
+
+  // Check for missing course details
+  if (
+    !req.course.subtitle ||
+    !req.course.description ||
+    !req.course.language ||
+    !req.course.tags ||
+    !req.course.level ||
+    !req.course.coverImageBlobName ||
+    !req.course.promotionalVideoBlobName ||
+    !req.course.price ||
+    !req.course.category ||
+    !req.course.subCategory
+  ) {
+    return res.status(404).json({ message: "Missing data in course details" });
+  }
+
+  // Check if there are instructors assigned to the course
+  if (req.course.instructors.length === 0) {
+    return res
+      .status(404)
+      .json({ message: "There are no instructors assigned to the course" });
+  }
+
+  // Update course status to "Published"
+  const submittedCourse = await Course.findByIdAndUpdate(courseId, {
+    status: "Published",
+  });
+
+  // Respond with success message or indicate missing data
+  return submittedCourse
+    ? res.status(200).json({ message: "Done" })
+    : res.status(500).json({ message: "Something went wrong" });
+});
