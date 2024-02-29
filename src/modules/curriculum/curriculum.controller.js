@@ -219,7 +219,7 @@ export const editCurriculum = asyncHandler(async (req, res, next) => {
 export const editVideo = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { courseId, chapterId, curriculumId } = req.params;
-  const { title, describtion } = req.body;
+  const { title, description } = req.body;
   // Retrieve the existing curriculum document based on curriculumId
   const curriculum = await Curriculum.findById(curriculumId);
   // Check if the curriculum exists
@@ -322,7 +322,7 @@ export const editVideo = asyncHandler(async (req, res, next) => {
   await Video.findByIdAndUpdate(curriculum.video, {
     title: title,
     subtitles: subtitles,
-    describtion: describtion,
+    description: description,
     url: videoUrl,
     blobName: blobVideoName,
     duration: duration,
