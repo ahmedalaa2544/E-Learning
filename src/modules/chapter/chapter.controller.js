@@ -173,7 +173,7 @@ export const deleteChapter = asyncHandler(async (req, res, next) => {
  */
 export const getChapter = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
-  const { courseId, chapterId } = req.params;
+  const { chapterId } = req.params;
 
   // Find the corresponding chapter based on chapterId
   const chapter = await Chapter.findById(chapterId);
