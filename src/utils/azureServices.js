@@ -143,12 +143,14 @@ const upload = async (
           if (compress) {
             // Generate a temporary file path using a unique identifier and the specified file extension
             const fileTempPath = `${tempDirPath}\\${uuidv4()}.${fileExtension}`;
-            // Compress the input file and get the output file name
-            outputFileName = await compressionFile(
-              inputFilePath,
-              fileTempPath,
-              type
-            );
+
+            // //
+            // // Compress the input file and get the output file name
+            // outputFileName = await compressionFile(
+            //   inputFilePath,
+            //   fileTempPath,
+            //   type
+            // );
           }
 
           // Specify the container name for temporary uploads
