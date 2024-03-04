@@ -1,4 +1,5 @@
 import orderModel from "../../../DB/model/order.model.js";
+import studentModel from "../../../DB/model/student.model.js";
 import courseModel from "../../../DB/model/course.model.js";
 import cartModel from "../../../DB/model/cart.model.js";
 import { asyncHandler } from "../../utils/asyncHandling.js";
@@ -120,9 +121,15 @@ export const orderWebhook = asyncHandler(async (request, response) => {
     let cBought = [];
     for (let i = 0; i < order.courses.length; i++) {
       cBought.push(order.courses[i].courseId);
+      await studentModel.create({
+        course: order.courses[i].courseId,
+        user: order.user,
+        // paid: ,
+      });
     }
     // add course to user
     await userModel.findByIdAndUpdate(order.user, { coursesBought: cBought });
+
     // clear cart
     await cartModel.updateOne({ user: order.user }, { course: [] });
     return response.status(200).json({ message: "Done" });

@@ -7,7 +7,8 @@ import Article from "../../../DB/model/article.model.js";
 import ratingModel from "../../../DB/model/rating.model.js";
 import commentModel from "../../../DB/model/comment.model.js";
 import userModel from "../../../DB/model/user.model.js";
-
+import View from "../../../DB/model/view.model.js";
+import mongoose from "mongoose";
 import upload, {
   deleteDirectory,
   deleteBlob,
@@ -248,7 +249,7 @@ export const deleteCourse = asyncHandler(async (req, res, next) => {
 });
 
 /**
- * Retrieve details of a course by its ID.
+ * Retrieve details of a course by its ID, including ratings, comments, and associated media URLs.
  *
  * @param {Object} req - Express request object with course ID as a parameter.
  * @param {Object} res - Express response object.
@@ -259,24 +260,53 @@ export const getCourse = asyncHandler(async (req, res, next) => {
   // Extract courseId from the request parameters.
   const { courseId } = req.params;
 
-  // Find the course in the database by its ID.
+  // Find the course in the database by its ID and populate the instructors field.
   const fetchedCourse = await Course.findById(courseId).populate([
     { path: "instructors", select: "userName profilePic" },
   ]);
+
   // If the course is not found, invoke the error middleware with a 404 status.
   if (!fetchedCourse) {
     return next(new Error("Course not found"), { cause: 404 });
   }
 
-  // Calculate the average rating for the course
+  // Update view count based on user cookie or create a new view entry.
+  if (req.cookies.cookieId) {
+    const cookieId = req.cookies.cookieId;
+    const delay = new Date(Date.now() - 5 * 60 * 1000); // 5 minutes ago
+    await View.findOneAndUpdate(
+      {
+        cookie: cookieId,
+        updatedAt: { $lt: delay },
+      },
+      { $inc: { count: 1 } }
+    );
+  } else {
+    const maxAge = 3 * 30 * 24 * 60 * 60; // 3 months in seconds
+    const cookieId = new mongoose.Types.ObjectId().toString();
+    const deviceType = req.useragent.isMobile
+      ? "Mobile"
+      : req.useragent.isTablet
+      ? "Tablet"
+      : "Computer";
+    res.setHeader(
+      "Set-Cookie",
+      `cookieId=${cookieId}; HttpOnly; Path=/; Max-Age=${maxAge}`
+    );
+    await View.create({
+      course: courseId,
+      cookie: cookieId,
+      count: 1,
+      agent: deviceType,
+    });
+  }
+
+  // Calculate the average rating for the course.
   const ratings = await ratingModel.find({ course: courseId });
-  let sum = 0;
-  ratings.map((rating) => {
-    sum += rating.rating;
-  });
+  const sum = ratings.reduce((acc, rating) => acc + rating.rating, 0);
   const courseRating = ratings.length > 0 ? sum / ratings.length : 0;
 
-  // Retrieve comments associated with the course
+  // Retrieve comments associated with the course and populate user details.
   const courseComments = await commentModel
     .find({ course: courseId })
     .populate({ path: "user", select: "userName profilePic" })
@@ -285,7 +315,6 @@ export const getCourse = asyncHandler(async (req, res, next) => {
   // Use Promise.all to concurrently process each comment and generate SAS URLs for user profile pictures.
   const userMeta = await Promise.all(
     courseComments.map(async (comment) => {
-      comment = comment._doc;
       const { accountSasTokenUrl: urlProfilePic } = await generateSASUrl(
         comment.user.profilePic.blobName,
         "r",
@@ -296,7 +325,7 @@ export const getCourse = asyncHandler(async (req, res, next) => {
       comment.user.profilePic = { url: urlProfilePic };
 
       return {
-        ...comment,
+        ...comment._doc,
         rating: ratings.find(
           (rating) => rating.user.toString() === comment.user._id.toString()
         ).rating,
@@ -305,24 +334,23 @@ export const getCourse = asyncHandler(async (req, res, next) => {
   );
 
   // Extract the blob name associated with the course's cover image and generate a Shared Access Signature (SAS) URL with read access and a 60-minute expiry.
-  const blobImageName = fetchedCourse.coverImageBlobName;
   const { accountSasTokenUrl: imageUrl } = await generateSASUrl(
-    blobImageName,
+    fetchedCourse.coverImageBlobName,
     "r",
     "60"
   );
 
   // Extract the blob name associated with the course's promotional video and generate a Shared Access Signature (SAS) URL with read access and a 60-minute expiry.
-  const blobVideoName = fetchedCourse.promotionalVideoBlobName;
   const { accountSasTokenUrl: videoUrl } = await generateSASUrl(
-    blobVideoName,
+    fetchedCourse.promotionalVideoBlobName,
     "r",
     "60"
   );
+
   // Return a JSON response based on the success or failure of the operation.
   return fetchedCourse
     ? res.status(200).json({
-        message: "Done",
+        message: "Success",
         course: {
           ...fetchedCourse._doc,
           coverImageUrl: imageUrl,
@@ -337,7 +365,18 @@ export const getCourse = asyncHandler(async (req, res, next) => {
       })
     : res.status(500).json({ message: "Something went wrong" });
 });
+export const courseAnalytics = asyncHandler(async (req, res, next) => {
+  // Extract courseId from the request parameters.
+  const { courseId } = req.params;
 
+  // Find the course in the database by its ID and populate the instructors field.
+  const fetchedCourse = await Course.findById(courseId);
+
+  // If the course is not found, invoke the error middleware with a 404 status.
+  if (!fetchedCourse) {
+    return next(new Error("Course not found"), { cause: 404 });
+  }
+});
 /**
  * Retrieve a list of courses .
  *

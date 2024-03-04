@@ -66,6 +66,13 @@ router.get(
   courseController.getCourse
 );
 
+router.get(
+  "/:courseId/analytics",
+  isAuthenticated,
+  isAuthorized,
+  validation(validators.getCourseSchema),
+  courseController.courseAnalytics
+);
 /**
  * Route: GET /courses
  * Description: Retrieve a list of courses created by the authenticated user.

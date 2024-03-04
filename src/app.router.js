@@ -12,6 +12,8 @@ import orderRouter from "./modules/order/order.router.js";
 import couponRouter from "./modules/coupon/coupon.router.js";
 import { globalErrorHandler } from "./utils/asyncHandling.js";
 import cors from "cors";
+import cookieParser from "cookie-parser";
+import useragent from "express-useragent";
 
 const appRouter = (app, express) => {
   // Cors // ////////
@@ -26,7 +28,8 @@ const appRouter = (app, express) => {
     }
     express.json()(req, res, next);
   });
-
+  app.use(cookieParser());
+  app.use(useragent.express());
   app.use("/auth", authRouter);
   app.use("/user", userRouter);
   app.use("/upload", uploadRouter);
