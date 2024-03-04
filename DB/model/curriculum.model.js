@@ -15,7 +15,7 @@ const curriculumSchema = new Schema(
     type: {
       type: String,
       enum: ["video", "article"],
-      require: true,
+      required: true,
       set: (value) => (value === "" ? null : value),
     },
     order: {
