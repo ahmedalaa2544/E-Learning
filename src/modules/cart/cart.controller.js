@@ -104,9 +104,17 @@ export const delCoupon = asyncHandler(async (req, res, next) => {
 });
 
 export const getCart = asyncHandler(async (req, res) => {
-  const cart = await cartModel
+  const { course } = await cartModel
     .findOne({ user: req.user.id })
-    .populate({ path: "coupon" });
+    .populate({ path: "coupon" })
+    .populate({
+      path: "course.courseId",
+      populate: {
+        path: "createdBy",
+        select: "userName -_id",
+      },
+      select: "coverImageUrl -_id",
+    });
 
-  return res.status(200).json({ message: "Done", cart });
+  return res.status(200).json({ message: "Done", course });
 });
