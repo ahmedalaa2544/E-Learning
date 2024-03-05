@@ -126,7 +126,7 @@ export const forgetCode = asyncHandler(async (req, res, next) => {
     subject: "Reset Password",
     html: resetPassTemp(code),
   });
-  return res.status(200).json({ message: "Done", code });
+  return res.status(200).json({ message: "Done" });
 });
 
 // Verify Code
