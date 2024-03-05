@@ -66,13 +66,6 @@ router.get(
   courseController.getCourse
 );
 
-router.get(
-  "/:courseId/analytics",
-  isAuthenticated,
-  isAuthorized,
-  validation(validators.getCourseSchema),
-  courseController.courseAnalytics
-);
 /**
  * Route: GET /courses
  * Description: Retrieve a list of courses created by the authenticated user.
@@ -147,7 +140,7 @@ router.patch(
 router.patch(
   "/:courseId/submit",
   isAuthenticated,
-  isAuthorized,
+  isAuthorized(["Instructor"]),
   validation(validators.deleteCourseSchema),
   courseController.submitCourse
 );

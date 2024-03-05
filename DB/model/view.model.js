@@ -8,6 +8,8 @@ const viewSchema = new Schema(
       reuired: true,
     },
     // user: { type: Types.ObjectId, ref: "User" },
+    courseOwner: { type: Types.ObjectId, ref: "User", required: true },
+
     cookie: { type: String, required: true },
     count: Number,
     agent: { type: String, enum: ["Computer", "Tablet", "Mobile"] },

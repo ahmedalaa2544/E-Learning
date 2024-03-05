@@ -7,6 +7,7 @@ const accomplishmentSchema = new Schema(
       ref: "Curriculum",
       reuired: true,
     },
+    courseOwner: { type: Types.ObjectId, ref: "User", required: true },
     type: {
       type: String,
       enum: ["video", "article"],
