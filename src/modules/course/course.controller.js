@@ -4,6 +4,9 @@ import Chapter from "../../../DB/model/chapter.model.js";
 import Curriculum from "../../../DB/model/curriculum.model.js";
 import Video from "../../../DB/model/video.model.js";
 import Article from "../../../DB/model/article.model.js";
+import Quiz from "../../../DB/model/quiz.model.js";
+import Question from "../../../DB/model/question.model.js";
+import Option from "../../../DB/model/option.model.js";
 import ratingModel from "../../../DB/model/rating.model.js";
 import commentModel from "../../../DB/model/comment.model.js";
 import userModel from "../../../DB/model/user.model.js";
@@ -216,6 +219,7 @@ export const editCourse = asyncHandler(async (req, res, next) => {
  * @returns {Object} - JSON response indicating success or failure of the course deletion operation.
  */
 export const deleteCourse = asyncHandler(async (req, res, next) => {
+  console.log("reach delete");
   // Extract courseId from the request parameters.
   const { courseId } = req.params;
 
@@ -233,6 +237,9 @@ export const deleteCourse = asyncHandler(async (req, res, next) => {
 
   // Delete article entries related to the course.
   await Article.deleteMany({ course: courseId });
+
+  // Delete Quiz entries related to the course.
+  await Quiz.deleteMany({ course: courseId });
 
   // Delete chapter entries related to the course.
   await Chapter.deleteMany({ course: courseId });
