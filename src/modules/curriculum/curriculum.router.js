@@ -28,6 +28,15 @@ router.post(
   curriculumController.createArticle
 );
 
+// Create a new quiz in the curriculum
+router.post(
+  "/quiz",
+  isAuthenticated,
+  isAuthorized,
+  validation(validators.createQuizSchema),
+  curriculumController.createQuiz
+);
+
 // Edit an existing curriculum order
 router.patch(
   "/:curriculumId",

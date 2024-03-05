@@ -168,7 +168,6 @@ const upload = async (
           // Read the compressed file and upload its data to Azure Blob Storage
           const data = fs.readFileSync(outputFileName);
           await blockBlobClient.uploadData(data);
-          setTimeout(async () => {}, 1000);
 
           // Cleanup: Remove the temporary directory when the upload is complete
           temp.cleanup();
