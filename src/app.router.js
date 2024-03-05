@@ -10,6 +10,8 @@ import categRouter from "./modules/category/categ.router.js";
 import cartRouter from "./modules/cart/cart.router.js";
 import orderRouter from "./modules/order/order.router.js";
 import couponRouter from "./modules/coupon/coupon.router.js";
+import analyticsRouter from "./modules/analytics/analytics.router.js";
+import quizRouter from "./modules/quiz/quiz.router.js";
 import { globalErrorHandler } from "./utils/asyncHandling.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -41,6 +43,8 @@ const appRouter = (app, express) => {
   app.use("/cart", cartRouter);
   app.use("/order", orderRouter);
   app.use("/coupon", couponRouter);
+  app.use("/analytics", analyticsRouter);
+  app.use("/quiz", quizRouter);
 
   app.all("*", (req, res) => {
     return res.status(404).json({ message: "invalid Path" });

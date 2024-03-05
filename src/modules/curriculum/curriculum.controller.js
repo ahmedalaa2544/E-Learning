@@ -1,11 +1,11 @@
 import { asyncHandler } from "../../utils/asyncHandling.js";
 import onFinished from "on-finished";
-import streamifier from "streamifier";
 import Course from "../../../DB/model/course.model.js";
 import Chapter from "../../../DB/model/chapter.model.js";
 import Curriculum from "../../../DB/model/curriculum.model.js";
 import Video from "../../../DB/model/video.model.js";
 import Article from "../../../DB/model/article.model.js";
+import Quiz from "../../../DB/model/quiz.model.js";
 import mongoose from "mongoose";
 import {
   uploadVideo,
@@ -149,6 +149,62 @@ export const createArticle = asyncHandler(async (req, res, next) => {
     : res.json({ message: "Something went wrong" });
 });
 
+/**
+ * Controller function to create a new quiz within a course chapter, handling file uploads and database operations.
+ *
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @returns {Object} - Response indicating the success or failure of the article creation process.
+ */
+export const createQuiz = asyncHandler(async (req, res, next) => {
+  // Extract parameters from the request
+  const { courseId, chapterId } = req.params;
+  const { title, description, duaration, sorted } = req.body;
+  // Generate a unique quizId using MongoDB ObjectId
+  const quizId = new mongoose.Types.ObjectId();
+  // Generate a unique curriculumId using MongoDB ObjectId
+  const curriculumId = new mongoose.Types.ObjectId();
+  let curriculums = await Curriculum.find({ chapter: chapterId });
+
+  // Calculate the order value for the next curriculum by adding 1 to the number of existing curriculums.
+  const order = curriculums.length + 1;
+
+  // Create a new quiz document in the database
+  const quiz = new Quiz({
+    _id: quizId,
+    course: courseId,
+    chapter: chapterId,
+    curriculum: curriculumId,
+    description: description,
+    duaration,
+    sorted,
+  });
+
+  // Save the new quiz document in the database
+  await quiz.save();
+
+  // Create a new Curriculum document for the quiz
+  const curriculum = new Curriculum({
+    _id: curriculumId,
+    course: courseId,
+    chapter: chapterId,
+    type: "quiz",
+    title: title,
+    order: order,
+    quiz: quizId,
+  });
+
+  // Save the new Curriculum document in the database
+  await curriculum.save();
+
+  // Send a response indicating the success or failure of the quiz creation process
+  return quiz
+    ? res
+        .status(200)
+        .json({ message: "Done", quiz: { ...quiz._doc, title: title } })
+    : res.json({ message: "Something went wrong" });
+});
 /**
  * Edit the order of a curriculum item within a specific chapter.
  *

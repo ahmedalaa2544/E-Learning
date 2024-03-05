@@ -14,7 +14,7 @@ const curriculumSchema = new Schema(
     },
     type: {
       type: String,
-      enum: ["video", "article"],
+      enum: ["video", "article", "quiz"],
       required: true,
       set: (value) => (value === "" ? null : value),
     },
@@ -35,6 +35,14 @@ const curriculumSchema = new Schema(
       ref: "Article",
       required: function () {
         return this.type === "article";
+      },
+      set: (value) => (value === "" ? null : value),
+    },
+    quiz: {
+      type: Types.ObjectId,
+      ref: "Quiz",
+      required: function () {
+        return this.type === "quiz";
       },
       set: (value) => (value === "" ? null : value),
     },

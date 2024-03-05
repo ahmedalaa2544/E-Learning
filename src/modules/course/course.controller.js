@@ -295,6 +295,7 @@ export const getCourse = asyncHandler(async (req, res, next) => {
     );
     await View.create({
       course: courseId,
+      courseOwner: fetchedCourse.createdBy,
       cookie: cookieId,
       count: 1,
       agent: deviceType,
