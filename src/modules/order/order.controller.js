@@ -124,7 +124,7 @@ export const orderWebhook = asyncHandler(async (request, response) => {
       await studentModel.create({
         course: order.courses[i].courseId,
         user: order.user,
-        // paid: ,
+        paid: order.courses[i].coursePrice,
       });
     }
     // add course to user

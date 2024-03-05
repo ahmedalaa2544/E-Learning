@@ -365,18 +365,7 @@ export const getCourse = asyncHandler(async (req, res, next) => {
       })
     : res.status(500).json({ message: "Something went wrong" });
 });
-export const courseAnalytics = asyncHandler(async (req, res, next) => {
-  // Extract courseId from the request parameters.
-  const { courseId } = req.params;
 
-  // Find the course in the database by its ID and populate the instructors field.
-  const fetchedCourse = await Course.findById(courseId);
-
-  // If the course is not found, invoke the error middleware with a 404 status.
-  if (!fetchedCourse) {
-    return next(new Error("Course not found"), { cause: 404 });
-  }
-});
 /**
  * Retrieve a list of courses .
  *
@@ -497,6 +486,7 @@ export const getCoursesWithCategAndSubCateg = asyncHandler(
     if (categoryId && subCategoryId) {
       // Retrieve courses associated with the specified category and subcategory.
       courses = await Course.find({
+        status: "Published",
         category: categoryId,
         subCategory: subCategoryId,
       });
