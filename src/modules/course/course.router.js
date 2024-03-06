@@ -33,7 +33,7 @@ router.post(
 router.patch(
   "/:courseId",
   isAuthenticated,
-  isAuthorized,
+  isAuthorized(["Instructor"]),
   validation(validators.editCourseSchema),
   fileUpload(customValidation.image.concat(customValidation.video)).fields([
     { name: "coverImage", maxCount: 1 },
@@ -50,7 +50,7 @@ router.patch(
 router.delete(
   "/:courseId",
   isAuthenticated,
-  isAuthorized,
+  isAuthorized(["Instructor"]),
   validation(validators.deleteCourseSchema),
   courseController.deleteCourse
 );
