@@ -171,7 +171,7 @@ export const createArticle = asyncHandler(async (req, res, next) => {
 export const createQuiz = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { courseId, chapterId } = req.params;
-  const { title, description, duaration, sorted } = req.body;
+  const { title } = req.body;
   // Generate a unique quizId using MongoDB ObjectId
   const quizId = new mongoose.Types.ObjectId();
   // Generate a unique curriculumId using MongoDB ObjectId
@@ -187,9 +187,6 @@ export const createQuiz = asyncHandler(async (req, res, next) => {
     course: courseId,
     chapter: chapterId,
     curriculum: curriculumId,
-    description: description,
-    duaration,
-    sorted,
   });
 
   // Save the new quiz document in the database

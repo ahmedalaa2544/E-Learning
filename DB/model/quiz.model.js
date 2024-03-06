@@ -24,7 +24,7 @@ const quizSchema = new Schema(
     },
     duaration: Number,
     // pointsNumber: { Number, required: true },
-    sorted: { type: Boolean, required: true },
+    sorted: { type: Boolean },
   },
 
   { timestamps: true }

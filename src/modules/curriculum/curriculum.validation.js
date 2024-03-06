@@ -23,9 +23,6 @@ export const createQuizSchema = joi
     courseId: joi.string().custom(isValidObjectId).required(),
     chapterId: joi.string().custom(isValidObjectId).required(),
     title: joi.string(),
-    description: joi.string().allow(""),
-    sorted: joi.boolean().required(),
-    duaration: joi.number().positive(),
   })
   .unknown(true);
 export const editCurriculumSchema = joi
