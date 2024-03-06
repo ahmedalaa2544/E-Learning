@@ -423,7 +423,9 @@ export const getCourses = asyncHandler(async (req, res, next) => {
   // Check the 'view' query parameter to determine the type of courses to retrieve.
   if (req.query.view === "instructor") {
     // Find courses created by the authenticated user.
-    let courses = await Course.find({ createdBy: req.userId })
+    let courses = await Course.find({
+      $or: [{ createdBy: req.userId }, { instructors: { $in: [req.userId] } }],
+    })
       .populate({ path: "category", select: "name" })
       .populate({ path: "subCategory", select: "name" })
       .exec();
