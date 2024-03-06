@@ -125,14 +125,6 @@ router.post(
   courseController.postComment
 );
 
-// add instructor
-router.patch(
-  "/:courseId/instructor/:instructorId",
-  isAuthenticated,
-  isAuthorized(["Instructor"]),
-  validation(validators.instructorSchema),
-  courseController.addInstructor
-);
 /**
  * PATCH route to submit a course for publishing.
  * */

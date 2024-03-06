@@ -18,7 +18,8 @@ export const editCourseSchema = joi
     subCategory: joi.string().allow(""),
     language: joi.string().allow(""),
     coureTags: joi.array().max(50).allow(""),
-    description: joi.string().min(60).allow(""),
+    description: joi.string().min(60).max(200).allow(""),
+    instructorId: joi.string().custom(isValidObjectId),
     level: joi
       .string()
       .valid(...allowedLevels)
