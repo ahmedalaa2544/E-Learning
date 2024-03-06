@@ -176,7 +176,7 @@ export const getChapter = asyncHandler(async (req, res, next) => {
   const { chapterId } = req.params;
 
   // Find the corresponding chapter based on chapterId
-  const chapter = await Chapter.findById(chapterId);
+  const chapter = await Chapter.findById(chapterId).populate("course", "title");
 
   // Send a response based on the success or failure of the chapter retrieval
   return chapter
