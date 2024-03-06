@@ -2,14 +2,24 @@ import { Schema, model, Types } from "mongoose";
 
 const questionSchema = new Schema(
   {
-    quiz: {
+    course: {
       type: Types.ObjectId,
-      ref: "Quiz",
+      ref: "Course",
+      reuired: true,
+    },
+    chapter: {
+      type: Types.ObjectId,
+      ref: "Chapter",
       reuired: true,
     },
     curriculum: {
       type: Types.ObjectId,
       ref: "Curriculum",
+      reuired: true,
+    },
+    quiz: {
+      type: Types.ObjectId,
+      ref: "Quiz",
       reuired: true,
     },
     order: {

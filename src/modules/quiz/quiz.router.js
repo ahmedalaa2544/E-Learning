@@ -7,6 +7,7 @@ import isAuthenticated from "../../middleware/authntication.middleware.js";
 import isAuthorized from "./quiz.authorization.js";
 import { fileUpload, customValidation } from "../../utils/multer.js";
 
+// Create a new question for a specific curriculum
 router.post(
   "/:curriculumId/question",
   isAuthenticated,
@@ -16,6 +17,7 @@ router.post(
   quizController.createQuestion
 );
 
+// Create a new option for a specific question within a curriculum
 router.post(
   "/:curriculumId/question/:questionId",
   isAuthenticated,
@@ -25,6 +27,63 @@ router.post(
   quizController.createOption
 );
 
+// Update details of a specific curriculum
+router.patch(
+  "/:curriculumId",
+  isAuthenticated,
+  isAuthorized(["Instructor"]),
+  validation(validators.updateQuizSchema),
+  quizController.editQuiz
+);
+
+// Edit details or order of a specific question within a curriculum
+router.patch(
+  "/:curriculumId/question/:questionId",
+  isAuthenticated,
+  isAuthorized(["Instructor"]),
+  fileUpload(customValidation.image)?.single("image"),
+  validation(validators.createOptionSchema),
+  quizController.editQuestion
+);
+
+// Edit details or order of a specific option within a question and curriculum
+router.patch(
+  "/:curriculumId/question/:questionId/option/:optionId",
+  isAuthenticated,
+  isAuthorized(["Instructor"]),
+  fileUpload(customValidation.image)?.single("image"),
+  validation(validators.createOptionSchema),
+  quizController.editOption
+);
+
+// Delete a specific curriculum and its associated questions and options
+router.delete(
+  "/:curriculumId",
+  isAuthenticated,
+  isAuthorized(["Instructor"]),
+  validation(validators.createQuestionSchema),
+  quizController.deleteQuiz
+);
+
+// Delete a specific question within a curriculum and its associated options
+router.delete(
+  "/:curriculumId/question/:questionId",
+  isAuthenticated,
+  isAuthorized(["Instructor"]),
+  validation(validators.createOptionSchema),
+  quizController.deleteQuestion
+);
+
+// Delete a specific option within a question and curriculum
+router.delete(
+  "/:curriculumId/question/:questionId/option/:optionId",
+  isAuthenticated,
+  isAuthorized(["Instructor"]),
+  validation(validators.createOptionSchema),
+  quizController.deleteOption
+);
+
+// Get details of a specific curriculum, including its questions and options
 router.get(
   "/:curriculumId",
   isAuthenticated,
@@ -32,4 +91,5 @@ router.get(
   validation(validators.createQuestionSchema),
   quizController.getQuiz
 );
+
 export default router;

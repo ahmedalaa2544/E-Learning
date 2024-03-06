@@ -269,14 +269,20 @@ export const deleteCourse = asyncHandler(async (req, res, next) => {
   // Delete curriculum entries related to the course.
   await Curriculum.deleteMany({ course: courseId });
 
+  // Delete Question entries related to the course.
+  await Option.deleteMany({ course: courseId });
+
+  // Delete Question entries related to the course.
+  await Question.deleteMany({ course: courseId });
+
+  // Delete Quiz entries related to the course.
+  await Quiz.deleteMany({ course: courseId });
+
   // Delete video entries related to the course.
   await Video.deleteMany({ course: courseId });
 
   // Delete article entries related to the course.
   await Article.deleteMany({ course: courseId });
-
-  // Delete Quiz entries related to the course.
-  await Quiz.deleteMany({ course: courseId });
 
   // Delete chapter entries related to the course.
   await Chapter.deleteMany({ course: courseId });

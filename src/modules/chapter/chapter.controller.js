@@ -5,7 +5,7 @@ import Curriculum from "../../../DB/model/curriculum.model.js";
 import Video from "../../../DB/model/video.model.js";
 import Article from "../../../DB/model/article.model.js";
 import { deleteDirectory } from "../../utils/azureServices.js";
-import { mergeSort, findMax } from "../../utils/dataSructures.js";
+import { mergeSort } from "../../utils/dataSructures.js";
 /**
  * Create a new chapter within a specified course.
  *
