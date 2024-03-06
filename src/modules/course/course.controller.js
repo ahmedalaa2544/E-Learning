@@ -73,6 +73,7 @@ export const editCourse = asyncHandler(async (req, res, next) => {
     tags,
     description,
     level,
+    instructorId,
   } = req.body;
   // Extract courseId from the request parameters.
   const { courseId } = req.params;
@@ -159,6 +160,34 @@ export const editCourse = asyncHandler(async (req, res, next) => {
       promotionalVideoBlobName: "",
     });
   }
+
+  // add instructor
+  // check instructor id
+  const checkInst = await userModel.findById(instructorId);
+  if (!checkInst) {
+    return next(new Error("instructor not found", { cause: 404 }));
+  }
+
+  //check instructor existance
+  const checkCourse = await Course.findById(courseId);
+  if (checkCourse.instructors.includes(instructorId)) {
+    return next(new Error("already instructor here before", { cause: 400 }));
+  }
+
+  const course = await Course.findByIdAndUpdate(
+    courseId,
+    {
+      $push: { instructors: instructorId },
+    },
+    { new: true }
+  );
+
+  //save instructor in DB Schema
+  await instructorModel.create({
+    course: courseId,
+    courseOwner: course.createdBy,
+    user: instructorId,
+  });
 
   // Update the course details in the database.
   await Course.updateOne(
@@ -614,35 +643,6 @@ export const postComment = asyncHandler(async (req, res, next) => {
     : res.status(500).json({ message: "Failed to post comment" });
 });
 
-export const addInstructor = asyncHandler(async (req, res, next) => {
-  // check instruction
-  const checkInst = await userModel.findById(req.params.instructorId);
-  if (!checkInst) {
-    return next(new Error("instructor not found", { cause: 404 }));
-  }
-  const checkCourse = await Course.findById(req.params.courseId);
-
-  if (checkCourse.instructors.includes(req.params.instructorId)) {
-    return next(new Error("already instructor here before", { cause: 400 }));
-  }
-  const course = await Course.findByIdAndUpdate(
-    req.params.courseId,
-    {
-      $push: { instructors: req.params.instructorId },
-    },
-    { new: true }
-  );
-
-  //save instructor in DB Schema
-  await instructorModel.create({
-    course: req.params.courseId,
-    courseOwner: course.createdBy,
-    user: req.params.instructorId,
-  });
-
-  // response
-  return res.status(200).json({ message: "Done", course });
-});
 /**
  * Controller function to submit a course for publishing.
  *

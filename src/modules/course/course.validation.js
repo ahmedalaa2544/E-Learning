@@ -19,6 +19,7 @@ export const editCourseSchema = joi
     language: joi.string().allow(""),
     coureTags: joi.array().max(50).allow(""),
     description: joi.string().min(60).max(200).allow(""),
+    instructorId: joi.string().custom(isValidObjectId),
     level: joi
       .string()
       .valid(...allowedLevels)
