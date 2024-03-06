@@ -125,11 +125,11 @@ router.post(
   courseController.postComment
 );
 
-// dead logic
+// add instructor
 router.patch(
   "/:courseId/instructor/:instructorId",
   isAuthenticated,
-  isAuthorized,
+  isAuthorized(["Instructor"]),
   validation(validators.instructorSchema),
   courseController.addInstructor
 );

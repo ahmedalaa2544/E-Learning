@@ -38,4 +38,6 @@ router.get("/BoughtCourses", isAuth, userController.getCourses);
 
 router.get("/createCourses", isAuth, userController.getCreatedCourses);
 
+router.get("/instructor/search", userController.search);
+
 export default router;
