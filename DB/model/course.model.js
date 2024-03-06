@@ -20,7 +20,6 @@ const courseSchema = new Schema(
       required: function () {
         return !(this.status === "Draft");
       },
-      max: 200,
       set: (value) => (value === "" ? null : value),
     },
     language: {
