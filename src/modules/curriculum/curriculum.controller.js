@@ -68,9 +68,17 @@ export const createVideo = asyncHandler(async (req, res, next) => {
   await curriculum.save();
   // Send an immediate response to the client
   curriculum
-    ? res
-        .status(200)
-        .json({ message: "Server Processing the Video", createdVideo })
+    ? res.status(200).json({
+        message: "Server Processing the Video",
+        curriculum: {
+          ...createdVideo._doc,
+          _id: curriculumId,
+          title: title,
+          type,
+          order,
+          video: videoId,
+        },
+      })
     : res.status(500).json({ message: "Something went wrong" });
 
   // Wait for the response to be sent, then perform additional actions
