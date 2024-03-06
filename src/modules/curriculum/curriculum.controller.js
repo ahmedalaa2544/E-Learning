@@ -74,7 +74,7 @@ export const createVideo = asyncHandler(async (req, res, next) => {
           ...createdVideo._doc,
           _id: curriculumId,
           title: title,
-          type,
+          type: "video",
           order,
           video: videoId,
         },
