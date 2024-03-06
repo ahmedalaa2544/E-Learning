@@ -17,6 +17,7 @@ import upload, {
   deleteBlob,
   generateSASUrl,
 } from "../../utils/azureServices.js";
+import instructorModel from "../../../DB/model/instructor.model.js";
 /**
  * Create a new course with the provided title.
  *
@@ -37,6 +38,13 @@ export const createCourse = asyncHandler(async (req, res, next) => {
 
   // Save the newly created course to the database.
   await createdCourse.save();
+
+  //save instrucator in DB Schema
+  await instructorModel.create({
+    course: createdCourse._id,
+    courseOwner: req.userId,
+    user: req.userId,
+  });
 
   // Return a JSON response based on the success or failure of the operation.
   return createdCourse
@@ -612,6 +620,11 @@ export const addInstructor = asyncHandler(async (req, res, next) => {
   if (!checkInst) {
     return next(new Error("instructor not found", { cause: 404 }));
   }
+  const checkCourse = await Course.findById(req.params.courseId);
+
+  if (checkCourse.instructors.includes(req.params.instructorId)) {
+    return next(new Error("already instructor here before", { cause: 400 }));
+  }
   const course = await Course.findByIdAndUpdate(
     req.params.courseId,
     {
@@ -619,6 +632,13 @@ export const addInstructor = asyncHandler(async (req, res, next) => {
     },
     { new: true }
   );
+
+  //save instructor in DB Schema
+  await instructorModel.create({
+    course: req.params.courseId,
+    courseOwner: course.createdBy,
+    user: req.params.instructorId,
+  });
 
   // response
   return res.status(200).json({ message: "Done", course });
