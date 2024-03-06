@@ -585,6 +585,8 @@ export const getQuiz = asyncHandler(async (req, res, next) => {
   // Construct the quiz object with enhanced question data
   const quiz = {
     ...req.quiz._doc,
+    course: req.curriculum.course,
+    chapter: req.curriculum.chapter,
     questionsNumber: questions.length,
     questions: mergeSort(questions, "order"),
   };

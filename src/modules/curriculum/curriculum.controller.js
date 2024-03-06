@@ -562,8 +562,9 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
   const curriculum = await Curriculum.findById(curriculumId)
     .populate("video")
     .populate("article")
+    .populate("course", "title")
+    .populate("chapter", "title")
     .exec();
-
   // Check if the curriculum exists
   if (!curriculum) {
     return next(new Error("Curriculum not found"), { cause: 404 });
@@ -600,6 +601,8 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
           message: "Done",
           video: {
             ...video._doc,
+            course: curriculum.course,
+            chapter: curriculum.chapter,
             type: "video",
             title: curriculum.title,
             url: videoUrl,
@@ -620,6 +623,8 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
           message: "Done",
           article: {
             ...article._doc,
+            course: curriculum.course,
+            chapter: curriculum.chapter,
             type: "article",
             title: curriculum.title,
             resources: resources,
