@@ -655,8 +655,7 @@ export const getCurriculums = asyncHandler(async (req, res, next) => {
   }
 
   // Find the corresponding chapter based on chapterId
-  const chapter = await Chapter.findById(chapterId);
-
+  const chapter = await Chapter.findById(chapterId).populate("course", "title");
   // If the chapter is not found, send a 404 error response
   if (!chapter) {
     return next(new Error("Chapter not found"), { cause: 404 });
@@ -669,7 +668,12 @@ export const getCurriculums = asyncHandler(async (req, res, next) => {
 
   // Map the curriculum documents to plain objects and overwrite resources with undefined
   curriculum = curriculum.map((curriculum) => {
-    return { ...curriculum._doc, resources: undefined };
+    return {
+      ...curriculum._doc,
+      resources: undefined,
+      course: undefined,
+      chapter: undefined,
+    };
   });
 
   // Sort the curriculum based on the 'order' property using merge sort
@@ -679,7 +683,11 @@ export const getCurriculums = asyncHandler(async (req, res, next) => {
   return curriculum
     ? res.status(200).json({
         message: "Done",
-        curriculum: sortedCurriculum,
+        curriculum: {
+          ...sortedCurriculum,
+          course: chapter.course,
+          chapter: { _id: chapter._id, title: chapter.title },
+        },
       })
     : //// Handle errors and pass them to the next middleware
       res.status(500).json({ message: "Something went wrong" });
