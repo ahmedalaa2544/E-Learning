@@ -187,7 +187,7 @@ export const createOption = asyncHandler(async (req, res, next) => {
 export const editQuiz = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { curriculumId } = req.params;
-  const { title, description, duaration, sorted } = req.body;
+  const { title, description, duration, sorted } = req.body;
 
   // Retrieve the curriculum associated with the provided curriculumId
   const curriculum = await Curriculum.findById(curriculumId);
@@ -198,7 +198,7 @@ export const editQuiz = asyncHandler(async (req, res, next) => {
   // Update the details of the quiz associated with the curriculum
   const quiz = await Quiz.findByIdAndUpdate(curriculum.quiz, {
     description: description,
-    duaration,
+    duration,
     sorted,
   });
 

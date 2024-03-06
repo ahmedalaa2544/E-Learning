@@ -17,7 +17,7 @@ import {
   generateSASUrl,
   deleteBlob,
 } from "../../utils/azureServices.js";
-import { mergeSort } from "../../utils/dataSructures.js";
+import { mergeSort, calculateDuration } from "../../utils/dataSructures.js";
 /**
  * Controller function to create a new video within a course chapter, handling file uploads and database operations.
  *
@@ -111,7 +111,9 @@ export const createArticle = asyncHandler(async (req, res, next) => {
   // Generate a unique curriculumId using MongoDB ObjectId
   const curriculumId = new mongoose.Types.ObjectId();
   let curriculums = await Curriculum.find({ chapter: chapterId });
-
+  //calculate duration for article based on number of words
+  const duration = calculateDuration(quillContent);
+  console.log("tessssssss: " + duration);
   // Calculate the order value for the next curriculum by adding 1 to the number of existing curriculums.
   const order = curriculums.length + 1;
 
@@ -121,7 +123,8 @@ export const createArticle = asyncHandler(async (req, res, next) => {
     course: courseId,
     chapter: chapterId,
     curriculum: curriculumId,
-    quillContent: quillContent,
+    quillContent,
+    duration,
   });
 
   // Save the new Article document in the database
@@ -422,7 +425,8 @@ export const editArticle = asyncHandler(async (req, res, next) => {
   if (!article) {
     return next(new Error("Article not found"), { cause: 404 });
   }
-
+  //calculate duration for article based on number of words
+  const duration = calculateDuration(quillContent);
   let resources;
   // Check if the request involves uploading resources.
   if (req.query.upload === "resources") {
@@ -452,6 +456,7 @@ export const editArticle = asyncHandler(async (req, res, next) => {
   await Article.findByIdAndUpdate(curriculum.article, {
     title: title,
     quillContent: quillContent,
+    duration,
     resources: resources,
   });
   // Update the curriculum document with the edited details

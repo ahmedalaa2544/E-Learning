@@ -32,9 +32,7 @@ const videoSchema = new Schema(
     blobName: {
       type: String,
     },
-    duration: {
-      type: String,
-    },
+    duration: Number,
   },
 
   { timestamps: true }
