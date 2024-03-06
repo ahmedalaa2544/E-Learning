@@ -146,7 +146,7 @@ export const createArticle = asyncHandler(async (req, res, next) => {
     ? res
         .status(200)
         .json({ message: "Done", article: { ...article._doc, title: title } })
-    : res.json({ message: "Something went wrong" });
+    : res.status(500).json({ message: "Something went wrong" });
 });
 
 /**
@@ -203,7 +203,7 @@ export const createQuiz = asyncHandler(async (req, res, next) => {
     ? res
         .status(200)
         .json({ message: "Done", quiz: { ...quiz._doc, title: title } })
-    : res.json({ message: "Something went wrong" });
+    : res.status(500).json({ message: "Something went wrong" });
 });
 /**
  * Edit the order of a curriculum item within a specific chapter.
@@ -261,7 +261,7 @@ export const editCurriculum = asyncHandler(async (req, res, next) => {
   // Send a JSON response indicating the success or failure of the order change.
   return editCurriculumOrder
     ? res.status(200).json({ message: "Done" })
-    : res.json({ message: "Something went wrong" });
+    : res.status(500).json({ message: "Something went wrong" });
 });
 
 /**
@@ -393,7 +393,7 @@ export const editVideo = asyncHandler(async (req, res, next) => {
   if (!res.headersSent) {
     return editedCurriculum
       ? res.status(200).json({ message: "Done" })
-      : res.json({ message: "Something went wrong" });
+      : res.status(500).json({ message: "Something went wrong" });
   }
 });
 
