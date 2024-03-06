@@ -683,11 +683,9 @@ export const getCurriculums = asyncHandler(async (req, res, next) => {
   return curriculum
     ? res.status(200).json({
         message: "Done",
-        curriculum: {
-          ...sortedCurriculum,
-          course: chapter.course,
-          chapter: { _id: chapter._id, title: chapter.title },
-        },
+        curriculum: sortedCurriculum,
+        course: chapter.course,
+        chapter: { _id: chapter._id, title: chapter.title },
       })
     : //// Handle errors and pass them to the next middleware
       res.status(500).json({ message: "Something went wrong" });
