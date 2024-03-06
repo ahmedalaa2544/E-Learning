@@ -163,32 +163,33 @@ export const editCourse = asyncHandler(async (req, res, next) => {
 
   // add instructor
   // check instructor id
-  const checkInst = await userModel.findById(instructorId);
-  if (!checkInst) {
-    return next(new Error("instructor not found", { cause: 404 }));
+  if (instructorId) {
+    const checkInst = await userModel.findById(instructorId);
+    if (!checkInst) {
+      return next(new Error("instructor not found", { cause: 404 }));
+    }
+
+    //check instructor existance
+    const checkCourse = await Course.findById(courseId);
+    if (checkCourse.instructors.includes(instructorId)) {
+      return next(new Error("already instructor here before", { cause: 400 }));
+    }
+
+    const course = await Course.findByIdAndUpdate(
+      courseId,
+      {
+        $push: { instructors: instructorId },
+      },
+      { new: true }
+    );
+
+    //save instructor in DB Schema
+    await instructorModel.create({
+      course: courseId,
+      courseOwner: course.createdBy,
+      user: instructorId,
+    });
   }
-
-  //check instructor existance
-  const checkCourse = await Course.findById(courseId);
-  if (checkCourse.instructors.includes(instructorId)) {
-    return next(new Error("already instructor here before", { cause: 400 }));
-  }
-
-  const course = await Course.findByIdAndUpdate(
-    courseId,
-    {
-      $push: { instructors: instructorId },
-    },
-    { new: true }
-  );
-
-  //save instructor in DB Schema
-  await instructorModel.create({
-    course: courseId,
-    courseOwner: course.createdBy,
-    user: instructorId,
-  });
-
   // Update the course details in the database.
   await Course.updateOne(
     { _id: courseId },
