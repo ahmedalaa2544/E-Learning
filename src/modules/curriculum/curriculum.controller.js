@@ -17,7 +17,7 @@ import {
   generateSASUrl,
   deleteBlob,
 } from "../../utils/azureServices.js";
-import { mergeSort } from "../../utils/dataSructures.js";
+import { mergeSort, calculateDuration } from "../../utils/dataSructures.js";
 /**
  * Controller function to create a new video within a course chapter, handling file uploads and database operations.
  *
@@ -68,9 +68,17 @@ export const createVideo = asyncHandler(async (req, res, next) => {
   await curriculum.save();
   // Send an immediate response to the client
   curriculum
-    ? res
-        .status(200)
-        .json({ message: "Server Processing the Video", createdVideo })
+    ? res.status(200).json({
+        message: "Server Processing the Video",
+        curriculum: {
+          ...createdVideo._doc,
+          _id: curriculumId,
+          title: title,
+          type: "video",
+          order,
+          video: videoId,
+        },
+      })
     : res.status(500).json({ message: "Something went wrong" });
 
   // Wait for the response to be sent, then perform additional actions
@@ -111,7 +119,9 @@ export const createArticle = asyncHandler(async (req, res, next) => {
   // Generate a unique curriculumId using MongoDB ObjectId
   const curriculumId = new mongoose.Types.ObjectId();
   let curriculums = await Curriculum.find({ chapter: chapterId });
-
+  //calculate duration for article based on number of words
+  const duration = calculateDuration(quillContent);
+  console.log("tessssssss: " + duration);
   // Calculate the order value for the next curriculum by adding 1 to the number of existing curriculums.
   const order = curriculums.length + 1;
 
@@ -121,7 +131,8 @@ export const createArticle = asyncHandler(async (req, res, next) => {
     course: courseId,
     chapter: chapterId,
     curriculum: curriculumId,
-    quillContent: quillContent,
+    quillContent,
+    duration,
   });
 
   // Save the new Article document in the database
@@ -160,7 +171,7 @@ export const createArticle = asyncHandler(async (req, res, next) => {
 export const createQuiz = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { courseId, chapterId } = req.params;
-  const { title, description, duaration, sorted } = req.body;
+  const { title } = req.body;
   // Generate a unique quizId using MongoDB ObjectId
   const quizId = new mongoose.Types.ObjectId();
   // Generate a unique curriculumId using MongoDB ObjectId
@@ -176,9 +187,6 @@ export const createQuiz = asyncHandler(async (req, res, next) => {
     course: courseId,
     chapter: chapterId,
     curriculum: curriculumId,
-    description: description,
-    duaration,
-    sorted,
   });
 
   // Save the new quiz document in the database
@@ -422,7 +430,8 @@ export const editArticle = asyncHandler(async (req, res, next) => {
   if (!article) {
     return next(new Error("Article not found"), { cause: 404 });
   }
-
+  //calculate duration for article based on number of words
+  const duration = calculateDuration(quillContent);
   let resources;
   // Check if the request involves uploading resources.
   if (req.query.upload === "resources") {
@@ -452,6 +461,7 @@ export const editArticle = asyncHandler(async (req, res, next) => {
   await Article.findByIdAndUpdate(curriculum.article, {
     title: title,
     quillContent: quillContent,
+    duration,
     resources: resources,
   });
   // Update the curriculum document with the edited details
@@ -549,8 +559,9 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
   const curriculum = await Curriculum.findById(curriculumId)
     .populate("video")
     .populate("article")
+    .populate("course", "title")
+    .populate("chapter", "title")
     .exec();
-
   // Check if the curriculum exists
   if (!curriculum) {
     return next(new Error("Curriculum not found"), { cause: 404 });
@@ -587,6 +598,8 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
           message: "Done",
           video: {
             ...video._doc,
+            course: curriculum.course,
+            chapter: curriculum.chapter,
             type: "video",
             title: curriculum.title,
             url: videoUrl,
@@ -607,6 +620,8 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
           message: "Done",
           article: {
             ...article._doc,
+            course: curriculum.course,
+            chapter: curriculum.chapter,
             type: "article",
             title: curriculum.title,
             resources: resources,
@@ -637,8 +652,7 @@ export const getCurriculums = asyncHandler(async (req, res, next) => {
   }
 
   // Find the corresponding chapter based on chapterId
-  const chapter = await Chapter.findById(chapterId);
-
+  const chapter = await Chapter.findById(chapterId).populate("course", "title");
   // If the chapter is not found, send a 404 error response
   if (!chapter) {
     return next(new Error("Chapter not found"), { cause: 404 });
@@ -651,7 +665,12 @@ export const getCurriculums = asyncHandler(async (req, res, next) => {
 
   // Map the curriculum documents to plain objects and overwrite resources with undefined
   curriculum = curriculum.map((curriculum) => {
-    return { ...curriculum._doc, resources: undefined };
+    return {
+      ...curriculum._doc,
+      resources: undefined,
+      course: undefined,
+      chapter: undefined,
+    };
   });
 
   // Sort the curriculum based on the 'order' property using merge sort
@@ -662,6 +681,8 @@ export const getCurriculums = asyncHandler(async (req, res, next) => {
     ? res.status(200).json({
         message: "Done",
         curriculum: sortedCurriculum,
+        course: chapter.course,
+        chapter: { _id: chapter._id, title: chapter.title },
       })
     : //// Handle errors and pass them to the next middleware
       res.status(500).json({ message: "Something went wrong" });

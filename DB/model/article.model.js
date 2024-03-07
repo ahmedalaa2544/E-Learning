@@ -18,6 +18,7 @@ const articleSchema = new Schema(
       ref: "Curriculum",
       reuired: true,
     },
+    duration: Number,
     quillContent: {
       type: String,
       required: true,

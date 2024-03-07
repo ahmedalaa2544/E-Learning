@@ -68,4 +68,19 @@ export const findMax = (arr, prop) => {
   return max;
 };
 
+export const calculateDuration = (str) => {
+  // Split the string into an array of words
+  const wordsArray = str.split(/\s+/);
+
+  // Filter out empty strings (in case of consecutive spaces)
+  const filteredWordsArray = wordsArray.filter((word) => word.length > 0);
+
+  let duration = filteredWordsArray.length / 200;
+  if (duration < 1) {
+    duration = 1;
+  }
+  // Return the duration of words
+  return duration;
+};
+
 export default mergeSort;

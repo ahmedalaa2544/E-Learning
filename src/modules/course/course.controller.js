@@ -190,6 +190,13 @@ export const editCourse = asyncHandler(async (req, res, next) => {
     });
   }
 
+    //save instructor in DB Schema
+    await instructorModel.create({
+      course: courseId,
+      courseOwner: course.createdBy,
+      user: instructorId,
+    });
+  }
   // Update the course details in the database.
   await Course.updateOne(
     { _id: courseId },
@@ -324,14 +331,16 @@ export const getCourse = asyncHandler(async (req, res, next) => {
   // Update view count based on user cookie or create a new view entry.
   if (req.cookies.cookieId) {
     const cookieId = req.cookies.cookieId;
+    console.log(cookieId);
     const delay = new Date(Date.now() - 5 * 60 * 1000); // 5 minutes ago
-    await View.findOneAndUpdate(
+    const view = await View.findOneAndUpdate(
       {
         cookie: cookieId,
         updatedAt: { $lt: delay },
       },
       { $inc: { count: 1 } }
     );
+    console.log(view);
   } else {
     const maxAge = 3 * 30 * 24 * 60 * 60; // 3 months in seconds
     const cookieId = new mongoose.Types.ObjectId().toString();

@@ -176,7 +176,7 @@ export const getChapter = asyncHandler(async (req, res, next) => {
   const { chapterId } = req.params;
 
   // Find the corresponding chapter based on chapterId
-  const chapter = await Chapter.findById(chapterId);
+  const chapter = await Chapter.findById(chapterId).populate("course", "title");
 
   // Send a response based on the success or failure of the chapter retrieval
   return chapter
@@ -210,8 +210,10 @@ export const getChapters = asyncHandler(async (req, res, next) => {
   }
 
   // Retrieve all chapters associated with the specified course
-  const chapters = await Chapter.find({ course: courseId });
-  chapters.map((chapter) => chapter._doc);
+  let chapters = await Chapter.find({ course: courseId });
+  chapters = chapters.map((chapter) => {
+    return { ...chapter._doc, course: undefined };
+  });
   // Sort the chapters based on the 'order' property using merge sort
   const sortedchapters = mergeSort(chapters, "order");
 
@@ -220,6 +222,7 @@ export const getChapters = asyncHandler(async (req, res, next) => {
     ? res.status(200).json({
         message: "Done",
         chapters: sortedchapters,
+        course: { _id: course._id, title: course.title },
       })
     : res.json({ message: "Something went wrong during chapter retrieval." });
 });

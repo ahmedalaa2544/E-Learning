@@ -19,7 +19,10 @@ const authorization = (accessRoles = []) => {
     const { curriculumId } = req.params;
 
     // Find the corresponding curriculum based on courseId
-    const curriculum = await Curriculum.findById(curriculumId);
+    const curriculum = await Curriculum.findById(curriculumId)
+      .populate("course", "title")
+      .populate("chapter", "title");
+    req.curriculum = curriculum;
     req.course = curriculum.course;
     req.chapter = curriculum.chapter;
     req.quiz = curriculum.quiz;
