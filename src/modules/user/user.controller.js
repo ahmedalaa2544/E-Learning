@@ -13,7 +13,7 @@ export const getUser = asyncHandler(async (req, res, next) => {
   const cryptr = new Cryptr(process.env.CRPTO_PHONE);
   const decryptedPhone = cryptr.decrypt(user.phone);
   user.phone = decryptedPhone;
-  const newUser = user;
+  const { password, ...newUser } = user.toObject();
   return res.status(200).json({ message: "Done", newUser });
 });
 
@@ -70,7 +70,9 @@ export const updateProfile = asyncHandler(async (req, res, next) => {
     await req.user.save();
   }
 
-  return res.status(200).json({ message: "Done", user });
+  const { password, ...newUser } = user.toObject();
+
+  return res.status(200).json({ message: "Done", newUser });
 });
 
 export const deleteAcc = asyncHandler(async (req, res, next) => {
