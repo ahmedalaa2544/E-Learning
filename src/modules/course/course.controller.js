@@ -73,7 +73,6 @@ export const editCourse = asyncHandler(async (req, res, next) => {
     tags,
     description,
     level,
-    instructorId,
   } = req.body;
   // Extract courseId from the request parameters.
   const { courseId } = req.params;
@@ -162,32 +161,34 @@ export const editCourse = asyncHandler(async (req, res, next) => {
   }
 
   // add instructor
-  // check instructor id
-  const checkInst = await userModel.findById(instructorId);
-  if (!checkInst) {
-    return next(new Error("instructor not found", { cause: 404 }));
+  const course = await Course.findById(courseId);
+
+  const courseInstructors = course.instructors.map((id) => id.toString());
+
+  const arraysAreEqual =
+    courseInstructors.length === req.body.instructorId.length &&
+    courseInstructors.every(
+      (value, index) => value === req.body.instructorId[index]
+    );
+
+  if (!arraysAreEqual) {
+    course.instructors = req.body.instructorId;
+    course.save();
+
+    //del instructors
+    await instructorModel.deleteMany({
+      course: courseId,
+    });
+
+    //save instructor in DB Schema
+    req.body.instructorId.forEach((element) => {
+      instructorModel.create({
+        course: courseId,
+        courseOwner: course.createdBy,
+        user: element,
+      });
+    });
   }
-
-  //check instructor existance
-  const checkCourse = await Course.findById(courseId);
-  if (checkCourse.instructors.includes(instructorId)) {
-    return next(new Error("already instructor here before", { cause: 400 }));
-  }
-
-  const course = await Course.findByIdAndUpdate(
-    courseId,
-    {
-      $push: { instructors: instructorId },
-    },
-    { new: true }
-  );
-
-  //save instructor in DB Schema
-  await instructorModel.create({
-    course: courseId,
-    courseOwner: course.createdBy,
-    user: instructorId,
-  });
 
   // Update the course details in the database.
   await Course.updateOne(
