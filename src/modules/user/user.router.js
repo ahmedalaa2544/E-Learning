@@ -6,10 +6,10 @@ import * as validators from "./user.validation.js";
 import isAuth from "../../middleware/authntication.middleware.js";
 import { customValidation, fileUpload } from "../../utils/multer.js";
 
-router.get("/", isAuth, userController.getUser);
+router.get("/profile", isAuth, userController.getUser);
 
 router.patch(
-  "/updateProfile",
+  "/profile",
   isAuth,
   fileUpload(customValidation.image).single("image"),
   validation(validators.updateSchema),
