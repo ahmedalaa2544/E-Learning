@@ -23,7 +23,11 @@ export const updateProfile = asyncHandler(async (req, res, next) => {
   if (checkEmail) {
     return next(new Error("email is Registred"), { cause: 400 });
   }
-  const user = await userModel.findByIdAndUpdate(req.user.id, { ...req.body });
+  const user = await userModel.findByIdAndUpdate(
+    req.user.id,
+    { ...req.body },
+    { new: true }
+  );
   if (req.body.phone) {
     // Encrypt phone
     const cryptr = new Cryptr(process.env.CRPTO_PHONE);
