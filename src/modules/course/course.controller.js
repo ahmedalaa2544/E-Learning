@@ -190,13 +190,6 @@ export const editCourse = asyncHandler(async (req, res, next) => {
     });
   }
 
-    //save instructor in DB Schema
-    await instructorModel.create({
-      course: courseId,
-      courseOwner: course.createdBy,
-      user: instructorId,
-    });
-  }
   // Update the course details in the database.
   await Course.updateOne(
     { _id: courseId },
