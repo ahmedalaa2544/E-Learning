@@ -11,8 +11,8 @@ router.get("/", isAuth, userController.getUser);
 router.patch(
   "/updateProfile",
   isAuth,
-  validation(validators.updateSchema),
   fileUpload(customValidation.image).single("image"),
+  validation(validators.updateSchema),
   userController.updateProfile
 );
 

@@ -6,6 +6,7 @@ import Cryptr from "cryptr";
 import tokenModel from "../../../DB/model/token.model.js";
 import upload, { deleteBlob } from "../../utils/azureServices.js";
 import workshopModel from "../../../DB/model/workshop.model.js";
+import bcryptjs from "bcryptjs";
 
 export const getUser = asyncHandler(async (req, res, next) => {
   const user = await userModel.findById(req.user._id);
@@ -17,14 +18,26 @@ export const getUser = asyncHandler(async (req, res, next) => {
 });
 
 export const updateProfile = asyncHandler(async (req, res, next) => {
-  // const { fullName, gender, phone, age } = req.body;
   // update profile
+  const checkEmail = await userModel.findOne({ email: req.body.email });
+  if (checkEmail) {
+    return next(new Error("email is Registred"), { cause: 400 });
+  }
   const user = await userModel.findByIdAndUpdate(req.user.id, { ...req.body });
   if (req.body.phone) {
     // Encrypt phone
     const cryptr = new Cryptr(process.env.CRPTO_PHONE);
     const encryptPhone = cryptr.encrypt(req.body.phone);
     user.phone = encryptPhone;
+    user.save();
+  }
+  if (req.body.password) {
+    // Encrypt password
+    const hashPassword = await bcryptjs.hash(
+      req.body.password,
+      +process.env.SALAT_ROUND
+    );
+    user.password = hashPassword;
     user.save();
   }
 

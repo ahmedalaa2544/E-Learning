@@ -4,6 +4,28 @@ import joi from "joi";
 export const updateSchema = joi
   .object({
     fullName: joi.string().empty(""),
+    firstName: joi.string().empty(""),
+    lastName: joi.string().empty(""),
+    occupation: joi.string().empty(""),
+    school: joi.string().empty(""),
+    country: joi.string().empty(""),
+    language: joi.string().empty(""),
+    about: joi.string().empty(""),
+    email: joi.string().email(),
+    gitHubLink: joi
+      .string()
+      .uri({
+        scheme: ["http", "https"],
+      })
+      .regex(/github\.com/),
+    linkedinLink: joi
+      .string()
+      .uri({
+        scheme: ["http", "https"],
+      })
+      .regex(/linkedin\.com/),
+    password: joi.string().min(8),
+    cPassword: joi.string().valid(joi.ref("password")),
     gender: joi.string().valid("male", "female").empty(""),
     phone: joi.string().empty(""),
     age: joi.number().integer().positive().min(4).max(100).empty(""),

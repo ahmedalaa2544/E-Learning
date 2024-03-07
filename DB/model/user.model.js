@@ -9,6 +9,24 @@ const userSchmea = new Schema(
       min: 3,
       max: 20,
     },
+    firstName: {
+      type: String,
+      min: 3,
+      max: 20,
+    },
+    lastName: {
+      type: String,
+      min: 3,
+      max: 20,
+    },
+    occupation: String,
+    school: String,
+    country: String,
+    language: String,
+    about: String,
+    fullName: String,
+    gitHubLink: String,
+    linkedinLink: String,
     email: {
       type: String,
       required: true,
@@ -20,7 +38,6 @@ const userSchmea = new Schema(
       required: true,
       min: 8,
     },
-    fullName: String,
     role: {
       type: String,
       enum: ["admin", "user"],
