@@ -63,7 +63,7 @@ export const confirmEmail = asyncHandler(async (req, res, next) => {
     }
   );
   if (req.params.email) {
-    await cartModel.findOneAndDelete({ email: user.email });
+    await cartModel.findOneAndDelete({ user: user._id });
     user.email = req.params.email;
     user.save();
   }
