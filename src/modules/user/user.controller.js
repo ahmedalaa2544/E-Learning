@@ -34,7 +34,6 @@ export const updateProfile = asyncHandler(async (req, res, next) => {
     // create user
     await userModel.findByIdAndUpdate(req.user.id, {
       activationCode,
-      isConfirm: false,
     });
     // create confirmLink
     const link = `https://education-project.azurewebsites.net/auth/confirmEmail/${activationCode}/${req.body.email}`;
