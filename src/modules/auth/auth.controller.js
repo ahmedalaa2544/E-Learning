@@ -62,6 +62,11 @@ export const confirmEmail = asyncHandler(async (req, res, next) => {
       $unset: { activationCode: 1 },
     }
   );
+  if (req.params.email) {
+    await cartModel.findOneAndDelete({ email: user.email });
+    user.email = req.params.email;
+    user.save();
+  }
   // check user exists
   if (!user) return next(new Error("user not found"), { cause: 404 });
 
