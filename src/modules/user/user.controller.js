@@ -78,7 +78,7 @@ export const updateProfile = asyncHandler(async (req, res, next) => {
     const blobImageExtension = req.file.originalname.split(".").pop();
     // Define the path for the promotion image in the user's course directory.
     const dateOfPublish = Date.now(); // to change the url from pic to another
-    const blobImageName = `Users\\${req.user.userName}_${req.user._id}\\profilePic\\image\\${dateOfPublish}.${blobImageExtension}`;
+    const blobImageName = `Users\\${req.user.userName}_${req.user._id}\\profilePic\\${dateOfPublish}\\image.${blobImageExtension}`;
     // Upload image and obtain its URL.
     const imageUrl = await upload(
       req.file.path,
