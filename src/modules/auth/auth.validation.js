@@ -12,6 +12,7 @@ export const signUpSchema = joi
 export const activateCodeSchema = joi
   .object({
     activationCode: joi.string().required(),
+    email: joi.string(),
   })
   .required();
 
