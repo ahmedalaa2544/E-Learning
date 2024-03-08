@@ -7,6 +7,9 @@ import tokenModel from "../../../DB/model/token.model.js";
 import upload, { deleteBlob } from "../../utils/azureServices.js";
 import workshopModel from "../../../DB/model/workshop.model.js";
 import bcryptjs from "bcryptjs";
+import { ConfirmTemp } from "../../utils/htmlTemps.js";
+import crypto from "crypto";
+import sendEmail from "../../utils/sentEmail.js";
 
 export const getUser = asyncHandler(async (req, res, next) => {
   const user = await userModel.findById(req.user._id);
@@ -22,13 +25,30 @@ export const getUser = asyncHandler(async (req, res, next) => {
 
 export const updateProfile = asyncHandler(async (req, res, next) => {
   // update profile
-  const checkEmail = await userModel.findOne({ email: req.body.email });
-  if (checkEmail) {
-    return next(new Error("email is Registred"), { cause: 400 });
+  if (req.body.email) {
+    const checkEmail = await userModel.findOne({ email: req.body.email });
+    if (checkEmail) {
+      return next(new Error("email is Registred"), { cause: 400 });
+    }
+    const activationCode = crypto.randomBytes(64).toString("hex");
+    // create user
+    await userModel.findByIdAndUpdate(req.user.id, {
+      activationCode,
+      isConfirm: false,
+    });
+    // create confirmLink
+    const link = `https://education-project.azurewebsites.net/auth/confirmEmail/${activationCode}/${req.body.email}`;
+    // send email
+    await sendEmail({
+      to: req.body.email,
+      subject: "Email Confirmation",
+      html: ConfirmTemp(link),
+    });
   }
+  const { email, ...newBody } = req.body;
   const user = await userModel.findByIdAndUpdate(
     req.user.id,
-    { ...req.body },
+    { ...newBody },
     { new: true }
   );
   if (req.body.phone) {

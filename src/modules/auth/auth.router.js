@@ -14,7 +14,7 @@ router.post(
 
 // Confirm Email
 router.get(
-  "/confirmEmail/:activationCode",
+  "/confirmEmail/:activationCode/:email?",
   validation(validators.activateCodeSchema),
   authController.confirmEmail
 );
