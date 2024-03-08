@@ -11,7 +11,10 @@ import bcryptjs from "bcryptjs";
 export const getUser = asyncHandler(async (req, res, next) => {
   const user = await userModel.findById(req.user._id);
   const cryptr = new Cryptr(process.env.CRPTO_PHONE);
-  const decryptedPhone = cryptr.decrypt(user.phone);
+  let decryptedPhone;
+  user.phone
+    ? (decryptedPhone = cryptr.decrypt(user.phone))
+    : (user.phone = "");
   user.phone = decryptedPhone;
   const { password, ...newUser } = user.toObject();
   return res.status(200).json({ message: "Done", newUser });
@@ -55,7 +58,8 @@ export const updateProfile = asyncHandler(async (req, res, next) => {
     // Extract the extension for the promotion image.
     const blobImageExtension = req.file.originalname.split(".").pop();
     // Define the path for the promotion image in the user's course directory.
-    const blobImageName = `Users\\${req.user.userName}_${req.user._id}\\profilePic\\image.${blobImageExtension}`;
+    const dateOfPublish = Date.now(); // to change the url from pic to another
+    const blobImageName = `Users\\${req.user.userName}_${req.user._id}\\profilePic\\image\\${dateOfPublish}.${blobImageExtension}`;
     // Upload image and obtain its URL.
     const imageUrl = await upload(
       req.file.path,
