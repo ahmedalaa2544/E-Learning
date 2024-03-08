@@ -16,7 +16,7 @@ router.patch(
   userController.updateProfile
 );
 
-router.delete("/delete", isAuth, userController.deleteAcc);
+router.delete("/", isAuth, userController.deleteAcc);
 
 router.patch(
   "/wishlist/:courseId",
