@@ -22,9 +22,15 @@ const quizSchema = new Schema(
       type: String,
       set: (value) => (value === "" ? null : value),
     },
-    duaration: Number,
+    timeLimit: Number,
     // pointsNumber: { Number, required: true },
-    sorted: { type: Boolean },
+    shuffleQuestions: Boolean,
+    shuffleAnswers: Boolean,
+    showCorrectAnswer: Boolean,
+    maxAttempts: Number,
+    maxQuestionsInPage: Number,
+    lockdown: Boolean,
+    numberOfQuestions: Number,
   },
 
   { timestamps: true }
