@@ -9,6 +9,7 @@ const commentSchema = new Schema(
     },
     user: { type: Types.ObjectId, ref: "User", required: true },
     comment: { type: String, min: 3, max: 120, required: true },
+    // sentimentAnalysis: Number,
   },
 
   { timestamps: true }

@@ -18,6 +18,8 @@ import upload, {
   generateSASUrl,
 } from "../../utils/azureServices.js";
 import instructorModel from "../../../DB/model/instructor.model.js";
+import fetch from "node-fetch";
+
 /**
  * Create a new course with the provided title.
  *
@@ -639,12 +641,22 @@ export const postComment = asyncHandler(async (req, res, next) => {
   // Extract course ID and comment data from the request
   const { courseId } = req.params;
   const { comment } = req.body;
+  // const url = "http://localhost:4000/model";
 
+  // let sentimentAnalysis = await fetch(url, {
+  //   method: "POST",
+  //   headers: {
+  //     "Content-Type": "application/json",
+  //   },
+  //   body: JSON.stringify({ new_review: comment }),
+  // });
+  // sentimentAnalysis = await sentimentAnalysis.text();
   // Create a new comment record
   const createdComment = new commentModel({
     course: courseId,
     user: req.userId,
     comment: comment,
+    // sentimentAnalysis,
   });
   await createdComment.save(); // Save the newly created comment
 

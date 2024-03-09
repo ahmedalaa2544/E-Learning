@@ -187,7 +187,18 @@ export const createOption = asyncHandler(async (req, res, next) => {
 export const editQuiz = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { curriculumId } = req.params;
-  const { title, description, duration, sorted } = req.body;
+  const {
+    title,
+    description,
+    timeLimit,
+    shuffleQuestions,
+    shuffleAnswers,
+    showCorrectAnswer,
+    maxAttempts,
+    maxQuestionsInPage,
+    lockdown,
+    numberOfQuestions,
+  } = req.body;
 
   // Retrieve the curriculum associated with the provided curriculumId
   const curriculum = await Curriculum.findById(curriculumId);
@@ -197,9 +208,15 @@ export const editQuiz = asyncHandler(async (req, res, next) => {
 
   // Update the details of the quiz associated with the curriculum
   const quiz = await Quiz.findByIdAndUpdate(curriculum.quiz, {
-    description: description,
-    duration,
-    sorted,
+    description,
+    timeLimit,
+    shuffleQuestions,
+    shuffleAnswers,
+    showCorrectAnswer,
+    maxAttempts,
+    maxQuestionsInPage,
+    lockdown,
+    numberOfQuestions,
   });
 
   // Send a response indicating the success or failure of the quiz editing process
@@ -587,6 +604,7 @@ export const getQuiz = asyncHandler(async (req, res, next) => {
     ...req.quiz._doc,
     course: req.curriculum.course,
     chapter: req.curriculum.chapter,
+    title: req.curriculum.title,
     questionsNumber: questions.length,
     questions: mergeSort(questions, "order"),
   };

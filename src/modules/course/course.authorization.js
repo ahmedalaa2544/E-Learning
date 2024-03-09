@@ -29,7 +29,7 @@ const authorization = (accessRoles = []) => {
         user: req.userId,
       });
       const isCreator = course.createdBy.toString() === req.userId;
-      if (isCreator && isInstructor) {
+      if (!isCreator && !isInstructor) {
         return next(new Error("You do not have access"), { cause: 403 });
       }
     }
