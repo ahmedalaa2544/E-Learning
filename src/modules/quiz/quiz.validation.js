@@ -1,8 +1,6 @@
 import joi from "joi";
 import { isValidObjectId } from "../../middleware/validation.js";
 
-const allowedLevels = ["Beginner", "Intermediate", "Expert", "All Levels"];
-
 export const createQuestionSchema = joi
   .object({
     curriculumId: joi.string().custom(isValidObjectId).required(),
@@ -28,7 +26,13 @@ export const updateQuizSchema = joi
     curriculumId: joi.string().custom(isValidObjectId).required(),
     title: joi.string(),
     description: joi.string().allow(""),
-    sorted: joi.boolean().required(),
-    duaration: joi.number().positive(),
+    timeLimit: joi.number().positive(),
+    shuffleQuestions: joi.boolean().required(),
+    shuffleAnswers: joi.boolean().required(),
+    showCorrectAnswer: joi.boolean().required(),
+    maxAttempts: joi.number().integer().positive(),
+    maxQuestionsInPage: joi.number().integer().positive(),
+    lockdown: joi.boolean().required(),
+    numberOfQuestions: joi.number().integer().positive(),
   })
   .unknown(true);
