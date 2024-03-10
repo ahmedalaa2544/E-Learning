@@ -14,12 +14,14 @@ export const updateSchema = joi
     email: joi.string().email(),
     gitHubLink: joi
       .string()
+      .empty("")
       .uri({
         scheme: ["http", "https"],
       })
       .regex(/github\.com/),
     linkedinLink: joi
       .string()
+      .empty("")
       .uri({
         scheme: ["http", "https"],
       })
