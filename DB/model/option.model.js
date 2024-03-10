@@ -2,6 +2,12 @@ import { Schema, model, Types } from "mongoose";
 
 const optionSchema = new Schema(
   {
+    id: {
+      type: Types.ObjectId,
+      default: function () {
+        return this._id || Types.ObjectId();
+      },
+    },
     course: {
       type: Types.ObjectId,
       ref: "Course",

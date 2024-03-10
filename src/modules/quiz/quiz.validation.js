@@ -26,7 +26,7 @@ export const updateQuizSchema = joi
     curriculumId: joi.string().custom(isValidObjectId).required(),
     title: joi.string(),
     description: joi.string().allow(""),
-    timeLimit: joi.number().positive(),
+    timeLimit: joi.number(),
     shuffleQuestions: joi.boolean(),
     shuffleAnswers: joi.boolean(),
     showCorrectAnswer: joi.boolean(),
