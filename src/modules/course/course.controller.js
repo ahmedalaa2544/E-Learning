@@ -161,37 +161,37 @@ export const editCourse = asyncHandler(async (req, res, next) => {
       promotionalVideoBlobName: "",
     });
   }
+  if (req.body.instructorId) {
+    // add instructor
+    const course = await Course.findById(courseId);
 
-  // add instructor
-  const course = await Course.findById(courseId);
+    const courseInstructors = course.instructors.map((id) => id.toString());
 
-  const courseInstructors = course.instructors.map((id) => id.toString());
+    const arraysAreEqual =
+      courseInstructors.length === req.body.instructorId.length &&
+      courseInstructors.every(
+        (value, index) => value === req.body.instructorId[index]
+      );
 
-  const arraysAreEqual =
-    courseInstructors.length === req.body.instructorId.length &&
-    courseInstructors.every(
-      (value, index) => value === req.body.instructorId[index]
-    );
+    if (!arraysAreEqual) {
+      course.instructors = req.body.instructorId;
+      course.save();
 
-  if (!arraysAreEqual) {
-    course.instructors = req.body.instructorId;
-    course.save();
-
-    //del instructors
-    await instructorModel.deleteMany({
-      course: courseId,
-    });
-
-    //save instructor in DB Schema
-    req.body.instructorId.forEach((element) => {
-      instructorModel.create({
+      //del instructors
+      await instructorModel.deleteMany({
         course: courseId,
-        courseOwner: course.createdBy,
-        user: element,
       });
-    });
-  }
 
+      //save instructor in DB Schema
+      req.body.instructorId.forEach((element) => {
+        instructorModel.create({
+          course: courseId,
+          courseOwner: course.createdBy,
+          user: element,
+        });
+      });
+    }
+  }
   // Update the course details in the database.
   await Course.updateOne(
     { _id: courseId },
