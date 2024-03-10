@@ -347,10 +347,7 @@ export const editOption = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { curriculumId, questionId, optionId } = req.params;
   const { text, correctAnswer, startPosition, endPosition } = req.body;
-  console.log(text);
   const changeOrder = req.query.change_order;
-  console.log("reach Option Edit");
-  console.log(questionId);
   // Find the existing option based on optionId
   const option = await Option.findById(optionId);
 
@@ -565,10 +562,9 @@ export const deleteOption = asyncHandler(async (req, res, next) => {
 export const getQuiz = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { curriculumId } = req.params;
-
+  let quiz = await Quiz.findById(req.quiz);
   // Retrieve questions associated with the quiz
   let questions = await Question.find({ quiz: req.quiz });
-
   // Retrieve options for each question and enhance the data
   questions = await Promise.all(
     questions.map(async (question) => {
@@ -598,8 +594,8 @@ export const getQuiz = asyncHandler(async (req, res, next) => {
   );
 
   // Construct the quiz object with enhanced question data
-  const quiz = {
-    ...req.quiz._doc,
+  quiz = {
+    ...quiz._doc,
     course: req.curriculum.course,
     chapter: req.curriculum.chapter,
     title: req.curriculum.title,

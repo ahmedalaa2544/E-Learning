@@ -2,6 +2,12 @@ import { Schema, model, Types } from "mongoose";
 
 const quizSchema = new Schema(
   {
+    id: {
+      type: Types.ObjectId,
+      default: function () {
+        return this._id || Types.ObjectId();
+      },
+    },
     course: {
       type: Types.ObjectId,
       ref: "Course",
@@ -19,13 +25,13 @@ const quizSchema = new Schema(
     },
 
     description: String,
-    timeLimit: Number,
+    timeLimit: { type: Number, default: 0 },
     // pointsNumber: { Number, required: true },
     shuffleQuestions: Boolean,
     shuffleAnswers: Boolean,
     showCorrectAnswer: Boolean,
     maxAttempts: { type: Number, default: 1 },
-    maxQuestionsInPage: { type: Number, default: 10 },
+    maxQuestionsInPage: { type: Number, default: 1 },
     lockdown: Boolean,
     numberOfQuestions: { type: Number, default: 1 },
   },
