@@ -18,19 +18,16 @@ const quizSchema = new Schema(
       reuired: true,
     },
 
-    description: {
-      type: String,
-      set: (value) => (value === "" ? null : value),
-    },
+    description: String,
     timeLimit: Number,
     // pointsNumber: { Number, required: true },
     shuffleQuestions: Boolean,
     shuffleAnswers: Boolean,
     showCorrectAnswer: Boolean,
-    maxAttempts: Number,
-    maxQuestionsInPage: Number,
+    maxAttempts: { type: Number, default: 1 },
+    maxQuestionsInPage: { type: Number, default: 10 },
     lockdown: Boolean,
-    numberOfQuestions: Number,
+    numberOfQuestions: { type: Number, default: 1 },
   },
 
   { timestamps: true }

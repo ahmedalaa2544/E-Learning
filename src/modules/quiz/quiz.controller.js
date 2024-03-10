@@ -24,7 +24,7 @@ import upload, {
 export const createQuestion = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { curriculumId } = req.params;
-  const { type, text, multiple, sorted } = req.body;
+  const { type, text, multiple } = req.body;
 
   // Fetch existing questions for the quiz
   const questions = await Question.find({ quiz: req.quiz });
@@ -69,7 +69,6 @@ export const createQuestion = asyncHandler(async (req, res, next) => {
     imageUrl,
     text,
     multiple,
-    sorted,
   });
 
   // Return appropriate response based on the success of question creation
@@ -236,7 +235,7 @@ export const editQuiz = asyncHandler(async (req, res, next) => {
 export const editQuestion = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { curriculumId, questionId } = req.params;
-  const { type, text, multiple, sorted, startPosition, endPosition } = req.body;
+  const { type, text, multiple, startPosition, endPosition } = req.body;
   const changeOrder = req.query.change_order;
 
   // Find the existing question based on questionId
@@ -326,7 +325,6 @@ export const editQuestion = asyncHandler(async (req, res, next) => {
     imageUrl,
     text,
     multiple,
-    sorted,
   });
 
   // Send a response based on the success or failure of the Question edit

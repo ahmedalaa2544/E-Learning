@@ -41,7 +41,7 @@ const questionSchema = new Schema(
     multiple: Boolean,
 
     optionsNumber: { Number },
-    sorted: { type: Boolean, required: true },
+    sorted: { type: Boolean },
   },
 
   { timestamps: true }
