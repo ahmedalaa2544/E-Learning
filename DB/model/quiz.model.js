@@ -5,7 +5,7 @@ const quizSchema = new Schema(
     id: {
       type: Types.ObjectId,
       default: function () {
-        return this._id || Types.ObjectId();
+        return this.curriculum || Types.ObjectId();
       },
     },
     course: {
