@@ -25,7 +25,10 @@ export const updateSchema = joi
       })
       .regex(/linkedin\.com/),
     password: joi.string().min(8),
-    cPassword: joi.string().valid(joi.ref("password")),
+    cPassword: joi.when("password", {
+      is: joi.string().min(8).required(),
+      then: joi.string().valid(joi.ref("password")).required(),
+    }),
     gender: joi.string().valid("male", "female"),
     phone: joi.string().empty(""),
     age: joi.number().integer().positive().min(4).max(100).empty(""),
