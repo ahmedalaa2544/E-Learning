@@ -163,15 +163,20 @@ export const getCreatedCourses = asyncHandler(async (req, res, next) => {
 export const search = asyncHandler(async (req, res, next) => {
   const query = req.query.q.toLowerCase();
 
-  const instructors = await instructorModel
-    .find()
-    .populate({ path: "user", select: "userName profilePic.url" })
-    .select("user -_id");
+  const user = await instructorModel.find();
+  const userArray = user.map((user) => user.user);
 
-  const matchedData = instructors
-    .filter((item) => item.user.userName.toLowerCase().includes(query))
+  const users = await userModel
+    .find({ _id: { $in: userArray } })
+    .select("userName profilePic");
+
+  let matchedData = users
+    .filter((item) => item.userName.toLowerCase().includes(query))
     .slice(0, 3);
 
+  if (query == "") {
+    matchedData = "";
+  }
   // respone
   return res.status(200).json({ message: "Done", matchedData });
 });
