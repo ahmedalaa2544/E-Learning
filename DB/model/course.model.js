@@ -130,6 +130,10 @@ const courseSchema = new Schema(
       enum: ["Draft", "Pending", "Published"],
       default: "Draft",
     },
+    numberOfStudents: { type: Number, default: 0 },
+    numberOfRatings: { type: Number, default: 0 },
+
+    rating: { type: Number, default: 0 },
   },
   {
     id: false,

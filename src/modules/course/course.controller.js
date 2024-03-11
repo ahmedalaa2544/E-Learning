@@ -108,10 +108,6 @@ export const editCourse = asyncHandler(async (req, res, next) => {
 
   // Check if the request includes a query parameter for uploading a promotional video.
   if (req.query.upload === "promotionalVideo") {
-    // if (req.course.promotionalVideoBlobName) {
-    //   console.log("enter");
-    //   deleteBlob(req.course.promotionalVideoBlobName);
-    // }
     // Check if a promotional video file is provided in the request.
     if (req.files?.promotionalVideo) {
       // Extract the extension for the promotional video.
@@ -359,8 +355,6 @@ export const getCourse = asyncHandler(async (req, res, next) => {
 
   // Calculate the average rating for the course.
   const ratings = await ratingModel.find({ course: courseId });
-  const sum = ratings.reduce((acc, rating) => acc + rating.rating, 0);
-  const courseRating = ratings.length > 0 ? sum / ratings.length : 0;
 
   // Retrieve comments associated with the course and populate user details.
   const courseComments = await commentModel
@@ -413,8 +407,6 @@ export const getCourse = asyncHandler(async (req, res, next) => {
           coverImageBlobName: undefined,
           promotionalVideoUrl: videoUrl,
           promotionalVideoBlobName: undefined,
-          rating: courseRating,
-          numberOfRatings: ratings.length,
           comments: userMeta,
           finalPrice: fetchedCourse.finalPrice,
         },
@@ -623,8 +615,16 @@ export const postRating = asyncHandler(async (req, res, next) => {
       { rating: rating }
     );
   }
+  // Calculate the average rating for the course.
+  const ratings = await ratingModel.find({ course: courseId });
+  const sum = ratings.reduce((acc, rating) => acc + rating.rating, 0);
+  const avgRating = ratings.length > 0 ? sum / ratings.length : 0;
+  const course = await Course.findByIdAndUpdate(courseId, {
+    rating: avgRating,
+    numberOfRatings: ratings.length,
+  });
   // Return a JSON response indicating the success or failure of the rating posting process
-  return rate
+  return course
     ? res.status(200).json({ message: "Done" })
     : res.status(500).json({ message: "Something went wrong" });
 });
