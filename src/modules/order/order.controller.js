@@ -121,6 +121,9 @@ export const orderWebhook = asyncHandler(async (request, response) => {
     let cBought = [];
     for (let i = 0; i < order.courses.length; i++) {
       cBought.push(order.courses[i].courseId);
+      await couponModel.findByIdAndUpdate(order.courses[i].courseId, {
+        $inc: { numberOfStudents: 1 },
+      });
       await studentModel.create({
         course: order.courses[i].courseId,
         user: order.user,
