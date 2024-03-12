@@ -214,6 +214,7 @@ export const editCourse = asyncHandler(async (req, res, next) => {
   const editedCourse = await Course.findById(courseId)
     .populate({ path: "category", select: "name" })
     .populate({ path: "subCategory", select: "name" })
+    .populate({ path: "instructors", select: "userName profilePic" })
     .exec();
 
   // Extract the blob name associated with the course's cover image and generate a Shared Access Signature (SAS) URL with read access and a 60-minute expiry.
