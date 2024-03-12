@@ -41,7 +41,7 @@ export const createQuestion = asyncHandler(async (req, res, next) => {
     const blobImageExtension = req.file?.originalname.split(".").pop();
 
     // Define the path for the cover image in the user's course directory.
-    imageBlobName = `Users\\${req.userId}\\Courses\\${req.course}\\${
+    imageBlobName = `Users\\${req.userId}\\Courses\\${req.course._id}\\${
       req.chapter
     }\\Quiz\\${curriculumId}\\question\\${questionId}\\${
       req.file.originalname
@@ -134,9 +134,9 @@ export const createOption = asyncHandler(async (req, res, next) => {
     const blobImageExtension = req.file?.originalname.split(".").pop();
 
     // Define the path for the option image in the user's course directory.
-    imageBlobName = `Users\\${req.userId}\\Courses\\${req.course}\\${
+    imageBlobName = `Users\\${req.userId}\\Courses\\${req.course._id}\\${
       req.chapter
-    }\\Quiz\\${curriculumId}\\options\\${optionId}\\${
+    }\\Quiz\\${curriculumId}\\question\\${questionId}\\options\\${optionId}\\${
       req.file.originalname
     }_${uuidv4()}.${blobImageExtension}`;
 
@@ -303,7 +303,7 @@ export const editQuestion = asyncHandler(async (req, res, next) => {
     const blobImageExtension = req.file?.originalname.split(".").pop();
 
     // Define the path for the question image in the user's course directory.
-    imageBlobName = `Users\\${req.userId}\\Courses\\${req.course}\\${
+    imageBlobName = `Users\\${req.userId}\\Courses\\${req.course._id}\\${
       req.chapter
     }\\Quiz\\${curriculumId}\\question\\${questionId}\\${
       req.file.originalname
@@ -412,9 +412,9 @@ export const editOption = asyncHandler(async (req, res, next) => {
     const blobImageExtension = req.file?.originalname.split(".").pop();
 
     // Define the path for the option image in the user's course directory.
-    imageBlobName = `Users\\${req.userId}\\Courses\\${req.course}\\${
+    imageBlobName = `Users\\${req.userId}\\Courses\\${req.course._id}\\${
       req.chapter
-    }\\Quiz\\${curriculumId}\\options\\${optionId}\\${
+    }\\Quiz\\${curriculumId}\\question\\${questionId}\\options\\${optionId}\\${
       req.file.originalname
     }_${uuidv4()}.${blobImageExtension}`;
 
