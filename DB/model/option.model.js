@@ -39,7 +39,7 @@ const optionSchema = new Schema(
     imageBlobName: {
       type: String,
     },
-    correctAnswer: { type: Boolean, required: true },
+    correctAnswer: { type: Boolean, required: true, default: false },
   },
 
   { timestamps: true }
