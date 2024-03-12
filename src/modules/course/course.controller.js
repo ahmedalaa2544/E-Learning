@@ -11,6 +11,7 @@ import ratingModel from "../../../DB/model/rating.model.js";
 import commentModel from "../../../DB/model/comment.model.js";
 import userModel from "../../../DB/model/user.model.js";
 import View from "../../../DB/model/view.model.js";
+import Similarities from "../../../DB/model/similarities.model.js";
 import mongoose from "mongoose";
 import upload, {
   deleteDirectory,
@@ -598,7 +599,6 @@ export const postRating = asyncHandler(async (req, res, next) => {
   const { rating } = req.body;
   const { courseId } = req.params;
   let rate;
-
   // Check if the user has already rated the course
   if (!(await ratingModel.findOne({ user: req.userId }))) {
     // If not, create a new rating record
