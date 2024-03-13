@@ -324,13 +324,14 @@ export const getCourse = asyncHandler(async (req, res, next) => {
   if (req.cookies.cookieId) {
     const cookieId = req.cookies.cookieId;
     console.log(cookieId);
-    const delay = new Date(Date.now() - 5 * 60 * 1000); // 5 minutes ago
+    const delay = new Date(Date.now() - 5 * 60 * 100); // 5 minutes ago
     const view = await View.findOneAndUpdate(
       {
+        course: courseId,
         cookie: cookieId,
         updatedAt: { $lt: delay },
       },
-      { $inc: { count: 1 } }
+      { $inc: { count: 1 }, user: req.userId }
     );
     console.log(view);
   } else {
@@ -341,6 +342,8 @@ export const getCourse = asyncHandler(async (req, res, next) => {
       : req.useragent.isTablet
       ? "Tablet"
       : "Computer";
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+
     res.setHeader(
       "Set-Cookie",
       `cookieId=${cookieId}; HttpOnly; Path=/; Max-Age=${maxAge}`
@@ -349,6 +352,7 @@ export const getCourse = asyncHandler(async (req, res, next) => {
       course: courseId,
       courseOwner: fetchedCourse.createdBy,
       cookie: cookieId,
+      user: req.userId,
       count: 1,
       agent: deviceType,
     });
