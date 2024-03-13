@@ -113,7 +113,7 @@ export const getCart = asyncHandler(async (req, res) => {
         path: "createdBy",
         select: "userName",
       },
-      select: "coverImageUrl -_id",
+      select: "coverImageUrl",
     });
 
   return res.status(200).json({ message: "Done", course });
