@@ -116,5 +116,13 @@ export const getCart = asyncHandler(async (req, res) => {
       select: "coverImageUrl",
     });
 
-  return res.status(200).json({ message: "Done", course });
+  const courses = course.map((item) => ({
+    courseId: item.courseId._id,
+    createdBy: item.courseId.createdBy,
+    coverImageUrl: item.courseId.coverImageUrl || "",
+    price: item.price,
+    name: item.name,
+  }));
+
+  return res.status(200).json({ message: "Done", courses });
 });
