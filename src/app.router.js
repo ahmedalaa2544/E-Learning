@@ -20,7 +20,8 @@ import useragent from "express-useragent";
 
 const appRouter = (app, express) => {
   // Cors // ////////
-  app.use(cors({}));
+  app.use(cors({ origin: true, credentials: true }));
+
   app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader(
