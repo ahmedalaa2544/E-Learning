@@ -111,7 +111,7 @@ export const getCart = asyncHandler(async (req, res) => {
       path: "course.courseId",
       populate: {
         path: "createdBy",
-        select: "userName -_id",
+        select: "userName",
       },
       select: "coverImageUrl -_id",
     });
