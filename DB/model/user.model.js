@@ -77,9 +77,22 @@ const userSchmea = new Schema(
     },
     forgetCode: String,
     activationCode: String,
+    totalSales: Number,
+    totalRevenue: Number,
   },
   { timestamps: true }
 );
+
+// fullName
+userSchmea.pre("findOneAndUpdate", function (next) {
+  const update = this.getUpdate();
+  if (update.firstName || update.lastName) {
+    update.fullName = `${update.firstName || ""} ${
+      update.lastName || ""
+    }`.trim();
+  }
+  next();
+});
 
 const userModel = model("User", userSchmea);
 export default userModel;
