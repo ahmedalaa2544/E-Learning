@@ -125,8 +125,8 @@ export const orderWebhook = asyncHandler(async (request, response) => {
       await courseModel.findByIdAndUpdate(order.courses[i].courseId, {
         $inc: { numberOfStudents: 1 },
       });
-      const course = await courseModel.findById(order.courses[i].courseId);
-      const workshop = await workshopModel.findById(order.courses[i].courseId);
+      let course = await courseModel.findById(order.courses[i].courseId);
+      let workshop = await workshopModel.findById(order.courses[i].courseId);
       if (course) {
         await userModel.findByIdAndUpdate(course.createdBy, {
           $inc: { totalSales: 1, totalRevenue: order.courses[i].coursePrice },
