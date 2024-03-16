@@ -129,14 +129,12 @@ export const orderWebhook = asyncHandler(async (request, response) => {
       const workshop = await workshopModel.findById(order.courses[i].courseId);
       if (course) {
         await userModel.findByIdAndUpdate(course.createdBy, {
-          $inc: { totalSales: 1 },
-          $inc: { totalRevenue: order.courses[i].coursePrice },
+          $inc: { totalSales: 1, totalRevenue: order.courses[i].coursePrice },
         });
       }
       if (workshop) {
         await userModel.findByIdAndUpdate(workshop.instructor, {
-          $inc: { totalSales: 1 },
-          $inc: { totalRevenue: order.courses[i].coursePrice },
+          $inc: { totalSales: 1, totalRevenue: order.courses[i].coursePrice },
         });
       }
       await studentModel.create({
