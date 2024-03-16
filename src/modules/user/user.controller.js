@@ -180,3 +180,11 @@ export const search = asyncHandler(async (req, res, next) => {
   // respone
   return res.status(200).json({ message: "Done", matchedData });
 });
+
+export const revenue = asyncHandler(async (req, res, next) => {
+  const Revenue = await userModel
+    .findById(req.user.id)
+    .select("totalSales totalRevenue");
+  // respone
+  return res.status(200).json({ message: "Done", Revenue });
+});
