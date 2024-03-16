@@ -6,6 +6,7 @@ import { asyncHandler } from "../../utils/asyncHandling.js";
 import Stripe from "stripe";
 import userModel from "../../../DB/model/user.model.js";
 import couponModel from "../../../DB/model/coupon.model.js";
+import workshopModel from "../../../DB/model/workshop.model.js";
 //
 export const createOrder = asyncHandler(async (req, res, next) => {
   //Check Cart
@@ -121,9 +122,23 @@ export const orderWebhook = asyncHandler(async (request, response) => {
     let cBought = [];
     for (let i = 0; i < order.courses.length; i++) {
       cBought.push(order.courses[i].courseId);
-      await couponModel.findByIdAndUpdate(order.courses[i].courseId, {
+      await courseModel.findByIdAndUpdate(order.courses[i].courseId, {
         $inc: { numberOfStudents: 1 },
       });
+      const course = await courseModel.findById(order.courses[i].courseId);
+      const workshop = await workshopModel.findById(order.courses[i].courseId);
+      if (course) {
+        await userModel.findByIdAndUpdate(course.createdBy, {
+          $inc: { totalSales: 1 },
+          $inc: { totalRevenue: order.courses[i].coursePrice },
+        });
+      }
+      if (workshop) {
+        await userModel.findByIdAndUpdate(workshop.instructor, {
+          $inc: { totalSales: 1 },
+          $inc: { totalRevenue: order.courses[i].coursePrice },
+        });
+      }
       await studentModel.create({
         course: order.courses[i].courseId,
         user: order.user,

@@ -6,7 +6,7 @@ const orderSchema = new Schema(
     courses: [
       {
         _id: false,
-        courseId: { type: Types.ObjectId, ref: "Course" },
+        courseId: { type: Types.ObjectId, ref: "Workshop" || "Course" },
         coursePrice: { type: Number, required: true },
         name: String,
       },

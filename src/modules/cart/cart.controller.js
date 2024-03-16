@@ -109,6 +109,7 @@ export const getCart = asyncHandler(async (req, res) => {
     .populate({ path: "coupon" })
     .populate({
       path: "course.courseId",
+      model: "Course",
       populate: {
         path: "createdBy",
         select: "userName",
@@ -116,13 +117,40 @@ export const getCart = asyncHandler(async (req, res) => {
       select: "coverImageUrl",
     });
 
-  const courses = course.map((item) => ({
-    courseId: item.courseId._id,
-    createdBy: item.courseId.createdBy,
-    coverImageUrl: item.courseId.coverImageUrl || "",
-    price: item.price,
-    name: item.name,
-  }));
+  const workshop = await cartModel
+    .findOne({ user: req.user.id })
+    .populate({ path: "coupon" })
+    .populate({
+      path: "course.courseId",
+      model: "Workshop",
+      populate: {
+        path: "instructor",
+        select: "userName",
+      },
+      select: "coverImageUrl",
+    });
+
+  const Fcourses = course
+    .filter((item) => item.courseId) // Filter out items where courseId is null or undefined
+    .map((item) => ({
+      courseId: item.courseId._id,
+      createdBy: item.courseId.createdBy,
+      coverImageUrl: item.courseId.coverImageUrl || "",
+      price: item.price,
+      name: item.name,
+    }));
+
+  const Scourses = workshop.course
+    .filter((item) => item.courseId) // Filter out items where courseId is null or undefined
+    .map((item) => ({
+      courseId: item.courseId._id,
+      createdBy: item.courseId.instructor,
+      coverImageUrl: item.courseId.coverImageUrl || "",
+      price: item.price,
+      name: item.name,
+    }));
+
+  const courses = Fcourses.concat(Scourses);
 
   return res.status(200).json({ message: "Done", courses });
 });
