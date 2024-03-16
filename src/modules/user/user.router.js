@@ -40,4 +40,6 @@ router.get("/createCourses", isAuth, userController.getCreatedCourses);
 
 router.get("/instructor/search", userController.search);
 
+router.get("/revenue", isAuth, userController.revenue);
+
 export default router;
