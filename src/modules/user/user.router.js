@@ -22,7 +22,7 @@ router.patch(
   "/wishlist/:courseId",
   isAuth,
   validation(validators.wishlistSchema),
-  userController.addWishlist
+  userController.addAndRmWishlist
 );
 
 router.patch(
