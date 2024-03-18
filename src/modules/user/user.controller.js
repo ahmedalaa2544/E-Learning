@@ -104,7 +104,7 @@ export const deleteAcc = asyncHandler(async (req, res, next) => {
   return res.status(200).json({ message: "Done" });
 });
 
-export const addWishlist = asyncHandler(async (req, res, next) => {
+export const addAndRmWishlist = asyncHandler(async (req, res, next) => {
   // recieve data
   const { courseId } = req.params;
   const course = await courseModel.findById(courseId);
