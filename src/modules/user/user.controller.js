@@ -107,15 +107,21 @@ export const deleteAcc = asyncHandler(async (req, res, next) => {
 export const addWishlist = asyncHandler(async (req, res, next) => {
   // recieve data
   const { courseId } = req.params;
-  // chcek course exists
   const course = await courseModel.findById(courseId);
   if (!course) return next(new Error("Course not found", { cause: 404 }));
+  // chcek course exists
+  if (req.user.wishlist.includes(courseId)) {
+    // remove
+    await userModel.findByIdAndUpdate(req.user.id, {
+      $pull: { wishlist: courseId },
+    });
+    return res.status(200).json({ message: "Removed From WishList" });
+  }
   // add to wishlist
-  await userModel.updateOne(
-    { _id: req.user.id },
-    { $addToSet: { wishlist: courseId } }
-  );
-  return res.status(200).json({ message: "Done" });
+  await userModel.findByIdAndUpdate(req.user.id, {
+    $addToSet: { wishlist: courseId },
+  });
+  return res.status(200).json({ message: "Added To WishList" });
 });
 
 export const rmWishlist = asyncHandler(async (req, res, next) => {
