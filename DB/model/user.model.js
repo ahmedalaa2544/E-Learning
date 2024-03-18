@@ -85,13 +85,20 @@ const userSchmea = new Schema(
 
 // fullName
 userSchmea.pre("findOneAndUpdate", function (next) {
-  const update = this.getUpdate();
-  if (update.firstName || update.lastName) {
-    update.fullName = `${update.firstName || ""} ${
-      update.lastName || ""
-    }`.trim();
-  }
-  next();
+  const query = this.getQuery();
+
+  this.model.findOne(query).then((docToUpdate) => {
+    const update = this.getUpdate();
+    const oldFirstName = docToUpdate.firstName;
+    const oldLastName = docToUpdate.lastName;
+
+    if (update.firstName || update.lastName) {
+      update.fullName = `${update.firstName || oldFirstName} ${
+        update.lastName || oldLastName
+      }`.trim();
+    }
+    next();
+  });
 });
 
 const userModel = model("User", userSchmea);
