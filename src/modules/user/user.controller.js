@@ -6,6 +6,7 @@ import Cryptr from "cryptr";
 import tokenModel from "../../../DB/model/token.model.js";
 import upload, { deleteBlob } from "../../utils/azureServices.js";
 import workshopModel from "../../../DB/model/workshop.model.js";
+import orderModel from "../../../DB/model/order.model.js";
 import bcryptjs from "bcryptjs";
 import { ConfirmTemp } from "../../utils/htmlTemps.js";
 import crypto from "crypto";
@@ -188,9 +189,40 @@ export const search = asyncHandler(async (req, res, next) => {
 });
 
 export const revenue = asyncHandler(async (req, res, next) => {
-  const Revenue = await userModel
-    .findById(req.user.id)
-    .select("totalSales totalRevenue");
+  // get created Courses
+  const course = await courseModel
+    .find({ createdBy: req.user.id })
+    .select("title numberOfStudents price coverImageUrl");
+  // get created workShops
+  const workshop = await workshopModel
+    .find({ instructor: req.user.id })
+    .select("title numberOfStudents price promotionImage");
+  // get all of them
+  const Fcourses = course.concat(workshop);
+
+  console.log(Fcourses);
+
+  const courses = Fcourses.map((item) => ({
+    courseId: item._id,
+    title: item.title,
+    coverImageUrl: item.coverImageUrl
+      ? item.coverImageUrl
+      : item.promotionImage?.url,
+    price: item.price,
+    numberOfStudents: item.numberOfStudents,
+    revenue: item.revenue,
+  }));
+
+  let totalNumberOfStudents = 0;
+  let totalRevenue = 0;
+
+  courses.forEach((course) => {
+    totalNumberOfStudents += course.numberOfStudents || 0;
+    totalRevenue += course.revenue || 0;
+  });
+
   // respone
-  return res.status(200).json({ message: "Done", Revenue });
+  return res
+    .status(200)
+    .json({ message: "Done", courses, totalRevenue, totalNumberOfStudents });
 });

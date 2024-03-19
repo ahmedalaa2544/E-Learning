@@ -77,8 +77,6 @@ const userSchmea = new Schema(
     },
     forgetCode: String,
     activationCode: String,
-    totalSales: { type: Number, default: 0 },
-    totalRevenue: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

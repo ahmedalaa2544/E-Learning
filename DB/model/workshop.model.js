@@ -8,7 +8,7 @@ const workshopSchema = new Schema(
     requirements: [{ type: String }],
     tags: [{ type: String }],
     languages: [{ type: String }],
-    price: { type: Number, min: 1 }, // client must use "finalPrice" not price
+    price: { type: Number, min: 0, default: 0 }, // client must use "finalPrice" not price
     discount: { type: Number, min: 0, max: 100, default: 0 },
     durationInWeek: { type: Number },
     startDay: { type: String },
@@ -48,6 +48,7 @@ const workshopSchema = new Schema(
     subCategoryId: { type: Types.ObjectId, ref: "SubCategory" },
     instructor: { type: Types.ObjectId, ref: "User" },
     rooms: [{ type: Types.ObjectId, ref: "Room" }],
+    numberOfStudents: { type: Number, default: 0 },
   },
   {
     id: false,
@@ -64,6 +65,10 @@ workshopSchema.virtual("finalPrice").get(function () {
       this.price - (this.price * this.discount || 0) / 100
     ).toFixed(2);
   }
+});
+
+workshopSchema.virtual("revenue").get(function () {
+  return this.price * this.numberOfStudents;
 });
 
 const workshopModel = model("Workshop", workshopSchema);
