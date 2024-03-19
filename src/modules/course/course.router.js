@@ -13,6 +13,8 @@ import { fileUpload, customValidation } from "../../utils/multer.js";
  */
 router.use("/:courseId/chapter", chapterRouter);
 
+router.get("/search", courseController.search);
+
 /**
  * Create a new course.
  * Route: POST /courses
@@ -144,4 +146,5 @@ router.patch(
   validation(validators.deleteCourseSchema),
   courseController.submitCourse
 );
+
 export default router;
