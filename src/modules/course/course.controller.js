@@ -20,6 +20,7 @@ import upload, {
 } from "../../utils/azureServices.js";
 import instructorModel from "../../../DB/model/instructor.model.js";
 import fetch from "node-fetch";
+import courseModel from "../../../DB/model/course.model.js";
 
 /**
  * Create a new course with the provided title.
@@ -720,4 +721,31 @@ export const submitCourse = asyncHandler(async (req, res, next) => {
   return submittedCourse
     ? res.status(200).json({ message: "Done" })
     : res.status(500).json({ message: "Something went wrong" });
+});
+
+export const search = asyncHandler(async (req, res, next) => {
+  let { title, page } = req.query;
+
+  // Set default values for page and limit if not provided
+  page = parseInt(page) || 1;
+  const limit = 5;
+
+  // Calculate the number of documents to skip based on the page and limit
+  const skip = (page - 1) * limit;
+
+  let query = { title: { $regex: title, $options: "i" } };
+
+  let courses = await courseModel
+    .find(query)
+    .select("title coverImageUrl")
+    .skip(skip)
+    .limit(limit);
+
+  // If title is empty, don't perform the search
+  if (title === "") {
+    courses = "";
+  }
+
+  // respone
+  return res.status(200).json({ message: "Done", courses });
 });

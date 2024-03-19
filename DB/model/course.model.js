@@ -155,7 +155,9 @@ courseSchema.virtual("finalPrice").get(function () {
 });
 
 courseSchema.virtual("revenue").get(function () {
-  return this.price * this.numberOfStudents;
+  return this.price * this.numberOfStudents
+    ? this.price * this.numberOfStudents
+    : 0;
 });
 
 const courseModel = model("Course", courseSchema);
