@@ -75,6 +75,7 @@ const courseSchema = new Schema(
     price: {
       type: Number,
       min: 0,
+      default: 0,
       required: function () {
         return !(this.status === "Draft");
       },
@@ -151,6 +152,10 @@ courseSchema.virtual("finalPrice").get(function () {
   } else {
     return 0;
   }
+});
+
+courseSchema.virtual("revenue").get(function () {
+  return this.price * this.numberOfStudents;
 });
 
 const courseModel = model("Course", courseSchema);
