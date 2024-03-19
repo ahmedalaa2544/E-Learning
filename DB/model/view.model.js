@@ -7,6 +7,10 @@ const viewSchema = new Schema(
       ref: "Course",
       reuired: true,
     },
+    user: {
+      type: Types.ObjectId,
+      ref: "User",
+    },
     // user: { type: Types.ObjectId, ref: "User" },
     courseOwner: { type: Types.ObjectId, ref: "User", required: true },
 

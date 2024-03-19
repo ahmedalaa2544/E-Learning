@@ -94,14 +94,14 @@ export const generateSASUrl = async (
   const blockBlobClient = await containerClient.getBlockBlobClient(blobName);
 
   // Best practice: create time limits
-  const SIXTY_MINUTES = timerange * 60 * 1000;
+  const duration = timerange * 60 * 1000;
   const NOW = new Date();
 
   NOW.setMinutes(NOW.getMinutes() - 5);
   // Generate SAS URL for the blob with specified permissions and time limits
   const accountSasTokenUrl = await blockBlobClient.generateSasUrl({
     // startsOn: NOW,
-    expiresOn: new Date(new Date().valueOf() + SIXTY_MINUTES),
+    expiresOn: new Date(new Date().valueOf() + duration),
     permissions: BlobSASPermissions.parse(permissions),
     protocol: SASProtocol.Https,
   });
@@ -153,21 +153,27 @@ const upload = async (
             // );
           }
 
-          // Specify the container name for temporary uploads
-          const containerName = process.env.MAIN_CONTAINER;
-
           // Generate a Shared Access Signature (SAS) URL for secure blob access
           const { accountSasTokenUrl, fileUrl } = await generateSASUrl(
             blobName,
             "racwd",
-            30
+            100
           );
 
           // Create a BlockBlobClient using the SAS URL
           const blockBlobClient = new BlockBlobClient(accountSasTokenUrl);
           // Read the compressed file and upload its data to Azure Blob Storage
-          const data = fs.readFileSync(outputFileName);
-          await blockBlobClient.uploadData(data);
+          fs.readFile(outputFileName, async (err, data) => {
+            if (err) {
+              reject(err);
+            }
+            try {
+              await blockBlobClient.uploadData(data);
+              // Call next function here if uploadData succeeds
+            } catch (uploadError) {
+              reject(uploadError);
+            }
+          });
 
           // Cleanup: Remove the temporary directory when the upload is complete
           temp.cleanup();

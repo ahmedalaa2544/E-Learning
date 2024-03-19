@@ -62,6 +62,14 @@ router.delete(
  */
 router.get(
   "/:courseId",
+  (req, res, next) => {
+    if (!req.headers.token) {
+      courseController.getCourse(req, res, next);
+    } else {
+      next();
+    }
+  },
+  isAuthenticated,
   validation(validators.getCourseSchema),
   courseController.getCourse
 );

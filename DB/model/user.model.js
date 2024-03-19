@@ -77,6 +77,7 @@ const userSchmea = new Schema(
     },
     forgetCode: String,
     activationCode: String,
+    clicked: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
