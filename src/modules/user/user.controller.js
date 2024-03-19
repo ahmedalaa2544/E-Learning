@@ -226,3 +226,50 @@ export const revenue = asyncHandler(async (req, res, next) => {
     .status(200)
     .json({ message: "Done", courses, totalRevenue, totalNumberOfStudents });
 });
+
+export const order = asyncHandler(async (req, res, next) => {
+  const orders = await orderModel.find({ user: req.user.id });
+
+  // response
+  return res.status(200).json({ message: "Done", orders });
+});
+
+export const refund = asyncHandler(async (req, res, next) => {
+  const { courseId } = req.params;
+  const course = await courseModel.findById(courseId);
+  const workShop = await workshopModel.findById(courseId);
+  if (!course && !workShop) {
+    return next(new Error("Course not found", { cause: 404 }));
+  }
+  const user = await userModel.findById(req.user.id);
+  if (!user.coursesBought.includes(courseId)) {
+    return next(new Error("You Did Not Buy This Course", { cause: 404 }));
+  }
+  const now = new Date();
+  const lessThan30DaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const order = await orderModel.findOne({
+    user: req.user.id,
+    status: "Completed",
+    createdAt: { $gt: lessThan30DaysAgo },
+    "courses.courseId": courseId,
+  });
+  if (order) {
+    await userModel.findByIdAndUpdate(req.user.id, {
+      $pull: { coursesBought: courseId },
+    });
+
+    return res.status(200).json({
+      message: `You Refunded ${
+        course.title ? course.title : workShop.title
+      } Course`,
+    });
+  }
+  return next(
+    new Error(
+      `You Cannot Refund ${course.title ? course.title : workShop.title} Course`
+    ),
+    {
+      cause: 400,
+    }
+  );
+});
