@@ -9,7 +9,7 @@ import Question from "../../../DB/model/question.model.js";
 import Option from "../../../DB/model/option.model.js";
 import ratingModel from "../../../DB/model/rating.model.js";
 import commentModel from "../../../DB/model/comment.model.js";
-import userModel from "../../../DB/model/user.model.js";
+import User from "../../../DB/model/user.model.js";
 import View from "../../../DB/model/view.model.js";
 import Similarities from "../../../DB/model/similarities.model.js";
 import mongoose from "mongoose";
@@ -333,7 +333,9 @@ export const getCourse = asyncHandler(async (req, res, next) => {
       },
       { $inc: { count: 1 }, user: req.userId }
     );
-    console.log(view);
+    if (req.userId) {
+      await User.findByIdAndUpdate(req.userId, { $inc: { clicked: 1 } });
+    }
   } else {
     const maxAge = 3 * 30 * 24 * 60 * 60; // 3 months in seconds
     const cookieId = new mongoose.Types.ObjectId().toString();
@@ -356,6 +358,9 @@ export const getCourse = asyncHandler(async (req, res, next) => {
       count: 1,
       agent: deviceType,
     });
+    if (req.userId) {
+      await User.findByIdAndUpdate(req.userId, { $inc: { clicked: 1 } });
+    }
   }
 
   // Calculate the average rating for the course.

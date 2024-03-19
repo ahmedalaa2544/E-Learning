@@ -12,6 +12,7 @@ import Instructor from "../../../DB/model/instructor.model.js";
 import Student from "../../../DB/model/student.model.js";
 import Rating from "../../../DB/model/rating.model.js";
 import ContentKNN from "../../utils/contentKNN.js";
+import EstimateRate from "../../utils/estimateRate.js";
 import mongoose from "mongoose";
 import upload, {
   deleteDirectory,
@@ -20,11 +21,23 @@ import upload, {
 } from "../../utils/azureServices.js";
 
 export const getRecommendations = asyncHandler(async (req, res, next) => {
-  console.log("reach getRecommendation");
+  const courses = await Course.find({ status: "Published" });
   const ratings = await Rating.find({ user: req.userId });
+  const clicked = await View.find({ user: req.userId });
+  const purchased = await Student.find({ user: req.userId });
+  const wishLisht = req.user.wishLisht;
   ratings.forEach((rate) => {
     rate._doc;
   });
+  const estimateRate = new EstimateRate(
+    req.user,
+    courses,
+    ratings,
+    clicked,
+    purchased,
+    wishLisht
+  );
+  estimateRate.estimatedRates();
   const contentKNN = new ContentKNN(req.userId);
   const predictions = await contentKNN.estimate(ratings);
   return predictions

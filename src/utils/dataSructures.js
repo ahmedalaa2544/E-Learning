@@ -130,5 +130,21 @@ export const calculateDuration = (str) => {
   // Return the duration of words
   return duration;
 };
+/**
+ * Normalize a value from one range to another.
+ *
+ * @param {number} value - The value to be normalized.
+ * @param {number} min_val - The minimum value of the original range.
+ * @param {number} max_val - The maximum value of the original range.
+ * @param {number} new_min - The minimum value of the target range.
+ * @param {number} new_max - The maximum value of the target range.
+ * @returns {number} - The normalized value within the target range.
+ */
+export const normalizeToRange = (value, min_val, max_val, new_min, new_max) => {
+  // Calculate the normalized value using the formula
+  const normalizedValue =
+    ((value - min_val) / (max_val - min_val)) * (new_max - new_min) + new_min;
+  return normalizedValue;
+};
 
 export default mergeSort;
