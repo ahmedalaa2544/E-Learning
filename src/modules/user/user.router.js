@@ -42,4 +42,13 @@ router.get("/instructor/search", userController.search);
 
 router.get("/revenue", isAuth, userController.revenue);
 
+router.get("/order", isAuth, userController.order);
+
+router.patch(
+  "/refund/:courseId",
+  isAuth,
+  validation(validators.wishlistSchema),
+  userController.refund
+);
+
 export default router;
