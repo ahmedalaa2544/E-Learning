@@ -78,9 +78,29 @@ const userSchmea = new Schema(
     forgetCode: String,
     activationCode: String,
     clicked: { type: Number, default: 0 },
+    totalSales: { type: Number, default: 0 },
+    totalRevenue: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
+
+// fullName
+userSchmea.pre("findOneAndUpdate", function (next) {
+  const query = this.getQuery();
+
+  this.model.findOne(query).then((docToUpdate) => {
+    const update = this.getUpdate();
+    const oldFirstName = docToUpdate.firstName;
+    const oldLastName = docToUpdate.lastName;
+
+    if (update.firstName || update.lastName) {
+      update.fullName = `${update.firstName || oldFirstName} ${
+        update.lastName || oldLastName
+      }`.trim();
+    }
+    next();
+  });
+});
 
 const userModel = model("User", userSchmea);
 export default userModel;

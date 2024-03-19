@@ -104,18 +104,24 @@ export const deleteAcc = asyncHandler(async (req, res, next) => {
   return res.status(200).json({ message: "Done" });
 });
 
-export const addWishlist = asyncHandler(async (req, res, next) => {
+export const addAndRmWishlist = asyncHandler(async (req, res, next) => {
   // recieve data
   const { courseId } = req.params;
-  // chcek course exists
   const course = await courseModel.findById(courseId);
   if (!course) return next(new Error("Course not found", { cause: 404 }));
+  // chcek course exists
+  if (req.user.wishlist.includes(courseId)) {
+    // remove
+    await userModel.findByIdAndUpdate(req.user.id, {
+      $pull: { wishlist: courseId },
+    });
+    return res.status(200).json({ message: "Removed From WishList" });
+  }
   // add to wishlist
-  await userModel.updateOne(
-    { _id: req.user.id },
-    { $addToSet: { wishlist: courseId } }
-  );
-  return res.status(200).json({ message: "Done" });
+  await userModel.findByIdAndUpdate(req.user.id, {
+    $addToSet: { wishlist: courseId },
+  });
+  return res.status(200).json({ message: "Added To WishList" });
 });
 
 export const rmWishlist = asyncHandler(async (req, res, next) => {
@@ -163,15 +169,28 @@ export const getCreatedCourses = asyncHandler(async (req, res, next) => {
 export const search = asyncHandler(async (req, res, next) => {
   const query = req.query.q.toLowerCase();
 
-  const instructors = await instructorModel
-    .find()
-    .populate({ path: "user", select: "userName profilePic.url" })
-    .select("user -_id");
+  const user = await instructorModel.find();
+  const userArray = user.map((user) => user.user);
 
-  const matchedData = instructors
-    .filter((item) => item.user.userName.toLowerCase().includes(query))
+  const users = await userModel
+    .find({ _id: { $in: userArray } })
+    .select("userName profilePic");
+
+  let matchedData = users
+    .filter((item) => item.userName.toLowerCase().includes(query))
     .slice(0, 3);
 
+  if (query == "") {
+    matchedData = "";
+  }
   // respone
   return res.status(200).json({ message: "Done", matchedData });
+});
+
+export const revenue = asyncHandler(async (req, res, next) => {
+  const Revenue = await userModel
+    .findById(req.user.id)
+    .select("totalSales totalRevenue");
+  // respone
+  return res.status(200).json({ message: "Done", Revenue });
 });
