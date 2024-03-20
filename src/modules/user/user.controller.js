@@ -227,6 +227,35 @@ export const revenue = asyncHandler(async (req, res, next) => {
     .json({ message: "Done", courses, totalRevenue, totalNumberOfStudents });
 });
 
+export const detailsRevenue = asyncHandler(async (req, res, next) => {
+  const now = new Date();
+  const lastmonth = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const course = await courseModel.find({ createdBy: req.user.id });
+  const workShop = await workshopModel.find({ instructor: req.user.id });
+  const courses = course.concat(workShop);
+  const salesLastMonth = await orderModel.find({
+    user: req.user.id,
+    "courses.courseId": { $in: courses },
+    status: "Completed",
+    createdAt: { $gt: lastmonth },
+  });
+
+  const salesCountPerDay = {};
+
+  salesLastMonth.forEach((sale) => {
+    const createdAtDate = new Date(sale.createdAt);
+    const dayOfMonth = createdAtDate.getDate();
+
+    if (salesCountPerDay[dayOfMonth]) {
+      salesCountPerDay[dayOfMonth]++;
+    } else {
+      salesCountPerDay[dayOfMonth] = 1;
+    }
+  });
+
+  return res.status(200).json({ message: "Completed", salesCountPerDay });
+});
+
 export const order = asyncHandler(async (req, res, next) => {
   const orders = await orderModel.find({ user: req.user.id });
 
@@ -246,7 +275,7 @@ export const refund = asyncHandler(async (req, res, next) => {
     return next(new Error("You Did Not Buy This Course", { cause: 404 }));
   }
   const now = new Date();
-  const lessThan30DaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const lessThan30DaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
   const order = await orderModel.findOne({
     user: req.user.id,
     status: "Completed",
