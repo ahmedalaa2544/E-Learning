@@ -16,6 +16,7 @@ const authorization = asyncHandler(async (req, res, next) => {
 
   // Find the corresponding course based on courseId
   const course = await Course.findById(courseId);
+  req.course = course;
   if (!course) {
     // If the course is not found, send a 404 error response
     return next(new Error("Course not found"), { cause: 404 });
@@ -30,6 +31,7 @@ const authorization = asyncHandler(async (req, res, next) => {
 
   // Find the corresponding chapter based on chapterId
   const chapter = await Chapter.findById(chapterId);
+  req.chapter = chapter;
   if (!chapter) {
     // If the chapter is not found, send a 404 error response
     return next(new Error("Chapter not found"), { cause: 404 });

@@ -48,6 +48,8 @@ const questionSchema = new Schema(
 
     optionsNumber: { Number },
     sorted: { type: Boolean },
+    points: Number,
+    required: Boolean,
   },
 
   { timestamps: true }

@@ -73,6 +73,8 @@ export const createVideo = asyncHandler(async (req, res, next) => {
         curriculum: {
           ...createdVideo._doc,
           _id: curriculumId,
+          course: { title: req.course.title, _id: req.course._id },
+          chapter: { title: req.chapter.title, _id: req.chapter._id },
           title: title,
           type: "video",
           order,
@@ -121,7 +123,6 @@ export const createArticle = asyncHandler(async (req, res, next) => {
   let curriculums = await Curriculum.find({ chapter: chapterId });
   //calculate duration for article based on number of words
   const duration = calculateDuration(quillContent);
-  console.log("tessssssss: " + duration);
   // Calculate the order value for the next curriculum by adding 1 to the number of existing curriculums.
   const order = curriculums.length + 1;
 
@@ -154,9 +155,15 @@ export const createArticle = asyncHandler(async (req, res, next) => {
 
   // Send a response indicating the success or failure of the article creation process
   return article
-    ? res
-        .status(200)
-        .json({ message: "Done", article: { ...article._doc, title: title } })
+    ? res.status(200).json({
+        message: "Done",
+        article: {
+          ...article._doc,
+          course: { title: req.course.title, _id: req.course._id },
+          chapter: { title: req.chapter.title, _id: req.chapter._id },
+          title: title,
+        },
+      })
     : res.status(500).json({ message: "Something went wrong" });
 });
 
@@ -208,9 +215,15 @@ export const createQuiz = asyncHandler(async (req, res, next) => {
 
   // Send a response indicating the success or failure of the quiz creation process
   return quiz
-    ? res
-        .status(200)
-        .json({ message: "Done", quiz: { ...quiz._doc, title: title } })
+    ? res.status(200).json({
+        message: "Done",
+        quiz: {
+          ...quiz._doc,
+          course: { title: req.course.title, _id: req.course._id },
+          chapter: { title: req.chapter.title, _id: req.chapter._id },
+          title: title,
+        },
+      })
     : res.status(500).json({ message: "Something went wrong" });
 });
 /**
