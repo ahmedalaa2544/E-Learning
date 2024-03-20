@@ -117,7 +117,7 @@ export const orderWebhook = asyncHandler(async (request, response) => {
     // change order status
     const orderId = event.data.object.metadata.order_id;
     const order = await orderModel.findByIdAndUpdate(orderId, {
-      status: "Completed",
+      status: "Paid",
     });
     let cBought = [];
     for (let i = 0; i < order.courses.length; i++) {

@@ -236,7 +236,7 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
   const salesLastMonth = await orderModel.find({
     user: req.user.id,
     "courses.courseId": { $in: courses },
-    status: "Completed",
+    status: "Paid",
     createdAt: { $gt: lastmonth },
   });
 
@@ -253,11 +253,14 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
     }
   });
 
-  return res.status(200).json({ message: "Completed", salesCountPerDay });
+  return res.status(200).json({ message: "Done", salesCountPerDay });
 });
 
 export const order = asyncHandler(async (req, res, next) => {
-  const orders = await orderModel.find({ user: req.user.id });
+  const orders = await orderModel.find({
+    user: req.user.id,
+    status: "Paid",
+  });
 
   // response
   return res.status(200).json({ message: "Done", orders });
@@ -278,7 +281,7 @@ export const refund = asyncHandler(async (req, res, next) => {
   const lessThan30DaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
   const order = await orderModel.findOne({
     user: req.user.id,
-    status: "Completed",
+    status: "Paid",
     createdAt: { $gt: lessThan30DaysAgo },
     "courses.courseId": courseId,
   });
@@ -287,6 +290,17 @@ export const refund = asyncHandler(async (req, res, next) => {
       $pull: { coursesBought: courseId },
     });
 
+    await orderModel.create({
+      user: req.user.id,
+      status: "Refunded",
+      courses: [
+        {
+          courseId: course._id,
+          coursePrice: course.price,
+          name: course.title,
+        },
+      ],
+    });
     return res.status(200).json({
       message: `You Refunded ${
         course.title ? course.title : workShop.title

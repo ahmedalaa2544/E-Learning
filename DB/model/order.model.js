@@ -14,8 +14,8 @@ const orderSchema = new Schema(
     price: { type: Number, required: true },
     status: {
       type: String,
-      default: "Not Completed",
-      enum: ["Completed", "Not Completed"],
+      default: "Not Paid",
+      enum: ["Paid", "Not Paid", "Refunded"],
     },
   },
   { timestamps: true }
