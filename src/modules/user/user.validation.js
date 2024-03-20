@@ -38,3 +38,9 @@ export const wishlistSchema = joi
     courseId: joi.string().custom(isValidObjectId).required(),
   })
   .required();
+
+export const withdraw = joi
+  .object({
+    email: joi.string().email().required(),
+  })
+  .required();
