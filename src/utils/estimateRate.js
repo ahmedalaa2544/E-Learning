@@ -21,14 +21,36 @@ class EstimateRate {
     const estimatedRates = this.courses.map((course) => {
       let estimatedRate = 0;
       const courseId = course._id;
-      const rate = this.ratings.find(
+      const isRated = this.ratings.find(
         (item) => course._id.toString() === item.course.toString()
       );
-      if (rate) {
-        var courseRate = rate.rating;
+      const isClicked = this.clicked.find(
+        (item) => course._id.toString() === item.course.toString()
+      );
+      const isPurchased = this.purchased.find(
+        (item) => course._id.toString() === item.course.toString()
+      );
+      const isInWL = this.wishLisht.find(
+        (item) => course._id.toString() === item.course.toString()
+      );
+      if (isRated) {
+        var rate = isRated.rating;
+        estimatedRate += normalizeToRange(rate, 0, 5, 0, 1);
       }
-      console.log(courseRate);
+      if (isClicked) {
+        var clickedTimes = isClicked.count;
+        estimatedRate += normalizeToRange(clickedTimes, 0, user.clicked, 0, 1);
+      }
+      if (isPurchased) {
+        estimatedRate += 1;
+      }
+      if (isInWL) {
+        estimatedRate += 1;
+      }
+
+      return { course: courseId, rate: estimatedRate };
     });
+    return estimatedRates;
   };
 }
 

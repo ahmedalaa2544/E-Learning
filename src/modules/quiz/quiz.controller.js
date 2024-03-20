@@ -24,7 +24,7 @@ import upload, {
 export const createQuestion = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { curriculumId } = req.params;
-  const { type, text, multiple } = req.body;
+  const { type, text, multiple, points, required } = req.body;
 
   // Fetch existing questions for the quiz
   const questions = await Question.find({ quiz: req.quiz });
@@ -41,12 +41,11 @@ export const createQuestion = asyncHandler(async (req, res, next) => {
     const blobImageExtension = req.file?.originalname.split(".").pop();
 
     // Define the path for the cover image in the user's course directory.
-    imageBlobName = `Users\\${req.userId}\\Courses\\${req.course._id}\\${
-      req.chapter
-    }\\Quiz\\${curriculumId}\\question\\${questionId}\\${
+    imageBlobName = `Users\\${req.userId}\\Courses\\${
+      req.course._id
+    }\\Chapters\\${req.chapter._id.toString()}\\Quiz\\${curriculumId}\\question\\${questionId}\\${
       req.file.originalname
     }_${uuidv4()}.${blobImageExtension}`;
-
     // Upload the cover image and obtain its URL.
     imageUrl = await upload(
       req.file?.path,
@@ -69,6 +68,8 @@ export const createQuestion = asyncHandler(async (req, res, next) => {
     imageUrl,
     text,
     multiple,
+    points,
+    required,
   });
 
   // Return appropriate response based on the success of question creation
@@ -136,7 +137,7 @@ export const createOption = asyncHandler(async (req, res, next) => {
     // Define the path for the option image in the user's course directory.
     imageBlobName = `Users\\${req.userId}\\Courses\\${req.course._id}\\${
       req.chapter
-    }\\Quiz\\${curriculumId}\\question\\${questionId}\\options\\${optionId}\\${
+    }\\Chapters\\${req.chapter._id.toString()}\\Quiz\\${curriculumId}\\question\\${questionId}\\options\\${optionId}\\${
       req.file.originalname
     }_${uuidv4()}.${blobImageExtension}`;
 
@@ -235,15 +236,25 @@ export const editQuiz = asyncHandler(async (req, res, next) => {
 export const editQuestion = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { curriculumId, questionId } = req.params;
-  const { type, text, multiple, startPosition, endPosition } = req.body;
+  const { type, text, multiple, points, required, startPosition, endPosition } =
+    req.body;
   const changeOrder = req.query.change_order;
 
   // Find the existing question based on questionId
   const question = await Question.findById(questionId);
-
   // Check if the question exists; if not, send a 404 error response
   if (!question) {
     return next(new Error("Question not found"), { cause: 404 });
+  }
+  // Check if the request involves deleting the image.
+  if (req.query.delete === "image") {
+    //delete it from azure storage
+    await deleteBlob(question.imageBlobName);
+    // Update the Question document in the database to remove question-related details.
+    await Question.findByIdAndUpdate(questionId, {
+      imageUrl: "",
+      imageBlobName: "",
+    });
   }
 
   /**
@@ -303,8 +314,10 @@ export const editQuestion = asyncHandler(async (req, res, next) => {
     const blobImageExtension = req.file?.originalname.split(".").pop();
 
     // Define the path for the question image in the user's course directory.
-    imageBlobName = `Users\\${req.userId}\\Courses\\${req.course._id}\\${
-      req.chapter
+    imageBlobName = `Users\\${req.userId}\\Courses\\${
+      req.course._id
+    }\\Chapters\\${
+      req.chapter._id
     }\\Quiz\\${curriculumId}\\question\\${questionId}\\${
       req.file.originalname
     }_${uuidv4()}.${blobImageExtension}`;
@@ -325,6 +338,8 @@ export const editQuestion = asyncHandler(async (req, res, next) => {
     imageUrl,
     text,
     multiple,
+    points,
+    required,
   });
 
   // Send a response based on the success or failure of the Question edit
@@ -354,6 +369,16 @@ export const editOption = asyncHandler(async (req, res, next) => {
   // Check if the option exists; if not, send a 404 error response
   if (!option) {
     return next(new Error("option not found"), { cause: 404 });
+  }
+  // Check if the request involves deleting the image.
+  if (req.query.delete === "image") {
+    //delete it from azure storage
+    await deleteBlob(option.imageBlobName);
+    // Update the option document in the database to remove option-related details.
+    await Option.findByIdAndUpdate(optionId, {
+      imageUrl: "",
+      imageBlobName: "",
+    });
   }
 
   /**
@@ -414,7 +439,7 @@ export const editOption = asyncHandler(async (req, res, next) => {
     // Define the path for the option image in the user's course directory.
     imageBlobName = `Users\\${req.userId}\\Courses\\${req.course._id}\\${
       req.chapter
-    }\\Quiz\\${curriculumId}\\question\\${questionId}\\options\\${optionId}\\${
+    }\\Chapters\\${req.chapter._id.toString()}\\Quiz\\${curriculumId}\\question\\${questionId}\\options\\${optionId}\\${
       req.file.originalname
     }_${uuidv4()}.${blobImageExtension}`;
 
@@ -454,7 +479,9 @@ export const deleteQuiz = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { curriculumId } = req.params;
   //delete directory in azure
-  const quizDirectoryblob = `Users\\${req.userId}\\Courses\\${req.course}\\${req.chapter}\\Quiz\\${curriculumId}`;
+  const quizDirectoryblob = `Users\\${
+    req.userId
+  }\\Courses\\${req.course._id.toString()}\\Chapters\\${req.chapter._id.toString()}\\Quiz\\${curriculumId}`;
   await deleteDirectory(quizDirectoryblob);
   // Delete all options associated with the curriculum
   await Option.deleteMany({ curriculum: curriculumId });
@@ -486,7 +513,9 @@ export const deleteQuestion = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { curriculumId, questionId } = req.params;
   //delete directory in azure
-  const questionDirectoryblob = `Users\\${req.userId}\\Courses\\${req.course}\\${req.chapter}\\Quiz\\${curriculumId}\\question\\${questionId}`;
+  const questionDirectoryblob = `Users\\${
+    req.userId
+  }\\Courses\\${req.course._id.toString()}\\Chapters\\${req.chapter._id.toString()}\\Quiz\\${curriculumId}\\question\\${questionId}`;
   await deleteDirectory(questionDirectoryblob);
   // Find the question to be deleted
   const question = await Question.findById(questionId);
@@ -526,7 +555,9 @@ export const deleteOption = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { curriculumId, questionId, optionId } = req.params;
   //delete directory in azure
-  const questionDirectoryblob = `Users\\${req.userId}\\Courses\\${req.course}\\${req.chapter}\\Quiz\\${curriculumId}\\options\\${optionId}`;
+  const questionDirectoryblob = `Users\\${
+    req.userId
+  }\\Courses\\${req.course._id.toString()}\\Chapters\\${req.chapter._id.toString()}\\Quiz\\${curriculumId}\\options\\${optionId}`;
   await deleteDirectory(questionDirectoryblob);
   // Find the option to be deleted
   const option = await Option.findById(optionId);
