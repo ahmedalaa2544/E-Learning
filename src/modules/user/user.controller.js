@@ -200,8 +200,6 @@ export const revenue = asyncHandler(async (req, res, next) => {
   // get all of them
   const Fcourses = course.concat(workshop);
 
-  console.log(Fcourses);
-
   const courses = Fcourses.map((item) => ({
     courseId: item._id,
     title: item.title,
@@ -221,10 +219,21 @@ export const revenue = asyncHandler(async (req, res, next) => {
     totalRevenue += course.revenue || 0;
   });
 
+  const user = await userModel.findById(req.user.id);
+  user.currentBalance = totalRevenue - user.totalPaidOut;
+  user.save();
+
+  const currentBalance = user.currentBalance;
+  const totalPaidOut = user.totalPaidOut;
   // respone
-  return res
-    .status(200)
-    .json({ message: "Done", courses, totalRevenue, totalNumberOfStudents });
+  return res.status(200).json({
+    message: "Done",
+    courses,
+    totalRevenue,
+    totalNumberOfStudents,
+    currentBalance,
+    totalPaidOut,
+  });
 });
 
 export const detailsRevenue = asyncHandler(async (req, res, next) => {
@@ -315,4 +324,15 @@ export const refund = asyncHandler(async (req, res, next) => {
       cause: 400,
     }
   );
+});
+
+export const withdraw = asyncHandler(async (req, res, next) => {
+  const user = await userModel.findById(req.user.id);
+  if (user.currentBalance < 200) {
+    return next(new Error("Minimum 200EGP To Withdraw"));
+  }
+  user.totalPaidOut += user.currentBalance;
+  user.currentBalance = 0;
+  user.save();
+  return res.status(200).json({ message: "Done" });
 });

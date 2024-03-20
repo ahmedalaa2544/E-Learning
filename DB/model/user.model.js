@@ -79,6 +79,7 @@ const userSchmea = new Schema(
     activationCode: String,
     clicked: { type: Number, default: 0 },
     totalPaidOut: { type: Number, default: 0 },
+    currentBalance: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

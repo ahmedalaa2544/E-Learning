@@ -53,4 +53,11 @@ router.patch(
   userController.refund
 );
 
+router.patch(
+  "/withdraw",
+  isAuth,
+  validation(validators.withdraw),
+  userController.withdraw
+);
+
 export default router;
