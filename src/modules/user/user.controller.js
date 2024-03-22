@@ -309,6 +309,7 @@ export const refund = asyncHandler(async (req, res, next) => {
           name: course.title,
         },
       ],
+      price: course.price,
     });
     return res.status(200).json({
       message: `You Refunded ${
