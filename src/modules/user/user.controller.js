@@ -268,7 +268,7 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
 export const order = asyncHandler(async (req, res, next) => {
   const orders = await orderModel.find({
     user: req.user.id,
-    status: "Paid",
+    status: "Paid" || "refunded",
   });
 
   // response
