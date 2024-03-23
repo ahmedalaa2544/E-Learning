@@ -733,7 +733,12 @@ export const search = asyncHandler(async (req, res, next) => {
   // Calculate the number of documents to skip based on the page and limit
   const skip = (page - 1) * limit;
 
-  let query = { title: { $regex: title, $options: "i" } };
+  let query = {
+    $or: [
+      { title: { $regex: title, $options: "i" } },
+      { tags: { $regex: title, $options: "i" } },
+    ],
+  };
 
   let courses = await courseModel
     .find(query)
