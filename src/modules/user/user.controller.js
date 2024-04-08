@@ -147,16 +147,34 @@ export const getWishlist = asyncHandler(async (req, res, next) => {
 });
 
 export const getCourses = asyncHandler(async (req, res, next) => {
-  // get courses
-  const courses = await userModel
-    .findById(req.user.id)
-    .populate([{ path: "coursesBought", model: "Course" }]);
-  // get workshops
-  const workshop = await userModel
-    .findById(req.user.id)
-    .populate([{ path: "coursesBought", model: "Workshop" }]);
-  // return response
-  return res.status(200).json({ message: "Done", courses, workshop });
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+
+  if (req.query.view === "course") {
+    // get courses
+    const { coursesBought } = await userModel
+      .findById(req.user.id)
+      .populate([{ path: "coursesBought", model: "Course" }]);
+
+    let courses = coursesBought.slice(startIndex, endIndex);
+
+    return res.status(200).json({ message: "Done", courses });
+  }
+  if (req.query.view === "workshop") {
+    // get workshops
+    const { coursesBought } = await userModel
+      .findById(req.user.id)
+      .populate([{ path: "coursesBought", model: "Workshop" }]);
+
+    let workshop = coursesBought.slice(startIndex, endIndex);
+
+    // return response
+    return res.status(200).json({ message: "Done", workshop });
+  }
+  return next(new Error("return vaild view", { cause: 404 }));
 });
 
 export const getCreatedCourses = asyncHandler(async (req, res, next) => {
