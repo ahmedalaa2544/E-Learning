@@ -50,13 +50,6 @@ export const addToCart = asyncHandler(async (req, res, next) => {
 });
 
 export const removeFromCart = asyncHandler(async (req, res, next) => {
-  // check course
-  const course = await courseModel.findById(req.params.courseId);
-  const workshop = await workshopModel.findById(req.params.courseId);
-
-  if (!(course || workshop)) {
-    return next(new Error("Course not found", { cause: 404 }));
-  }
   // check course in cart
   const checkCourseInCart = await cartModel.findOne({
     user: req.user.id,
@@ -66,7 +59,7 @@ export const removeFromCart = asyncHandler(async (req, res, next) => {
     return next(new Error("Course not exist in Ur Cart", { cause: 404 }));
   }
   // remove course from cart
-  const remove = await cartModel.findOneAndUpdate(
+  await cartModel.findOneAndUpdate(
     {
       user: req.user.id,
     },
@@ -74,7 +67,7 @@ export const removeFromCart = asyncHandler(async (req, res, next) => {
     { new: true }
   );
   // response
-  return res.status(200).json({ message: "Done", remove });
+  return res.status(200).json({ message: "Done" });
 });
 
 export const addCoupon = asyncHandler(async (req, res, next) => {
@@ -104,6 +97,7 @@ export const delCoupon = asyncHandler(async (req, res, next) => {
 });
 
 export const getCart = asyncHandler(async (req, res) => {
+  //get courses
   const { course } = await cartModel
     .findOne({ user: req.user.id })
     .populate({ path: "coupon" })
@@ -112,19 +106,6 @@ export const getCart = asyncHandler(async (req, res) => {
       model: "Course",
       populate: {
         path: "createdBy",
-        select: "userName",
-      },
-      select: "coverImageUrl",
-    });
-
-  const workshop = await cartModel
-    .findOne({ user: req.user.id })
-    .populate({ path: "coupon" })
-    .populate({
-      path: "course.courseId",
-      model: "Workshop",
-      populate: {
-        path: "instructor",
         select: "userName",
       },
       select: "coverImageUrl",
@@ -140,17 +121,33 @@ export const getCart = asyncHandler(async (req, res) => {
       name: item.name,
     }));
 
-  const Scourses = workshop.course
-    .filter((item) => item.courseId) // Filter out items where courseId is null or undefined
-    .map((item) => ({
-      courseId: item.courseId._id,
-      createdBy: item.courseId.instructor,
-      coverImageUrl: item.courseId.coverImageUrl || "",
-      price: item.price,
-      name: item.name,
-    }));
+  if (course.length !== Fcourses.length) {
+    const workshop = await cartModel
+      .findOne({ user: req.user.id })
+      .populate({ path: "coupon" })
+      .populate({
+        path: "course.courseId",
+        model: "Workshop",
+        populate: {
+          path: "instructor",
+          select: "userName",
+        },
+        select: "coverImageUrl",
+      });
 
-  const courses = Fcourses.concat(Scourses);
+    const Scourses = workshop.course
+      .filter((item) => item.courseId) // Filter out items where courseId is null or undefined
+      .map((item) => ({
+        courseId: item.courseId._id,
+        createdBy: item.courseId.instructor,
+        coverImageUrl: item.courseId.coverImageUrl || "",
+        price: item.price,
+        name: item.name,
+      }));
 
-  return res.status(200).json({ message: "Done", courses });
+    const courses = Fcourses.concat(Scourses);
+
+    return res.status(200).json({ message: "Done", courses });
+  }
+  return res.status(200).json({ message: "Done", courses: Fcourses });
 });
