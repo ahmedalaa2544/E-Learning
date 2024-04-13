@@ -3,10 +3,11 @@ import { Schema, Types, model } from "mongoose";
 const participantSchema = new Schema(
   {
     participantId: { type: String },
-    identity: {
-      userId: { type: Types.ObjectId, ref: "User" },
-      userName: { type: String },
-    },
+    // identity: {
+    //   userId: { type: Types.ObjectId, ref: "User" },
+    //   userName: { type: String },
+    // },
+    identity: { type: String },
     status: [{ type: String }],
     joinedAt: { type: String },
     version: { type: Number },
