@@ -98,10 +98,17 @@ export const joinRoom = asyncHandler(async (req, res, next) => {
   if (!room) return next(new Error("Room not found!", { cause: 404 }));
 
   // create identity
-  const identity = JSON.stringify({
-    userId: req.user._id,
-    userName: req.user.userName,
-  });
+
+  // const identity = {
+  //   userId: req.user._id,
+  //   userName: req.user.userName,
+  // };
+
+  // console.log("identity", JSON.stringify(identity));
+
+  const identity = `${req.user._id}`;
+
+  console.log("identity", identity);
 
   // generate token for logged User
   const accessToken = new AccessToken(
