@@ -108,8 +108,6 @@ export const joinRoom = asyncHandler(async (req, res, next) => {
 
   const identity = `${req.user._id}`;
 
-  console.log("identity", identity);
-
   // generate token for logged User
   const accessToken = new AccessToken(
     process.env.LIVEKIT_API_KEY,
