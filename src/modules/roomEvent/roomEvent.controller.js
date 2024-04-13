@@ -71,7 +71,8 @@ export const participant_joined = asyncHandler(async (req, res, next) => {
     room,
   } = receiver.receive(req.body, req.get("Authorization"));
 
-  console.log("identity", identity);
+  console.log("participantinJoin", participant);
+  console.log("identityinJoin", identity);
 
   // parsing identity info from string to object {userId, identity}
   // const identityInfo = JSON.parse(identity);
