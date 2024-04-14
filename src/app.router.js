@@ -1,4 +1,3 @@
-import connectDB from "../DB/connection.js";
 import authRouter from "./modules/auth/auth.router.js";
 import userRouter from "./modules/user/user.router.js";
 import uploadRouter from "./modules/upload/upload.router.js";
@@ -64,7 +63,6 @@ const appRouter = (app, express) => {
     return res.status(404).json({ message: "invalid Path" });
   });
 
-  connectDB();
   app.use(globalErrorHandler);
 };
 
