@@ -23,14 +23,12 @@ import upload, {
 export const getRecommendations = asyncHandler(async (req, res, next) => {
   const courses = await Course.find({ status: "Published" });
   const ratings = await Rating.find({ user: req.userId });
-
-  const clicked = await View.find({ user: req.userId, updatedAt: { $gt: 0 } });
+  const clicked = await View.find({ user: req.userId });
   const purchased = await Student.find({ user: req.userId });
   const wishLisht = req.user.wishLisht;
   ratings.forEach((rate) => {
     rate._doc;
   });
-
   const estimateRate = new EstimateRate(
     req.user,
     courses,
@@ -41,21 +39,8 @@ export const getRecommendations = asyncHandler(async (req, res, next) => {
   );
   estimateRate.estimatedRates();
   const contentKNN = new ContentKNN(req.userId);
-  const lastVisit = estimateRate.getLastVisit();
-  const finalPredictions = [];
   const predictions = await contentKNN.estimate(ratings);
-  predictions.map((prediciton) => {
-    const course = courses.find(
-      (item) => prediciton.course.toString() === item._id.toString()
-    );
-    finalPredictions.push({
-      course,
-      coverImageBlobName: undefined,
-      // promotionalVideoUrl: videoUrl,
-      promotionalVideoBlobName: undefined,
-    });
-  });
-  return finalPredictions
-    ? res.status(200).json({ message: "Done", finalPredictions })
+  return predictions
+    ? res.status(200).json({ message: "Done", predictions })
     : res.status(500).json({ message: "Something went wrong" });
 });

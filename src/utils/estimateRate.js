@@ -30,7 +30,7 @@ class EstimateRate {
       const isPurchased = this.purchased.find(
         (item) => course._id.toString() === item.course.toString()
       );
-      const isInWL = this.wishLisht?.find(
+      const isInWL = this.wishLisht.find(
         (item) => course._id.toString() === item.course.toString()
       );
       if (isRated) {
@@ -39,13 +39,7 @@ class EstimateRate {
       }
       if (isClicked) {
         var clickedTimes = isClicked.count;
-        estimatedRate += normalizeToRange(
-          clickedTimes,
-          0,
-          this.user.clicked,
-          0,
-          1
-        );
+        estimatedRate += normalizeToRange(clickedTimes, 0, user.clicked, 0, 1);
       }
       if (isPurchased) {
         estimatedRate += 1;
@@ -57,9 +51,6 @@ class EstimateRate {
       return { course: courseId, rate: estimatedRate };
     });
     return estimatedRates;
-  };
-  getLastVisit = () => {
-    return this.clicked[0].course.toString();
   };
 }
 
