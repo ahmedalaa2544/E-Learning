@@ -35,7 +35,7 @@ const authorization = (accessRoles = []) => {
     }
     // // Check if the user has access to the specified course (is the creator)
     // if (!(course.createdBy.toString() === req.userId)) {
-    //   // If the user does not have access, send a 403 error response
+    //     // If the user does not have access, send a 403 error response
     //   return next(new Error("You do not have access"), { cause: 403 });
     // }
 
