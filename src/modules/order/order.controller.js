@@ -7,6 +7,7 @@ import Stripe from "stripe";
 import userModel from "../../../DB/model/user.model.js";
 import couponModel from "../../../DB/model/coupon.model.js";
 import workshopModel from "../../../DB/model/workshop.model.js";
+import chatGroupModel from "../../../DB/model/chatGroup.model.js";
 //
 export const createOrder = asyncHandler(async (req, res, next) => {
   //Check Cart
@@ -131,6 +132,14 @@ export const orderWebhook = asyncHandler(async (request, response) => {
           $inc: { numberOfStudents: 1 },
         }
       );
+      if (w) {
+        await chatGroupModel.findOneAndUpdate(
+          { name: w.title },
+          {
+            $push: { participants: order.user },
+          }
+        );
+      }
       await studentModel.create({
         course: order.courses[i].courseId,
         user: order.user,
