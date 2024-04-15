@@ -4,6 +4,7 @@ import categoryModel from "../../../DB/model/category.model.js";
 import subCategoryModel from "../../../DB/model/subCategory.model.js";
 import upload, { deleteBlob } from "../../utils/azureServices.js";
 import roomModel from "../../../DB/model/room.model.js";
+import chatGroupModel from "../../../DB/model/chatGroup.model.js";
 
 export const createWorkshop = asyncHandler(async (req, res, next) => {
   // data
@@ -12,6 +13,17 @@ export const createWorkshop = asyncHandler(async (req, res, next) => {
 
   // create workshop
   const workshop = await workshopModel.create({ title, instructor });
+
+  await chatGroupModel.create({
+    participants: instructor,
+    name: title,
+    messages: [
+      {
+        from: instructor,
+        message: `Welcome to ${title} Group`,
+      },
+    ],
+  });
 
   // send response
   return res.status(201).json({
@@ -456,11 +468,9 @@ export const getWorkshopRooms = asyncHandler(async (req, res, next) => {
   // fetch workshop rooms
   const rooms = await roomModel.find({ _id: { $in: workshop.rooms } });
 
-  return res
-    .status(200)
-    .json({
-      success: true,
-      message: "All Specified Workshop Rooms",
-      results: rooms,
-    });
+  return res.status(200).json({
+    success: true,
+    message: "All Specified Workshop Rooms",
+    results: rooms,
+  });
 });
