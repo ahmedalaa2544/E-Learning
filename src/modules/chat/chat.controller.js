@@ -15,19 +15,9 @@ export const search = asyncHandler(async (req, res, next) => {
 
   const users = await userModel.find().select("userName profilePic");
 
-  if (!req.query.next) {
-    matchedData = users
-      .filter((item) => item.userName.toLowerCase().includes(query))
-      .slice(0, 5);
-    return res.status(200).json({ message: "Done", matchedData });
-  }
-  if (req.query.next) {
-    const limit = (+req.query.next + 1) * 5;
-    const start = +req.query.next * 5;
-    matchedData = users
-      .filter((item) => item.userName.toLowerCase().includes(query))
-      .slice(start, limit);
-  }
+  matchedData = users
+    .filter((item) => item.userName.toLowerCase().includes(query))
+    .slice(0, 5);
 
   // respone
   return res.status(200).json({ message: "Done", matchedData });
