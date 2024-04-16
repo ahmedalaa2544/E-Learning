@@ -98,15 +98,15 @@ export const joinRoom = asyncHandler(async (req, res, next) => {
   if (!room) return next(new Error("Room not found!", { cause: 404 }));
 
   // create identity
+  const userId = req.user._id.toString();
 
-  // const identity = {
-  //   userId: req.user._id,
-  //   userName: req.user.userName,
-  // };
+  let identity = {
+    userId,
+    userName: req.user.userName,
+  };
+  identity = JSON.stringify(identity);
 
-  // console.log("identity", JSON.stringify(identity));
-
-  const identity = `${req.user._id}`;
+  // const identity = `${req.user._id}`;
 
   // generate token for logged User
   const accessToken = new AccessToken(
@@ -115,6 +115,20 @@ export const joinRoom = asyncHandler(async (req, res, next) => {
     { identity }
   );
   accessToken.addGrant({ roomJoin: true, room: room.roomName });
+
+  const participantIds = new Set(
+    room.participants.map((participant) => participant.userId.toString())
+  );
+
+  // Check if the user ID already exists in the set
+  if (!participantIds.has(userId.toString())) {
+    room.participants.push({
+      userId,
+      userName: req.user.userName,
+    });
+
+    await room.save();
+  }
 
   // send response
   return res.status(201).json({
@@ -136,6 +150,25 @@ export const getSpecificRoom = asyncHandler(async (req, res, next) => {
     success: true,
     message: "Room Found Successfully!",
     results: room,
+  });
+});
+
+export const getRoomAbsenceList = asyncHandler(async (req, res, next) => {
+  // data
+  const { roomId } = req.params;
+
+  // check room existence
+  const roomParticipants = await roomModel
+    .findById(roomId)
+    .select("participants.userId participants.userName");
+
+  if (!roomParticipants)
+    return next(new Error("Room not found!", { cause: 404 }));
+
+  return res.status(200).json({
+    success: true,
+    message: "Absence List",
+    results: roomParticipants,
   });
 });
 
