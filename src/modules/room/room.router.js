@@ -31,6 +31,13 @@ router.get(
   validation(roomValidation.roomIdSchema),
   roomController.getSpecificRoom
 );
+// Get absence list of Specific Room
+router.get(
+  "/absence/:roomId",
+  isAuth,
+  validation(roomValidation.roomIdSchema),
+  roomController.getRoomAbsenceList
+);
 
 // Delete Room
 router.delete(

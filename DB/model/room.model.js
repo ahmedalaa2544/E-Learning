@@ -12,9 +12,14 @@ const roomSchema = new Schema(
     turnPassword: { type: String },
     // Private: not assigned to workshop
     roomType: { type: String, enum: ["Private", "Public"], default: "Private" }, // belong to workshop or not
-    participants: [{ type: Types.ObjectId, ref: "Participant" }],
+    participants: [
+      {
+        userId: { type: Types.ObjectId, ref: "User" },
+        userName: { type: String },
+      },
+    ],
     workshopId: { type: Types.ObjectId, ref: "Workshop" },
-    roomStatus: { type: String, enum: ["Started", "Finshed"] },
+    // roomStatus: { type: String, enum: ["Started", "Finshed"] },
     createdAt: { type: String },
   },
   { timestamps: true }
