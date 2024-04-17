@@ -5,39 +5,34 @@ import upload from "../../utils/azureServices.js";
 import { getIo } from "../../utils/server.js";
 
 export const sendMsg = asyncHandler(async (req, res, next) => {
-  const { message, destId } = req.body;
-  // get destination user to get his socketId
-  const destUser = await userModel.findById(destId);
-  if (!destUser) return next(new Error("user not found", { cause: 404 }));
+  const { message, chatId } = req.body;
 
   // get the chat
   let chat = await chatModel
-    .findOne({
-      $or: [
-        { POne: req.user.id, PTwo: destId },
-        { POne: destId, PTwo: req.user.id },
-      ],
-    })
+    .findById(chatId)
     .populate([
-      { path: "POne", select: "userName profilePic" },
-      { path: "PTwo", select: "userName profilePic" },
+      { path: "participants", select: "userName profilePic socketId" },
     ]);
 
   // create chat if not found
   if (!chat) {
+    let arr = [req.user.id, chatId];
     chat = await chatModel.create({
-      POne: req.user.id,
-      PTwo: destId,
+      participants: arr,
       messages: [],
     });
   }
+  const dateOfPublish = Date.now(); // to change the url from pic to another
+  // sockets who sent to them
+  let socketIds = chat.participants
+    .filter((participant) => participant.id !== req.user.id)
+    .map((participant) => participant.socketId);
 
   // Send files
   if (req.file) {
     // Extract the extension for the promotion media.
     const blobMediaExtension = req.file.originalname.split(".").pop();
     // Define the path for the promotion media in the user's course directory.
-    const dateOfPublish = Date.now(); // to change the url from pic to another
     const blobMediaName = `Users\\${req.user.userName}\\ChatMedia\\${dateOfPublish}.${blobMediaExtension}`;
     // Upload media and obtain its URL.
     const mediaUrl = await upload(
@@ -52,8 +47,9 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
       from: req.user.id,
       to: destId,
       media: mediaUrl,
+      time: dateOfPublish,
     });
-    getIo().to(destUser.socketId).emit("recieveMsg", mediaUrl);
+    getIo().to(socketIds).emit("recieveMsg", mediaUrl);
     chat.messages.status = "delivered";
     await chat.save();
     return res.status(200).json({ message: "Done" });
@@ -65,13 +61,14 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
       from: req.user.id,
       to: destId,
       text: message,
+      time: dateOfPublish,
     });
     await chat.save();
-    getIo().to(destUser.socketId).emit("recieveMsg", message);
+    getIo().to(socketIds).emit("recieveMsg", message);
     chat.messages.status = "delivered";
     return res.status(200).json({ message: "Done" });
   }
-  getIo().to(destUser.socketId).emit("emptyMsg", "Please, Enter Vaild Message");
+  getIo().to(req.user.socketId).emit("emptyMsg", "Please, Enter Vaild Message");
   return next(
     new Error("emptyMsg", "Please, Enter Vaild Message", { cause: 400 })
   );
