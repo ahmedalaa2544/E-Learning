@@ -1,55 +1,84 @@
 import Similarities from "../../DB/model/similarities.model.js";
-import { mergeSortDescending } from "./dataSructures.js";
+import { mergeSortDescending, mergeSort } from "./dataSructures.js";
+/**
+ * The ContentKNN class uses collaborative filtering techniques based on the K-nearest neighbors algorithm
+ * to provide personalized course recommendations to a user.
+ */
 class ContentKNN {
+  /**
+   * Constructs a new instance of ContentKNN with a specific user.
+   *
+   * @param {Object} user The user object for whom the recommendations are to be made.
+   */
   constructor(user) {
     this.user = user;
-    // this.ratedCourses = ratedCourses;
-    // this.similarities = similarities;
   }
-  isUserRateThat = (ratings, courseSim) => {
-    for (let i = 0; i < ratings.length; i++) {
-      if (ratings[i].course.toString() == courseSim) {
-        return true;
-      }
-    }
 
-    return false;
+  /**
+   * Determines if the user has rated a specific course.
+   *
+   * @param {Array} ratings Array of user's ratings.
+   * @param {String} courseSim The course ID to check against the user's ratings.
+   * @returns {Boolean} True if the user has rated the course, otherwise false.
+   */
+  hasUserRatedCourse = (ratings, courseSim) => {
+    return ratings.some((rating) => rating.course.toString() === courseSim);
   };
 
-  estimate = async (ratedCourses) => {
+  /**
+   * Generates personalized recommendations for the user based on their past course ratings.
+   *
+   * @param {Array} ratedCourses Array of courses that the user has rated.
+   * @returns {Promise<Array>} A promise that resolves to an array of recommended courses with predicted ratings.
+   */
+  generateRecommendations = async (ratedCourses) => {
     const coursesSim = await Similarities.find({});
     let predictions = coursesSim.map((courseSim) => {
       let simTotal = 0,
         weightedSum = 0;
-      const k_neighbors = mergeSortDescending(
+      const kNeighbors = mergeSortDescending(
         courseSim.similarities,
         "similarity"
       ).slice(0, 10);
 
       if (
-        !this.isUserRateThat(ratedCourses, courseSim._doc.course.toString())
+        !this.hasUserRatedCourse(ratedCourses, courseSim._doc.course.toString())
       ) {
-        ratedCourses.map((rate) => {
-          const ratedItemSim = k_neighbors.find(
-            (item) => rate.course.toString() === item.course.toString()
+        ratedCourses.forEach((rated) => {
+          const ratedItemSim = kNeighbors.find(
+            (item) => rated.course.toString() === item.course.toString()
           );
-          if (ratedItemSim.similarity > 0) {
+          if (ratedItemSim && ratedItemSim.similarity > 0) {
             simTotal += ratedItemSim.similarity;
-            weightedSum += ratedItemSim.similarity * rate.rating;
+            weightedSum += ratedItemSim.similarity * rated.rating;
           }
         });
-
         const predict = weightedSum / simTotal;
-
         return {
           course: courseSim._doc.course.toString(),
           predict: isNaN(predict) ? 0 : predict,
         };
       }
     });
+
     predictions = predictions.filter((item) => item != null);
-    predictions = predictions.map((item) => item.course);
     return mergeSortDescending(predictions, "predict");
+  };
+
+  /**
+   * Generates recommendations related to a single item, typically the last item viewed or interacted with by the user.
+   *
+   * @param {String} item The course ID of the last visited course.
+   * @returns {Promise<Array>} A promise that resolves to an array of recommended courses based on the last visited course.
+   */
+  generateItemBasedRecommendations = async (item) => {
+    const predictions = await Similarities.findOne({
+      course: item,
+    });
+    return mergeSortDescending(predictions.similarities, "similarity").slice(
+      0,
+      10
+    );
   };
 }
 
