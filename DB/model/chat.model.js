@@ -6,7 +6,7 @@ const chatSchmea = new Schema(
     messages: [
       {
         from: { type: Types.ObjectId, ref: "User", required: true },
-        to: { type: Types.ObjectId, ref: "User", required: true },
+        to: [{ type: Types.ObjectId, ref: "User", required: true }],
         text: String,
         media: String,
         time: String,
