@@ -62,7 +62,7 @@ class ContentKNN {
     });
 
     predictions = predictions.filter((item) => item != null);
-    return mergeSortDescending(predictions, "predict");
+    return mergeSortDescending(predictions, "predict").slice(0, 10);
   };
 
   /**

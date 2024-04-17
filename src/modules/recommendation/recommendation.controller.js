@@ -77,7 +77,6 @@ export const getRecommendations = asyncHandler(async (req, res, next) => {
     const BYVPredictions = await contentKNN.generateItemBasedRecommendations([
       lastVisit.course,
     ]);
-    console.log(BYVPredictions.length);
     BYVPredictions.map((prediction) => {
       const course = courses.find(
         (item) => prediction.course.toString() === item._id.toString()
@@ -115,23 +114,23 @@ export const getRecommendations = asyncHandler(async (req, res, next) => {
 
   // Construct the final recommendations object with messages and grouped data
   const recommendations = {
-    "Learners are viewing": {
-      recommendations: undefined,
-      message:
-        "It will be implemented with Matrix Factorization until we collect data to train with.",
-    },
     "Because you viewed": {
       key: lastVisitTitle,
       recommendations: BYVRecommendations,
     },
-    "Because you searched for": {
-      key: "",
-      recommendations: BYSRecommendations,
-    },
-    "Recommended for you": { recommendations: RFYRecommendations },
     "Because you wishlisted": {
       key: lastwishlistedTitle,
       recommendations: BYWRecommendations,
+    },
+    "Because you searched for": {
+      key: undefined,
+      recommendations: BYSRecommendations,
+    },
+    "Recommended for you": { recommendations: RFYRecommendations },
+    "Learners are viewing": {
+      recommendations: undefined,
+      message:
+        "It will be implemented with Matrix Factorization until we collect data to train with.",
     },
   };
 
