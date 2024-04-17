@@ -8,7 +8,10 @@ const chatSchmea = new Schema(
       {
         from: { type: Types.ObjectId, ref: "User", required: true },
         to: { type: Types.ObjectId, ref: "User", required: true },
-        message: { type: String, required: true },
+        text: String,
+        voice: String,
+        image: String,
+        status: { type: String, enum: ["sent", "delivered", "read"] },
       },
     ],
   },

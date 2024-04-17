@@ -188,22 +188,41 @@ export const getCreatedCourses = asyncHandler(async (req, res, next) => {
 export const search = asyncHandler(async (req, res, next) => {
   const query = req.query.q.toLowerCase();
 
-  const user = await instructorModel.find();
-  const userArray = user.map((user) => user.user);
+  let matchedData;
 
-  const users = await userModel
-    .find({ _id: { $in: userArray } })
-    .select("userName profilePic");
-
-  let matchedData = users
-    .filter((item) => item.userName.toLowerCase().includes(query))
-    .slice(0, 3);
-
-  if (query == "") {
+  if (query == "" || query == " ") {
     matchedData = "";
+    return res.status(200).json({ message: "Done", matchedData });
   }
-  // respone
-  return res.status(200).json({ message: "Done", matchedData });
+
+  if (req.query.type == "user") {
+    const users = await userModel.find().select("userName profilePic");
+
+    matchedData = users
+      .filter((item) => item.userName.toLowerCase().includes(query))
+      .slice(0, 5);
+
+    // respone
+    return res.status(200).json({ message: "Done", matchedData });
+  }
+
+  if (req.query.type == "instrcutor") {
+    const user = await instructorModel.find();
+    const userArray = user.map((user) => user.user);
+
+    const users = await userModel
+      .find({ _id: { $in: userArray } })
+      .select("userName profilePic");
+
+    matchedData = users
+      .filter((item) => item.userName.toLowerCase().includes(query))
+      .slice(0, 5);
+
+    // respone
+    return res.status(200).json({ message: "Done", matchedData });
+  }
+
+  return next(new Error("Enter Vaild Search Type", { cause: 401 }));
 });
 
 export const revenue = asyncHandler(async (req, res, next) => {
