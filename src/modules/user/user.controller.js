@@ -206,7 +206,7 @@ export const search = asyncHandler(async (req, res, next) => {
     return res.status(200).json({ message: "Done", matchedData });
   }
 
-  if (req.query.type == "instrcutor") {
+  if (req.query.type == "instructor") {
     const user = await instructorModel.find();
     const userArray = user.map((user) => user.user);
 
