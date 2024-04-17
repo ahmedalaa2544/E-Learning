@@ -10,6 +10,7 @@ export const customValidation = {
     "application/x-subrip",
   ],
   video: ["video/mp4", "video/x-matroska", "video/x-m4v"],
+  voice: ["audio/mpeg", "audio/wav", "audio/mp3", "audio/x-ms-wma"],
 };
 export const fileUpload = (filterArray) => {
   const fileFilter = (req, file, cb) => {
