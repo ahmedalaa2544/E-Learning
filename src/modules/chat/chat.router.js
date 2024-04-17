@@ -14,12 +14,7 @@ router.post(
       .concat(customValidation.video)
       .concat(customValidation.voice)
       .concat(customValidation.file)
-  ).fields([
-    { name: "image", maxCount: 1 },
-    { name: "video", maxCount: 1 },
-    { name: "voice", maxCount: 1 },
-    { name: "file", maxCount: 1 },
-  ]),
+  ).single("media"),
   chatController.sendMsg
 );
 

@@ -33,133 +33,30 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
   }
 
   // Send files
-  if (req.files) {
-    // send image
-    if (req.files.image) {
-      // Extract the extension for the promotion image.
-      const blobImageExtension = req.files.image[0].originalname
-        .split(".")
-        .pop();
+  if (req.file) {
+    // Extract the extension for the promotion media.
+    const blobMediaExtension = req.file.originalname.split(".").pop();
+    // Define the path for the promotion media in the user's course directory.
+    const dateOfPublish = Date.now(); // to change the url from pic to another
+    const blobMediaName = `Users\\${req.user.userName}\\ChatMedia\\${dateOfPublish}.${blobMediaExtension}`;
+    // Upload media and obtain its URL.
+    const mediaUrl = await upload(
+      req.file.path,
+      blobMediaName,
+      "media",
+      blobMediaExtension
+    );
 
-      const time = new Date();
-      // Define the path for the promotion image in the user's course directory.
-      const blobImageName = `Users\\${req.user.userName}_${
-        req.user._id
-      }\\Chats\\${chat.POne}_${chat.PTwo}\\${new Date()}.${blobImageExtension}`;
-
-      // Upload the promotion image and obtain its URL.
-      const imageUrl = await upload(
-        req.files.image[0].path,
-        blobImageName,
-        "image",
-        blobImageExtension
-      );
-
-      // save changes in DB
-      chat.messages.push({
-        from: req.user.id,
-        to: destId,
-        image: imageUrl,
-      });
-      getIo().to(destUser.socketId).emit("recieveMsg", imageUrl);
-      chat.messages.status = "delivered";
-      await chat.save();
-      return res.status(200).json({ message: "Done", chat });
-    }
-
-    // send video
-    if (req.files.video) {
-      // Extract the extension for the promotion video.
-      const blobVideoExtension = req.files.video[0].originalname
-        .split(".")
-        .pop();
-
-      // Define the path for the promotion video in the user's course directory.
-      const blobVideoName = `Users\\${req.user.userName}_${
-        req.user._id
-      }\\Chats\\${chat.POne}_${chat.PTwo}\\${new Date()}.${blobVideoExtension}`;
-
-      // Upload the promotion video and obtain its URL.
-      const videoUrl = await upload(
-        req.files.video[0].path,
-        blobVideoName,
-        "video",
-        blobVideoExtension
-      );
-
-      // save changes in DB
-      chat.messages.push({
-        from: req.user.id,
-        to: destId,
-        video: videoUrl,
-      });
-      getIo().to(destUser.socketId).emit("recieveMsg", videoUrl);
-      chat.messages.status = "delivered";
-      await chat.save();
-      return res.status(200).json({ message: "Done", chat });
-    }
-
-    // send voice
-    if (req.files.voice) {
-      // Extract the extension for the promotion voice.
-      const blobvoiceExtension = req.files.voice[0].originalname
-        .split(".")
-        .pop();
-
-      // Define the path for the promotion voice in the user's course directory.
-      const blobvoiceName = `Users\\${req.user.userName}_${
-        req.user._id
-      }\\Chats\\${chat.POne}_${chat.PTwo}\\${new Date()}.${blobvoiceExtension}`;
-
-      // Upload the promotion voice and obtain its URL.
-      const voiceUrl = await upload(
-        req.files.voice[0].path,
-        blobvoiceName,
-        "voice",
-        blobvoiceExtension
-      );
-
-      // save changes in DB
-      chat.messages.push({
-        from: req.user.id,
-        to: destId,
-        voice: voiceUrl,
-      });
-      getIo().to(destUser.socketId).emit("recieveMsg", voiceUrl);
-      chat.messages.status = "delivered";
-      await chat.save();
-      return res.status(200).json({ message: "Done", chat });
-    }
-
-    // send file
-    if (req.files.file) {
-      // Extract the extension for the promotion file.
-      const blobfileExtension = req.files.file[0].originalname.split(".").pop();
-
-      // Define the path for the promotion file in the user's course directory.
-      const blobfileName = `Users\\${req.user.userName}_${
-        req.user._id
-      }\\Chats\\${chat.POne}_${chat.PTwo}\\${new Date()}.${blobfileExtension}`;
-
-      // Upload the promotion file and obtain its URL.
-      const fileUrl = await upload(
-        req.files.file[0].path,
-        blobfileName,
-        "file",
-        blobfileExtension
-      );
-
-      // save changes in DB
-      chat.messages.push({
-        from: req.user.id,
-        to: destId,
-        file: fileUrl,
-      });
-      getIo().to(destUser.socketId).emit("recieveMsg", fileUrl);
-      chat.messages.status = "delivered";
-      await chat.save();
-      return res.status(200).json({ message: "Done", chat });
-    }
+    // save changes in DB
+    chat.messages.push({
+      from: req.user.id,
+      to: destId,
+      media: mediaUrl,
+    });
+    getIo().to(destUser.socketId).emit("recieveMsg", mediaUrl);
+    chat.messages.status = "delivered";
+    await chat.save();
+    return res.status(200).json({ message: "Done" });
   }
 
   // Send messages
