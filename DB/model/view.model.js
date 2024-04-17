@@ -12,7 +12,7 @@ const viewSchema = new Schema(
       ref: "User",
     },
     // user: { type: Types.ObjectId, ref: "User" },
-    courseOwner: { type: Types.ObjectId, ref: "User", required: true },
+    courseOwner: [{ type: Types.ObjectId, ref: "User", required: true }],
 
     cookie: { type: String, required: true },
     count: Number,
