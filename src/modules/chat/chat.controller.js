@@ -17,6 +17,8 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
   // create chat if not found
   if (!chat) {
     let arr = [req.user.id, chatId];
+    const chcekUser = await userModel.findById(chatId);
+    if (!chcekUser) return next(new Error("user not found", { cause: 400 }));
     chat = await chatModel.create({
       participants: arr,
       messages: [],
@@ -24,9 +26,10 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
   }
   const dateOfPublish = Date.now(); // to change the url from pic to another
   // sockets who sent to them
-  let socketIds = chat.participants
-    .filter((participant) => participant.id !== req.user.id)
-    .map((participant) => participant.socketId);
+  let destIds = chat.participants.filter(
+    (participant) => participant.id !== req.user.id
+  );
+  let socketIds = destIds.map((participant) => participant.socketId);
 
   // Send files
   if (req.file) {
@@ -45,9 +48,9 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
     // save changes in DB
     chat.messages.push({
       from: req.user.id,
-      to: destId,
+      to: destIds,
       media: mediaUrl,
-      time: dateOfPublish,
+      time: new Date(),
     });
     getIo().to(socketIds).emit("recieveMsg", mediaUrl);
     chat.messages.status = "delivered";
@@ -59,9 +62,9 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
   if (message) {
     chat.messages.push({
       from: req.user.id,
-      to: destId,
+      to: destIds,
       text: message,
-      time: dateOfPublish,
+      time: new Date(),
     });
     await chat.save();
     getIo().to(socketIds).emit("recieveMsg", message);
@@ -75,31 +78,18 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
 });
 
 export const getChat = asyncHandler(async (req, res) => {
-  const { destId } = req.params;
+  const { chatId } = req.params;
   const chat = await chatModel
-    .findOne({
-      $or: [
-        { POne: req.user.id, PTwo: destId },
-        { POne: destId, PTwo: req.user.id },
-      ],
-    })
-    .populate([
-      { path: "POne", select: "userName profilePic" },
-      { path: "PTwo", select: "userName profilePic" },
-    ]);
+    .findById(chatId)
+    .populate([{ path: "participants", select: "userName profilePic" }]);
 
   return res.status(200).json({ message: "Done", chat });
 });
 
 export const Chats = asyncHandler(async (req, res) => {
   const chat = await chatModel
-    .find({
-      $or: [{ POne: req.user.id }, { PTwo: req.user.id }],
-    })
-    .populate([
-      { path: "POne", select: "userName profilePic" },
-      { path: "PTwo", select: "userName profilePic" },
-    ])
+    .find({ participants: { $elemMatch: { $eq: req.user.id } } })
+    .populate([{ path: "participants", select: "userName profilePic" }])
     .sort({ updatedAt: -1 })
     .slice("messages", -1);
 

@@ -18,6 +18,6 @@ router.post(
   chatController.sendMsg
 );
 
-router.get("/:destId", isAuth, chatController.getChat);
+router.get("/:chatId", isAuth, chatController.getChat);
 
 export default router;
