@@ -4,7 +4,7 @@ import categoryModel from "../../../DB/model/category.model.js";
 import subCategoryModel from "../../../DB/model/subCategory.model.js";
 import upload, { deleteBlob } from "../../utils/azureServices.js";
 import roomModel from "../../../DB/model/room.model.js";
-import chatGroupModel from "../../../DB/model/chatGroup.model.js";
+import chatModel from "../../../DB/model/chat.model.js";
 
 export const createWorkshop = asyncHandler(async (req, res, next) => {
   // data
@@ -14,15 +14,11 @@ export const createWorkshop = asyncHandler(async (req, res, next) => {
   // create workshop
   const workshop = await workshopModel.create({ title, instructor });
 
-  await chatGroupModel.create({
-    participants: instructor,
+  await chatModel.create({
+    participants: [instructor],
     name: title,
-    messages: [
-      {
-        from: instructor,
-        message: `Welcome to ${title} Group`,
-      },
-    ],
+    messages: [],
+    type: "group",
   });
 
   // send response
@@ -188,6 +184,10 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
     );
 
     // save changes in DB
+    await chatModel.findOneAndUpdate(
+      { name: workshop.title, type: "group" },
+      { pic: promotionImageUrl }
+    );
     workshop.promotionImage.blobName = blobImageName;
     workshop.promotionImage.url = promotionImageUrl;
   }
