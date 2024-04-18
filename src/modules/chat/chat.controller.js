@@ -137,3 +137,35 @@ export const allMessages = asyncHandler(async (req, res, next) => {
   const messages = chat.messages.slice(startIndex, endIndex);
   return res.status(200).json({ message: "Done", messages });
 });
+
+export const createGroup = asyncHandler(async (req, res, next) => {
+  const { name, participants } = req.body;
+  console.log(req.body.name);
+  console.log(participants);
+
+  let imageUrl;
+  // Send files
+  if (req.file) {
+    // Extract the extension for the promotion media.
+    const blobMediaExtension = req.file.originalname.split(".").pop();
+    // Define the path for the promotion media in the user's course directory.
+    const dateOfPublish = Date.now();
+    const blobMediaName = `Users\\${req.user.userName}\\ChatMedia\\${dateOfPublish}.${blobMediaExtension}`;
+    // Upload media and obtain its URL.
+    let typeOfMedia = req.file.mimetype.split("/")[0];
+    imageUrl = await upload(
+      req.file.path,
+      blobMediaName,
+      typeOfMedia,
+      blobMediaExtension
+    );
+  }
+  const chat = await chatModel.create({
+    name,
+    participants,
+    type: "group",
+    messages: [],
+    pic: imageUrl ? imageUrl : "",
+  });
+  return res.status(200).json({ message: "Done", chat });
+});

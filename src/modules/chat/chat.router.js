@@ -22,4 +22,11 @@ router.get("/:chatId", isAuth, chatController.getChat);
 
 router.get("/:chatId/messages", isAuth, chatController.allMessages);
 
+router.post(
+  "/",
+  isAuth,
+  fileUpload(customValidation.image).single("image"),
+  chatController.createGroup
+);
+
 export default router;
