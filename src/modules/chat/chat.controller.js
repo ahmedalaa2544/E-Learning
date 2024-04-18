@@ -54,11 +54,14 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
       media: { url: mediaUrl, size: req.file.size, typeOfMedia },
       time: dateOfPublish,
     });
-    getIo().to(socketIds).emit("recieveMsg", {
-      url: mediaUrl,
-      size: req.file.size,
-      type: typeOfMedia,
-    });
+    getIo()
+      .to(socketIds)
+      .emit("recieveMsg", {
+        from: req.user.id,
+        to: destIds,
+        media: { url: mediaUrl, size: req.file.size, typeOfMedia },
+        time: dateOfPublish,
+      });
     chat.messages.status = "delivered";
     await chat.save();
     return res.status(200).json({ message: "Done" });
@@ -73,7 +76,12 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
       time: dateOfPublish,
     });
     await chat.save();
-    getIo().to(socketIds).emit("recieveMsg", message);
+    getIo().to(socketIds).emit("recieveMsg", {
+      from: req.user.id,
+      to: destIds,
+      text: message,
+      time: dateOfPublish,
+    });
     chat.messages.status = "delivered";
     return res.status(200).json({ message: "Done" });
   }
