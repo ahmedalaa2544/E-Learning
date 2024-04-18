@@ -22,6 +22,7 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
     chat = await chatModel.create({
       participants: arr,
       messages: [],
+      type: "private",
     });
   }
   const dateOfPublish = Date.now(); // to change the url from pic to another
@@ -38,10 +39,11 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
     // Define the path for the promotion media in the user's course directory.
     const blobMediaName = `Users\\${req.user.userName}\\ChatMedia\\${dateOfPublish}.${blobMediaExtension}`;
     // Upload media and obtain its URL.
+    let typeOfMedia = req.file.mimetype.split("/")[0];
     const mediaUrl = await upload(
       req.file.path,
       blobMediaName,
-      "media",
+      typeOfMedia,
       blobMediaExtension
     );
 
@@ -49,10 +51,14 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
     chat.messages.push({
       from: req.user.id,
       to: destIds,
-      media: mediaUrl,
-      time: new Date(),
+      media: { url: mediaUrl, size: req.file.size, type: typeOfMedia },
+      time: dateOfPublish,
     });
-    getIo().to(socketIds).emit("recieveMsg", mediaUrl);
+    getIo().to(socketIds).emit("recieveMsg", {
+      url: mediaUrl,
+      size: req.file.size,
+      type: typeOfMedia,
+    });
     chat.messages.status = "delivered";
     await chat.save();
     return res.status(200).json({ message: "Done" });
@@ -64,7 +70,7 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
       from: req.user.id,
       to: destIds,
       text: message,
-      time: new Date(),
+      time: dateOfPublish,
     });
     await chat.save();
     getIo().to(socketIds).emit("recieveMsg", message);
@@ -78,9 +84,12 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
 });
 
 export const getChat = asyncHandler(async (req, res) => {
-  const { chatId } = req.params;
+  const { userId } = req.params;
   const chat = await chatModel
-    .findById(chatId)
+    .findOne({
+      participants: { $elemMatch: { $eq: userId } },
+      type: "private",
+    })
     .populate([{ path: "participants", select: "userName profilePic" }]);
 
   return res.status(200).json({ message: "Done", chat });

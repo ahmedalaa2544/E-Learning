@@ -7,8 +7,8 @@ import Stripe from "stripe";
 import userModel from "../../../DB/model/user.model.js";
 import couponModel from "../../../DB/model/coupon.model.js";
 import workshopModel from "../../../DB/model/workshop.model.js";
-import chatGroupModel from "../../../DB/model/chatGroup.model.js";
 import { getIo } from "../../utils/server.js";
+import chatModel from "../../../DB/model/chat.model.js";
 //
 export const createOrder = asyncHandler(async (req, res, next) => {
   //Check Cart
@@ -135,8 +135,8 @@ export const orderWebhook = asyncHandler(async (request, response) => {
         })
         .populate([{ path: "instructor", select: "socketId" }]);
       if (w) {
-        await chatGroupModel.findOneAndUpdate(
-          { name: w.title },
+        await chatModel.findOneAndUpdate(
+          { name: w.title, type: "group" },
           {
             $push: { participants: order.user },
           }
