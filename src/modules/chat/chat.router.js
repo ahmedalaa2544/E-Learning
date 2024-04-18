@@ -7,7 +7,7 @@ import { customValidation, fileUpload } from "../../utils/multer.js";
 router.get("/", isAuth, chatController.Chats);
 
 router.post(
-  "/",
+  "/:chatId/messages",
   isAuth,
   fileUpload(
     customValidation.image
@@ -18,6 +18,8 @@ router.post(
   chatController.sendMsg
 );
 
-router.get("/:userId", isAuth, chatController.getChat);
+router.get("/:chatId", isAuth, chatController.getChat);
+
+router.get("/:chatId/messages", isAuth, chatController.allMessages);
 
 export default router;

@@ -1,11 +1,11 @@
 import chatModel from "../../../DB/model/chat.model.js";
-import userModel from "../../../DB/model/user.model.js";
 import { asyncHandler } from "../../utils/asyncHandling.js";
 import upload from "../../utils/azureServices.js";
 import { getIo } from "../../utils/server.js";
 
 export const sendMsg = asyncHandler(async (req, res, next) => {
-  const { message, chatId } = req.body;
+  const { message } = req.body;
+  const { chatId } = req.params;
 
   // get the chat
   let chat = await chatModel
@@ -16,14 +16,7 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
 
   // create chat if not found
   if (!chat) {
-    let arr = [req.user.id, chatId];
-    const chcekUser = await userModel.findById(chatId);
-    if (!chcekUser) return next(new Error("user not found", { cause: 400 }));
-    chat = await chatModel.create({
-      participants: arr,
-      messages: [],
-      type: "private",
-    });
+    return next(new Error("chat not found", { cause: 404 }));
   }
   const dateOfPublish = Date.now(); // to change the url from pic to another
   // sockets who sent to them
@@ -92,14 +85,30 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
 });
 
 export const getChat = asyncHandler(async (req, res) => {
-  const { userId } = req.params;
+  const { chatId } = req.params;
+  const { user } = req.query;
+  if (user == "true") {
+    let chat = await chatModel
+      .findOne({
+        participants: { $elemMatch: { $eq: chatId } },
+        type: "private",
+      })
+      .populate([{ path: "participants", select: "userName profilePic" }])
+      .slice("messages", -15);
+    if (!chat) {
+      let arr = [req.user.id, chatId];
+      chat = await chatModel.create({
+        participants: arr,
+        messages: [],
+        type: "private",
+      });
+    }
+    return res.status(200).json({ message: "Done", chat });
+  }
   const chat = await chatModel
-    .findOne({
-      participants: { $elemMatch: { $eq: userId } },
-      type: "private",
-    })
-    .populate([{ path: "participants", select: "userName profilePic" }]);
-
+    .findById(chatId)
+    .populate([{ path: "participants", select: "userName profilePic" }])
+    .slice("messages", -15);
   return res.status(200).json({ message: "Done", chat });
 });
 
@@ -111,4 +120,20 @@ export const Chats = asyncHandler(async (req, res) => {
     .slice("messages", -1);
 
   return res.status(200).json({ message: "Done", chat });
+});
+
+export const allMessages = asyncHandler(async (req, res, next) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = 15;
+
+  const startIndex = page * limit;
+  const endIndex = (page + 1) * limit;
+  const { chatId } = req.params;
+
+  const chat = await chatModel
+    .findById(chatId)
+    .populate([{ path: "participants", select: "userName profilePic" }]);
+
+  const messages = chat.messages.slice(startIndex, endIndex);
+  return res.status(200).json({ message: "Done", messages });
 });
