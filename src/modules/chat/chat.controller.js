@@ -1,4 +1,5 @@
 import chatModel from "../../../DB/model/chat.model.js";
+import userModel from "../../../DB/model/user.model.js";
 import { asyncHandler } from "../../utils/asyncHandling.js";
 import upload from "../../utils/azureServices.js";
 import { getIo } from "../../utils/server.js";
@@ -94,19 +95,20 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
   );
 });
 
-export const getChat = asyncHandler(async (req, res) => {
+export const getChat = asyncHandler(async (req, res, next) => {
   const { chatId } = req.params;
   const { user } = req.query;
   if (user == "true") {
     let chat = await chatModel
       .findOne({
-        participants: { $elemMatch: { $eq: chatId } },
-        participants: { $elemMatch: { $eq: req.user.id } },
+        participants: { $all: [chatId, req.user.id] },
         type: "private",
       })
       .populate([{ path: "participants", select: "userName profilePic" }])
       .slice("messages", -15);
     if (!chat) {
+      const checkUser = await userModel.findById(chatId);
+      if (!checkUser) return next(new Error("user not found", { cause: 404 }));
       let arr = [req.user.id, chatId];
       chat = await chatModel.create({
         participants: arr,
