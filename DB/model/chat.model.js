@@ -9,7 +9,7 @@ const chatSchmea = new Schema(
     messages: [
       {
         from: { type: Types.ObjectId, ref: "User", required: true },
-        to: [{ type: Types.ObjectId, ref: "User", required: true }],
+        to: { type: Types.ObjectId, ref: "ChatId", required: true },
         text: String,
         media: { url: String, size: Number, name: String, typeOfMedia: String },
         time: String,

@@ -43,7 +43,7 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
     // save changes in DB
     chat.messages.push({
       from: req.user.id,
-      to: destIds,
+      to: chatId,
       media: {
         url: mediaUrl,
         size: req.file.size,
@@ -56,7 +56,7 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
       .to(socketIds)
       .emit("recieveMsg", {
         from: req.user.id,
-        to: destIds,
+        to: chatId,
         media: {
           url: mediaUrl,
           size: req.file.size,
@@ -74,14 +74,14 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
   if (message) {
     chat.messages.push({
       from: req.user.id,
-      to: destIds,
+      to: chatId,
       text: message,
       time: dateOfPublish,
     });
     await chat.save();
     getIo().to(socketIds).emit("recieveMsg", {
       from: req.user.id,
-      to: destIds,
+      to: chatId,
       text: message,
       time: dateOfPublish,
     });
