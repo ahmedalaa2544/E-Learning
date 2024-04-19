@@ -101,6 +101,7 @@ export const getChat = asyncHandler(async (req, res) => {
     let chat = await chatModel
       .findOne({
         participants: { $elemMatch: { $eq: chatId } },
+        participants: { $elemMatch: { $eq: req.user.id } },
         type: "private",
       })
       .populate([{ path: "participants", select: "userName profilePic" }])
