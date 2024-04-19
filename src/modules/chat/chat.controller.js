@@ -44,7 +44,12 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
     chat.messages.push({
       from: req.user.id,
       to: destIds,
-      media: { url: mediaUrl, size: req.file.size, typeOfMedia },
+      media: {
+        url: mediaUrl,
+        size: req.file.size,
+        name: req.file.originalname,
+        typeOfMedia,
+      },
       time: dateOfPublish,
     });
     getIo()
@@ -52,7 +57,12 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
       .emit("recieveMsg", {
         from: req.user.id,
         to: destIds,
-        media: { url: mediaUrl, size: req.file.size, typeOfMedia },
+        media: {
+          url: mediaUrl,
+          size: req.file.size,
+          name: req.file.originalname,
+          typeOfMedia,
+        },
         time: dateOfPublish,
       });
     chat.messages.status = "delivered";
