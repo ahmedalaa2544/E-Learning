@@ -11,7 +11,7 @@ const chatSchmea = new Schema(
         from: { type: Types.ObjectId, ref: "User", required: true },
         to: [{ type: Types.ObjectId, ref: "User", required: true }],
         text: String,
-        media: { url: String, size: Number, typeOfMedia: String },
+        media: { url: String, size: Number, name: String, typeOfMedia: String },
         time: String,
         status: { type: String, enum: ["sent", "delivered", "read"] },
       },
