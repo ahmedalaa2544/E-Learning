@@ -117,6 +117,11 @@ export const getChat = asyncHandler(async (req, res, next) => {
         messages: [],
         type: "private",
       });
+      const newChat = await chatModel
+        .findById(Chat.id)
+        .populate([{ path: "participants", select: "userName profilePic" }]);
+      const { messages, ...chat } = newChat.toObject();
+      return res.status(201).json({ message: "Done", chat });
     }
     const { messages, ...chat } = Chat.toObject();
     return res.status(200).json({ message: "Done", chat });
