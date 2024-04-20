@@ -102,30 +102,31 @@ export const getChat = asyncHandler(async (req, res, next) => {
         new Error("Enter Vaild User (Not Yourself Psycho!)", { cause: 400 })
       );
     }
-    let chat = await chatModel
+    let Chat = await chatModel
       .findOne({
         participants: { $all: [chatId, req.user.id] },
         type: "private",
       })
       .populate([{ path: "participants", select: "userName profilePic" }]);
-    if (!chat) {
+    if (!Chat) {
       const checkUser = await userModel.findById(chatId);
       if (!checkUser) return next(new Error("user not found", { cause: 404 }));
       let arr = [req.user.id, chatId];
-      chat = await chatModel.create({
+      Chat = await chatModel.create({
         participants: arr,
         messages: [],
         type: "private",
       });
     }
-    const { messages, ...Chat } = chat.toObject();
-    return res.status(200).json({ message: "Done", Chat });
+    const { messages, ...chat } = Chat.toObject();
+    return res.status(200).json({ message: "Done", chat });
   }
-  const chat = await chatModel
+  const Chat = await chatModel
     .findById(chatId)
     .populate([{ path: "participants", select: "userName profilePic" }]);
-  const { messages, ...Chat } = chat.toObject();
-  return res.status(200).json({ message: "Done", Chat });
+  if (!Chat) return next(new Error("chat not found", { cause: 404 }));
+  const { messages, ...chat } = Chat.toObject();
+  return res.status(200).json({ message: "Done", chat });
 });
 
 export const Chats = asyncHandler(async (req, res) => {
