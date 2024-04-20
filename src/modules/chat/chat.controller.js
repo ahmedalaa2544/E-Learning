@@ -150,7 +150,7 @@ export const allMessages = asyncHandler(async (req, res, next) => {
     .findById(chatId)
     .populate([{ path: "participants", select: "userName profilePic" }]);
 
-  const messages = chat.messages.slice(startIndex, endIndex);
+  const messages = chat.messages.reverse().slice(startIndex, endIndex);
   return res.status(200).json({ message: "Done", messages });
 });
 
