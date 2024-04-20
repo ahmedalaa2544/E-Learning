@@ -90,22 +90,24 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
     return res.status(200).json({ message: "Done" });
   }
   getIo().to(req.user.socketId).emit("emptyMsg", "Please, Enter Vaild Message");
-  return next(
-    new Error("emptyMsg", "Please, Enter Vaild Message", { cause: 400 })
-  );
+  return next(new Error("Please, Enter Vaild Message", { cause: 400 }));
 });
 
 export const getChat = asyncHandler(async (req, res, next) => {
   const { chatId } = req.params;
   const { user } = req.query;
   if (user == "true") {
+    if (chatId == req.user.id) {
+      return next(
+        new Error("Enter Vaild User (Not Yourself Psycho!)", { cause: 400 })
+      );
+    }
     let chat = await chatModel
       .findOne({
         participants: { $all: [chatId, req.user.id] },
         type: "private",
       })
-      .populate([{ path: "participants", select: "userName profilePic" }])
-      .slice("messages", -15);
+      .populate([{ path: "participants", select: "userName profilePic" }]);
     if (!chat) {
       const checkUser = await userModel.findById(chatId);
       if (!checkUser) return next(new Error("user not found", { cause: 404 }));
@@ -116,13 +118,14 @@ export const getChat = asyncHandler(async (req, res, next) => {
         type: "private",
       });
     }
-    return res.status(200).json({ message: "Done", chat });
+    const { messages, ...Chat } = chat.toObject();
+    return res.status(200).json({ message: "Done", Chat });
   }
   const chat = await chatModel
     .findById(chatId)
-    .populate([{ path: "participants", select: "userName profilePic" }])
-    .slice("messages", -15);
-  return res.status(200).json({ message: "Done", chat });
+    .populate([{ path: "participants", select: "userName profilePic" }]);
+  const { messages, ...Chat } = chat.toObject();
+  return res.status(200).json({ message: "Done", Chat });
 });
 
 export const Chats = asyncHandler(async (req, res) => {
@@ -136,11 +139,11 @@ export const Chats = asyncHandler(async (req, res) => {
 });
 
 export const allMessages = asyncHandler(async (req, res, next) => {
-  const page = parseInt(req.query.page) || 1;
+  const page = req.query.page || 0;
   const limit = 15;
 
-  const startIndex = page * limit;
-  const endIndex = (page + 1) * limit;
+  const startIndex = +page * limit;
+  const endIndex = (+page + 1) * limit;
   const { chatId } = req.params;
 
   const chat = await chatModel
