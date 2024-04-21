@@ -33,9 +33,9 @@ export const createOrder = asyncHandler(async (req, res, next) => {
   //check courses
   for (let i = 0; i < cart.course.length; i++) {
     if (checkCoupon) {
-      if (checkCoupon.courseId != cart.course[i].courseId) {
+      if (checkCoupon.courseId.toString() != cart.course[i].courseId) {
         return next(
-          new Error(`coupon not vaild to this ${cart.course[i].title} course`)
+          new Error(`coupon not vaild to this ${cart.course[i].name} course`)
         );
       }
     }
