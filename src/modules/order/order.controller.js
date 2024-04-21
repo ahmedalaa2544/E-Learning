@@ -160,8 +160,13 @@ export const orderWebhook = asyncHandler(async (request, response) => {
     const user = await userModel.findByIdAndUpdate(order.user, {
       $push: { coursesBought: { $each: cBought } },
     });
-
-    let sendToInstructor = c ? c.createdBy.socketId : w.instructor.socketId;
+    let sendToInstructor;
+    if (c) {
+      sendToInstructor = c.createdBy.socketId;
+    }
+    if (w) {
+      sendToInstructor = w.instructor.socketId;
+    }
     getIo.to(user.socketId).emit("receiveNotification", {
       title: "Successfully Payment", //rename the message
       from: `${c ? c.title : w.title}`,
