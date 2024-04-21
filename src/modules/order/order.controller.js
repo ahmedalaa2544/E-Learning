@@ -153,7 +153,7 @@ export const orderWebhook = asyncHandler(async (request, response) => {
         course: order.courses[i].courseId,
         user: order.user,
         paid: order.courses[i].coursePrice,
-        courseOwner: c ? c.createdBy.id : w.instructor.id,
+        courseOwner: c ? c.createdBy : w.instructor,
       });
     }
     // add course to user
