@@ -8,17 +8,17 @@ import { validation } from "../../middleware/validation.js";
 router.post(
   "/",
   isAuth,
-  //   isAuthen(), ask team first
   validation(validators.couponSchema),
   couponController.createCoupon
 );
 
 router.delete(
-  "/:name",
+  "/:courseId",
   isAuth,
-  //   isAuthen(), ask team first
   validation(validators.delCoupon),
   couponController.delCoupon
 );
+
+router.get("/", isAuth, couponController.getCoupons);
 
 export default router;
