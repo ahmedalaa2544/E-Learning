@@ -149,11 +149,19 @@ export const orderWebhook = asyncHandler(async (request, response) => {
           }
         );
       }
+      let owner;
+      if (c) {
+        owner = c.createdBy.id;
+      }
+      if (w) {
+        owner = w.instructor.id;
+      }
+      console.log(c);
       await studentModel.create({
         course: order.courses[i].courseId,
         user: order.user,
         paid: order.courses[i].coursePrice,
-        courseOwner: c ? c.createdBy : w.instructor,
+        courseOwner: owner,
       });
     }
     // add course to user
