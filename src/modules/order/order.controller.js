@@ -131,12 +131,12 @@ export const orderWebhook = asyncHandler(async (request, response) => {
     let cBought = [];
     for (let i = 0; i < order.courses.length; i++) {
       cBought.push(order.courses[i].courseId);
-      const c = await courseModel
+      let c = await courseModel
         .findByIdAndUpdate(order.courses[i].courseId, {
           $inc: { numberOfStudents: 1 },
         })
         .populate([{ path: "createdBy", select: "socketId" }]);
-      const w = await workshopModel
+      let w = await workshopModel
         .findByIdAndUpdate(order.courses[i].courseId, {
           $inc: { numberOfStudents: 1 },
         })
@@ -149,41 +149,28 @@ export const orderWebhook = asyncHandler(async (request, response) => {
           }
         );
       }
-      let owner;
-      if (c) {
-        owner = c.createdBy.id;
-      }
-      if (w) {
-        owner = w.instructor.id;
-      }
-      console.log(c);
+
       await studentModel.create({
         course: order.courses[i].courseId,
         user: order.user,
         paid: order.courses[i].coursePrice,
-        courseOwner: owner,
+        courseOwner: c ? c.createdBy.id : w.instructor.id,
+      });
+      getIo.to(user.socketId).emit("receiveNotification", {
+        title: "Successfully Payment", //rename the message
+        from: `${c ? c.title : w.title}`,
+        message: `Welcome to ${c ? c.title : w.title}`,
+      });
+      let sendToInstructor = c ? c.createdBy.id : w.instructor.id;
+      getIo.to(sendToInstructor).emit("receiveNotification", {
+        title: "SomeOne Enroll Your Course",
+        from: `${c ? c.title : w.title}`,
+        message: `${user.userName} Enroll Your Course`,
       });
     }
     // add course to user
     const user = await userModel.findByIdAndUpdate(order.user, {
       $push: { coursesBought: { $each: cBought } },
-    });
-    let sendToInstructor;
-    if (c) {
-      sendToInstructor = c.createdBy.socketId;
-    }
-    if (w) {
-      sendToInstructor = w.instructor.socketId;
-    }
-    getIo.to(user.socketId).emit("receiveNotification", {
-      title: "Successfully Payment", //rename the message
-      from: `${c ? c.title : w.title}`,
-      message: `Welcome to ${c ? c.title : w.title}`,
-    });
-    getIo.to(sendToInstructor).emit("receiveNotification", {
-      title: "SomeOne Enroll Your Course",
-      from: `${c ? c.title : w.title}`,
-      message: `${user.userName} Enroll Your Course`,
     });
 
     // clear cart
