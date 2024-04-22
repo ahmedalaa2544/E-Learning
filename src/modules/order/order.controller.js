@@ -157,17 +157,21 @@ export const orderWebhook = asyncHandler(async (request, response) => {
         paid: order.courses[i].coursePrice,
         courseOwner: c ? c.createdBy.id : w.instructor.id,
       });
-      getIo.to(user.socketId).emit("receiveNotification", {
-        title: "Successfully Payment", //rename the message
-        from: `${c ? c.title : w.title}`,
-        message: `Welcome to ${c ? c.title : w.title}`,
-      });
+      getIo()
+        .to(user.socketId)
+        .emit("receiveNotification", {
+          title: "Successfully Payment", //rename the message
+          from: `${c ? c.title : w.title}`,
+          message: `Welcome to ${c ? c.title : w.title}`,
+        });
       let sendToInstructor = c ? c.createdBy.id : w.instructor.id;
-      getIo.to(sendToInstructor).emit("receiveNotification", {
-        title: "SomeOne Enroll Your Course",
-        from: `${c ? c.title : w.title}`,
-        message: `${user.userName} Enroll Your Course`,
-      });
+      getIo()
+        .to(sendToInstructor)
+        .emit("receiveNotification", {
+          title: "SomeOne Enroll Your Course",
+          from: `${c ? c.title : w.title}`,
+          message: `${user.userName} Enroll Your Course`,
+        });
     }
     // add course to user
     user.coursesBought.push(...cBought);
