@@ -121,8 +121,6 @@ export const orderWebhook = asyncHandler(async (request, response) => {
     return;
   }
 
-  const user = await userModel.findById(order.user);
-
   // Handle the event
   if (event.type === "checkout.session.completed") {
     // change order status
@@ -130,6 +128,7 @@ export const orderWebhook = asyncHandler(async (request, response) => {
     const order = await orderModel.findByIdAndUpdate(orderId, {
       status: "Paid",
     });
+    const user = await userModel.findById(order.user);
     let cBought = [];
     for (let i = 0; i < order.courses.length; i++) {
       cBought.push(order.courses[i].courseId);
