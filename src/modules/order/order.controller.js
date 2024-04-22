@@ -121,6 +121,8 @@ export const orderWebhook = asyncHandler(async (request, response) => {
     return;
   }
 
+  const user = await userModel.findById(order.user);
+
   // Handle the event
   if (event.type === "checkout.session.completed") {
     // change order status
@@ -169,10 +171,7 @@ export const orderWebhook = asyncHandler(async (request, response) => {
       });
     }
     // add course to user
-    const user = await userModel.findByIdAndUpdate(order.user, {
-      $push: { coursesBought: { $each: cBought } },
-    });
-
+    user.coursesBought.push(...cBought);
     // clear cart
     await cartModel.updateOne({ user: order.user }, { course: [] });
     return response.status(200).json({ message: "Done" });
