@@ -38,13 +38,10 @@ export const delCoupon = asyncHandler(async (req, res, next) => {
   if (!coupon) {
     return next(new Error("Coupon not found", { cause: 404 }));
   }
-  if (coupon?.createdBy != req.user.id) {
-    return next(
-      new Error("You Have not Access to coupon on this course", {
-        cause: 401,
-      })
-    );
-  }
+
+  await courseModel.findByIdAndUpdate(coupon.courseId, {
+    $pull: { coupons: coupon.id },
+  });
 
   return res.status(200).json({ message: "Done" });
 });
