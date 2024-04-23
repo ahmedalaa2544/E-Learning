@@ -11,6 +11,7 @@ import bcryptjs from "bcryptjs";
 import { ConfirmTemp } from "../../utils/htmlTemps.js";
 import crypto from "crypto";
 import sendEmail from "../../utils/sentEmail.js";
+import notificationModel from "../../../DB/model/notification.model.js";
 
 export const getUser = asyncHandler(async (req, res, next) => {
   const user = await userModel.findById(req.user._id);
@@ -373,4 +374,12 @@ export const withdraw = asyncHandler(async (req, res, next) => {
   user.currentBalance = 0;
   user.save();
   return res.status(200).json({ message: "Done" });
+});
+
+export const getNotify = asyncHandler(async (req, res, next) => {
+  const notifications = await notificationModel
+    .find({ user: req.user.id })
+    .populate([{ path: "notifications.from", select: "userName profilePic" }]);
+
+  return res.status(200).json({ message: "Done", notifications });
 });

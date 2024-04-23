@@ -60,4 +60,6 @@ router.patch(
   userController.withdraw
 );
 
+router.get("/notifications", isAuth, userController.getNotify);
+
 export default router;
