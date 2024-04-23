@@ -104,9 +104,10 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
         $push: { notifications: notification },
       }
     );
+
     if (!notify) {
       await notificationModel.create({
-        user: { $in: destId },
+        user: destId[0],
         notifications: notification,
       });
     }
