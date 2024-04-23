@@ -26,6 +26,8 @@ export const createCoupon = asyncHandler(async (req, res, next) => {
     expireAt: new Date(req.body.expireAt).getTime(),
     createdBy: req.user._id,
   });
+  checkCourse.coupons.push(coupon.id);
+  await checkCourse.save();
   // response
   return res.status(200).json({ message: "Done", coupon });
 });

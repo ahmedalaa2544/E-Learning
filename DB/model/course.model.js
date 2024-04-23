@@ -135,6 +135,7 @@ const courseSchema = new Schema(
     numberOfRatings: { type: Number, default: 0 },
 
     rating: { type: Number, default: 0 },
+    coupons: [{ type: Types.ObjectId, ref: "Coupon" }],
   },
   {
     id: false,

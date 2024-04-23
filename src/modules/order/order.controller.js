@@ -9,6 +9,7 @@ import couponModel from "../../../DB/model/coupon.model.js";
 import workshopModel from "../../../DB/model/workshop.model.js";
 import { getIo } from "../../utils/server.js";
 import chatModel from "../../../DB/model/chat.model.js";
+import notificationModel from "../../../DB/model/notification.model.js";
 //
 export const createOrder = asyncHandler(async (req, res, next) => {
   //Check Cart
@@ -157,19 +158,29 @@ export const orderWebhook = asyncHandler(async (request, response) => {
         paid: order.courses[i].coursePrice,
         courseOwner: c ? c.createdBy.id : w.instructor.id,
       });
-      getIo()
-        .to(user.socketId)
-        .emit("receiveNotification", {
-          title: "Successfully Payment", //rename the message
-          from: `${c ? c.title : w.title}`,
-          message: `Welcome to ${c ? c.title : w.title}`,
-        });
-      let sendToInstructor = c ? c.createdBy.id : w.instructor.id;
+      const notify = await notificationModel.create({
+        user: c ? c.createdBy.id : w.instructor.id,
+        $push: {
+          notifications: {
+            from: user.id,
+            title: "SomeOne Enroll Your Course",
+            message: `${user.userName} Enroll Your Course`,
+          },
+        },
+      });
+      // getIo()
+      //   .to(user.socketId)
+      //   .emit("notification", {
+      //     title: "Successfully Payment", //rename the message
+      //     from: user.id,
+      //     message: `Welcome to ${c ? c.title : w.title}`,
+      //   });
+      let sendToInstructor = c ? c.createdBy.socketId : w.instructor.socketId;
       getIo()
         .to(sendToInstructor)
-        .emit("receiveNotification", {
+        .emit("notification", {
           title: "SomeOne Enroll Your Course",
-          from: `${c ? c.title : w.title}`,
+          from: user.id,
           message: `${user.userName} Enroll Your Course`,
         });
     }

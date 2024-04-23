@@ -313,9 +313,9 @@ export const getCourse = asyncHandler(async (req, res, next) => {
   const { courseId } = req.params;
 
   // Find the course in the database by its ID and populate the instructors field.
-  const fetchedCourse = await Course.findById(courseId).populate([
-    { path: "instructors", select: "userName profilePic" },
-  ]);
+  const fetchedCourse = await Course.findById(courseId)
+    .populate([{ path: "instructors", select: "userName profilePic" }])
+    .populate("coupons");
 
   // If the course is not found, invoke the error middleware with a 404 status.
   if (!fetchedCourse) {
