@@ -26,6 +26,7 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
     (participant) => participant.id !== req.user.id
   );
   let socketIds = destIds.map((participant) => participant.socketId);
+  let destId = destIds.map((participant) => participant.id);
 
   // Send files
   if (req.file) {
@@ -97,7 +98,7 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
     };
     const notify = await notificationModel.findOneAndUpdate(
       {
-        user: { $in: destIds },
+        user: { $in: destId },
       },
       {
         $push: { notifications: notification },
@@ -105,7 +106,7 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
     );
     if (!notify) {
       await notificationModel.create({
-        user: { $in: destIds },
+        user: { $in: destId },
         notifications: notification,
       });
     }
