@@ -21,6 +21,8 @@ import upload, {
 import instructorModel from "../../../DB/model/instructor.model.js";
 import fetch from "node-fetch";
 import courseModel from "../../../DB/model/course.model.js";
+import notificationModel from "../../../DB/model/notification.model.js";
+import { getIo } from "../../utils/server.js";
 
 /**
  * Create a new course with the provided title.
@@ -670,6 +672,29 @@ export const postComment = asyncHandler(async (req, res, next) => {
     // sentimentAnalysis,
   });
   await createdComment.save(); // Save the newly created comment
+
+  // add notification
+  const course = await courseModel.findById(courseId).populate("createdBy");
+  const notification = {
+    from: req.user.id,
+    title: "New Comment",
+    message: `${req.user.userName} comment on ${course.title}`,
+  };
+  const notify = await notificationModel.findOneAndUpdate(
+    {
+      user: course.createdBy.id,
+    },
+    {
+      $push: { notifications: notification },
+    }
+  );
+  if (!notify) {
+    await notificationModel.create({
+      user: course.createdBy.id,
+      notifications: notification,
+    });
+  }
+  getIo().to(course.createdBy.socketId).emit("notification", notification);
 
   // Return a JSON response indicating the success or failure of the comment posting process
   return createdComment
