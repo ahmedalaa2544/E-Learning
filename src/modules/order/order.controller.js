@@ -158,31 +158,30 @@ export const orderWebhook = asyncHandler(async (request, response) => {
         paid: order.courses[i].coursePrice,
         courseOwner: c ? c.createdBy.id : w.instructor.id,
       });
-      const notify = await notificationModel.create({
-        user: c ? c.createdBy.id : w.instructor.id,
-        $push: {
-          notifications: {
-            from: user.id,
-            title: "SomeOne Enroll Your Course",
-            message: `${user.userName} Enroll Your Course`,
-          },
+
+      //add notification
+      const notification = {
+        from: user.id,
+        title: "SomeOne Enroll Your Course",
+        message: `${user.userName} Enroll Your Course`,
+      };
+      const notify = await notificationModel.findOneAndUpdate(
+        {
+          user: c ? c.createdBy.id : w.instructor.id,
         },
-      });
-      // getIo()
-      //   .to(user.socketId)
-      //   .emit("notification", {
-      //     title: "Successfully Payment", //rename the message
-      //     from: user.id,
-      //     message: `Welcome to ${c ? c.title : w.title}`,
-      //   });
-      let sendToInstructor = c ? c.createdBy.socketId : w.instructor.socketId;
-      getIo()
-        .to(sendToInstructor)
-        .emit("notification", {
-          title: "SomeOne Enroll Your Course",
-          from: user.id,
-          message: `${user.userName} Enroll Your Course`,
+        {
+          $push: { notifications: notification },
+        }
+      );
+      if (!notify) {
+        await notificationModel.create({
+          user: c ? c.createdBy.id : w.instructor.id,
+          notifications: notification,
         });
+      }
+      let sendToInstructor = c ? c.createdBy.socketId : w.instructor.socketId;
+
+      getIo().to(sendToInstructor).emit("notification", notification);
     }
     // add course to user
     await userModel.findByIdAndUpdate(order.user, {

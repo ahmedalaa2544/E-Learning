@@ -1,4 +1,5 @@
 import chatModel from "../../../DB/model/chat.model.js";
+import notificationModel from "../../../DB/model/notification.model.js";
 import userModel from "../../../DB/model/user.model.js";
 import { asyncHandler } from "../../utils/asyncHandling.js";
 import upload from "../../utils/azureServices.js";
@@ -87,9 +88,33 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
       time: dateOfPublish,
     });
     chat.messages.status = "delivered";
+
+    // add notification
+    const notification = {
+      from: req.user.id,
+      title: "New Message",
+      message: `${req.user.userName} sent you a message`,
+    };
+    const notify = await notificationModel.findOneAndUpdate(
+      {
+        user: { $in: destIds },
+      },
+      {
+        $push: { notifications: notification },
+      }
+    );
+    if (!notify) {
+      await notificationModel.create({
+        user: { $in: destIds },
+        notifications: notification,
+      });
+    }
+    getIo().to(socketIds).emit("notification", notification);
+
     return res.status(200).json({ message: "Done" });
   }
   getIo().to(req.user.socketId).emit("emptyMsg", "Please, Enter Vaild Message");
+
   return next(new Error("Please, Enter Vaild Message", { cause: 400 }));
 });
 
@@ -162,8 +187,6 @@ export const allMessages = asyncHandler(async (req, res, next) => {
 
 export const createGroup = asyncHandler(async (req, res, next) => {
   const { name, participants } = req.body;
-  console.log(req.body.name);
-  console.log(participants);
 
   let imageUrl;
   // Send files
