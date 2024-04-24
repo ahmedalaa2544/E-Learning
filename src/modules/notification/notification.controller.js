@@ -29,12 +29,3 @@ app.get("/send-notification", (req, res) => {
   res.json({ statue: "Success", message: "Message sent to push service" });
   console.log(subDatabse);
 });
-
-/* 
-Public Key:
-BC715ldq3LNaKheFg_f4NiFBYZwj3qzRKcxnemdng3jBICMFvyjQ99c3SnkdQ2vL8mNPc6L0ZlWYyuF_zQoBlo0
-
-Private Key:
-fpgCqM8ef7h2eJPthrl_r9rwqoe6karSaQl8oaprHB0
-
-*/
