@@ -24,8 +24,8 @@ export const saveSub = asyncHandler(async (req, res) => {
 
 ///////////////////////////////////////////////////
 
-app.get("/send-notification", (req, res) => {
-  webpush.sendNotification(subDatabse[0], "Hello world");
-  res.json({ statue: "Success", message: "Message sent to push service" });
-  console.log(subDatabse);
-});
+// app.get("/send-notification", (req, res) => {
+//   webpush.sendNotification(subDatabse[0], "Hello world");
+//   res.json({ statue: "Success", message: "Message sent to push service" });
+//   console.log(subDatabse);
+// });
