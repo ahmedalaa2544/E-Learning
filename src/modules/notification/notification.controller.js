@@ -17,7 +17,7 @@ webpush.setVapidDetails(
 
 export const saveSub = asyncHandler(async (req, res) => {
   await userModel.findByIdAndUpdate(req.user.id, {
-    popUpId: req.body,
+    popUpId: req.body.popUp,
   });
   res.json({ status: "Success", message: "Subscription saved!" });
 });
