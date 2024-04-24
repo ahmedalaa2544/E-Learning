@@ -4,6 +4,7 @@ import userModel from "../../../DB/model/user.model.js";
 import { asyncHandler } from "../../utils/asyncHandling.js";
 import upload from "../../utils/azureServices.js";
 import { getIo } from "../../utils/server.js";
+import webpush from "web-push";
 
 export const sendMsg = asyncHandler(async (req, res, next) => {
   const { message } = req.body;
@@ -26,6 +27,7 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
     (participant) => participant.id !== req.user.id
   );
   let socketIds = destIds.map((participant) => participant.socketId);
+  let popUpIds = destIds.map((participant) => participant.popUpId);
   let destId = destIds.map((participant) => participant.id);
 
   // Send files
@@ -112,6 +114,7 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
       });
     }
     getIo().to(socketIds).emit("notification", notification);
+    webpush.sendNotification(popUpIds, notification);
 
     return res.status(200).json({ message: "Done" });
   }

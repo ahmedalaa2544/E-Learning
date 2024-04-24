@@ -137,12 +137,12 @@ export const orderWebhook = asyncHandler(async (request, response) => {
         .findByIdAndUpdate(order.courses[i].courseId, {
           $inc: { numberOfStudents: 1 },
         })
-        .populate([{ path: "createdBy", select: "socketId" }]);
+        .populate([{ path: "createdBy" }]);
       let w = await workshopModel
         .findByIdAndUpdate(order.courses[i].courseId, {
           $inc: { numberOfStudents: 1 },
         })
-        .populate([{ path: "instructor", select: "socketId" }]);
+        .populate([{ path: "instructor" }]);
       if (w) {
         await chatModel.findOneAndUpdate(
           { name: w.title, type: "group" },
@@ -179,9 +179,10 @@ export const orderWebhook = asyncHandler(async (request, response) => {
           notifications: notification,
         });
       }
-      let sendToInstructor = c ? c.createdBy.socketId : w.instructor.socketId;
+      let sendToInstructor = c ? c.createdBy : w.instructor;
 
-      getIo().to(sendToInstructor).emit("notification", notification);
+      getIo().to(sendToInstructor.socketId).emit("notification", notification);
+      webpush.sendNotification(sendToInstructor.popUpId, notification);
     }
     // add course to user
     await userModel.findByIdAndUpdate(order.user, {

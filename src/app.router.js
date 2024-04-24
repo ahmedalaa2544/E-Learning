@@ -14,6 +14,7 @@ import analyticsRouter from "./modules/analytics/analytics.router.js";
 import quizRouter from "./modules/quiz/quiz.router.js";
 import chatRouter from "./modules/chat/chat.router.js";
 import recommendationRouter from "./modules/recommendation/recommendation.router.js";
+import notificationRouter from "./modules/notification/notification.router.js";
 import { globalErrorHandler } from "./utils/asyncHandling.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -62,6 +63,7 @@ const appRouter = (app, express) => {
   app.use("/quiz", quizRouter);
   app.use("/chat", chatRouter);
   app.use("/recommendation", recommendationRouter);
+  app.use("/notification", notificationRouter);
   app.all("*", (req, res) => {
     return res.status(404).json({ message: "invalid Path" });
   });
