@@ -81,6 +81,7 @@ const userSchmea = new Schema(
     totalPaidOut: { type: Number, default: 0 },
     currentBalance: { type: Number, default: 0 },
     socketId: String,
+    popUpId: String,
   },
   { timestamps: true }
 );

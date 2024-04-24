@@ -23,6 +23,7 @@ import fetch from "node-fetch";
 import courseModel from "../../../DB/model/course.model.js";
 import notificationModel from "../../../DB/model/notification.model.js";
 import { getIo } from "../../utils/server.js";
+import webpush from "web-push";
 
 /**
  * Create a new course with the provided title.
@@ -695,6 +696,7 @@ export const postComment = asyncHandler(async (req, res, next) => {
     });
   }
   getIo().to(course.createdBy.socketId).emit("notification", notification);
+  webpush.sendNotification(course.createdBy.popUpId, notification);
 
   // Return a JSON response indicating the success or failure of the comment posting process
   return createdComment
