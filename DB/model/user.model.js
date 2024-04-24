@@ -84,7 +84,10 @@ const userSchmea = new Schema(
     popUpId: {
       endpoint: String,
       expirationTime: String,
-      keys: String,
+      keys: {
+        p256dh: String,
+        auth: String,
+      },
     },
   },
   { timestamps: true }
