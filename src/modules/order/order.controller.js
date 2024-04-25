@@ -160,10 +160,13 @@ export const orderWebhook = asyncHandler(async (request, response) => {
       });
 
       //add notification
+      let checkCourse = c ? c : w;
+
       const notification = {
-        from: user.id,
-        title: "SomeOne Enroll Your Course",
-        message: `${user.userName} Enroll Your Course`,
+        image: checkCourse.coverImageUrl || checkCourse.promotionImage.url,
+        title: "New Student",
+        body: `${user.userName} Enroll Your Course, ${checkCourse.title}`,
+        url: `https://e-learning-azure.vercel.app/courseDetails/${checkCourse.id}`,
       };
       const notify = await notificationModel.findOneAndUpdate(
         {
@@ -182,7 +185,12 @@ export const orderWebhook = asyncHandler(async (request, response) => {
       let sendToInstructor = c ? c.createdBy : w.instructor;
 
       getIo().to(sendToInstructor.socketId).emit("notification", notification);
-      webpush.sendNotification(sendToInstructor.popUpId, notification);
+      if (course.createdBy.popUpId.endpoint) {
+        webpush.sendNotification(
+          sendToInstructor.popUpId,
+          JSON.stringify(notification)
+        );
+      }
     }
     // add course to user
     await userModel.findByIdAndUpdate(order.user, {

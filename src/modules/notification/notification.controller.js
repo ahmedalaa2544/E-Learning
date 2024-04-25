@@ -1,3 +1,4 @@
+import notificationModel from "../../../DB/model/notification.model.js";
 import userModel from "../../../DB/model/user.model.js";
 import { asyncHandler } from "../../utils/asyncHandling.js";
 
@@ -22,6 +23,26 @@ export const saveSub = asyncHandler(async (req, res) => {
   res.json({ status: "Success", message: "Subscription saved!" });
 });
 
+export const readNotify = asyncHandler(async (req, res) => {
+  const notification = await notificationModel.findOne({ user: req.user.id });
+
+  if (req.params.notificationId) {
+    // Mark the notification as read
+    notification.notifications.forEach((notif) => {
+      if (notif._id.toString() == req.params.notificationId) {
+        notif.isRead = true;
+      }
+    });
+    await notification.save();
+    return res.status(200).json({ message: "Done" });
+  }
+  // Mark all notification as read
+  notification.notifications.forEach((notif) => {
+    notif.isRead = true;
+  });
+  await notification.save();
+  return res.status(200).json({ message: "Done" });
+});
 ///////////////////////////////////////////////////
 
 // app.get("/send-notification", (req, res) => {

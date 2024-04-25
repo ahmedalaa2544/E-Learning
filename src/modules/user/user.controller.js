@@ -377,9 +377,9 @@ export const withdraw = asyncHandler(async (req, res, next) => {
 });
 
 export const getNotify = asyncHandler(async (req, res, next) => {
-  const notifications = await notificationModel
-    .find({ user: req.user.id })
-    .populate([{ path: "notifications.from", select: "userName profilePic" }]);
+  const [{ notifications }] = await notificationModel.find({
+    user: req.user.id,
+  });
 
   return res.status(200).json({ message: "Done", notifications });
 });

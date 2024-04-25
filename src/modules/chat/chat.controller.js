@@ -94,9 +94,10 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
 
     // add notification
     const notification = {
-      from: req.user.id,
+      image: req.user.profilePic.url,
       title: "New Message",
-      message: `${req.user.userName} sent you a message`,
+      body: `${req.user.userName} sent you a message`,
+      url: `https://e-learning-azure.vercel.app/instructor/messages/${chatId}`,
     };
     const notify = await notificationModel.findOneAndUpdate(
       {
@@ -114,7 +115,9 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
       });
     }
     getIo().to(socketIds).emit("notification", notification);
-    webpush.sendNotification(popUpIds, notification);
+    if (course.createdBy.popUpId.endpoint) {
+      webpush.sendNotification(popUpIds, JSON.stringify(notification));
+    }
 
     return res.status(200).json({ message: "Done" });
   }

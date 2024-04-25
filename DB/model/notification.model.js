@@ -5,9 +5,11 @@ const notificationSchmea = new Schema(
     user: { type: Types.ObjectId, ref: "User", required: true },
     notifications: [
       {
-        from: { type: Types.ObjectId, ref: "User", required: true },
+        image: String,
         title: { type: String, required: true },
-        message: { type: String, required: true },
+        body: { type: String, required: true },
+        url: String,
+        isRead: { type: Boolean, default: false },
       },
     ],
   },
