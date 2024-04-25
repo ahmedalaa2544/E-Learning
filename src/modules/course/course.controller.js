@@ -677,9 +677,10 @@ export const postComment = asyncHandler(async (req, res, next) => {
   // add notification
   const course = await courseModel.findById(courseId).populate("createdBy");
   const notification = {
-    from: req.user.id,
+    image: req.user.profilePic.url,
     title: "New Comment",
-    message: `${req.user.userName} comment on ${course.title}`,
+    body: `${req.user.userName} comment on ${course.title}`,
+    url: `https://e-learning-azure.vercel.app/courseDetails/${courseId}`,
   };
   const notify = await notificationModel.findOneAndUpdate(
     {
@@ -696,7 +697,12 @@ export const postComment = asyncHandler(async (req, res, next) => {
     });
   }
   getIo().to(course.createdBy.socketId).emit("notification", notification);
-  webpush.sendNotification(course.createdBy.popUpId, notification);
+  if (course.createdBy.popUpId.endpoint) {
+    webpush.sendNotification(
+      course.createdBy.popUpId,
+      JSON.stringify(notification)
+    );
+  }
 
   // Return a JSON response indicating the success or failure of the comment posting process
   return createdComment

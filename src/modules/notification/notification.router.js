@@ -5,4 +5,6 @@ import isAuth from "../../middleware/authntication.middleware.js";
 
 router.post("/save-subscription", isAuth, notityController.saveSub);
 
+router.get("/:notificationId?", isAuth, notityController.readNotify);
+
 export default router;
