@@ -14,7 +14,7 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
   let chat = await chatModel
     .findById(chatId)
     .populate([
-      { path: "participants", select: "userName profilePic socketId" },
+      { path: "participants", select: "userName profilePic socketId popUpId" },
     ]);
 
   // create chat if not found
@@ -115,8 +115,11 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
       });
     }
     getIo().to(socketIds).emit("notification", notification);
-    if (popUpIds[0].endpoint) {
-      webpush.sendNotification(popUpIds, JSON.stringify(notification));
+    if (destIds[0].popUpId.endpoint) {
+      webpush.sendNotification(
+        destIds[0].popUpId,
+        JSON.stringify(notification)
+      );
     }
 
     return res.status(200).json({ message: "Done" });
