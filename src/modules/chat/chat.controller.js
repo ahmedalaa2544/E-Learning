@@ -115,7 +115,7 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
       });
     }
     getIo().to(socketIds).emit("notification", notification);
-    if (course.createdBy.popUpId.endpoint) {
+    if (popUpIds[0].endpoint) {
       webpush.sendNotification(popUpIds, JSON.stringify(notification));
     }
 

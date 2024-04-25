@@ -185,7 +185,7 @@ export const orderWebhook = asyncHandler(async (request, response) => {
       let sendToInstructor = c ? c.createdBy : w.instructor;
 
       getIo().to(sendToInstructor.socketId).emit("notification", notification);
-      if (course.createdBy.popUpId.endpoint) {
+      if (sendToInstructor.popUpId.endpoint) {
         webpush.sendNotification(
           sendToInstructor.popUpId,
           JSON.stringify(notification)
