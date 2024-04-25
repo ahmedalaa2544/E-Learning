@@ -15,6 +15,8 @@ router.use("/:courseId/chapter", chapterRouter);
 
 router.get("/search", courseController.search);
 
+router.get("/all-courses", courseController.getAll);
+
 /**
  * Create a new course.
  * Route: POST /courses

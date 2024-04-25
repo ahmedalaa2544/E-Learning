@@ -787,3 +787,14 @@ export const search = asyncHandler(async (req, res, next) => {
   // respone
   return res.status(200).json({ message: "Done", courses });
 });
+
+export const getAll = asyncHandler(async (req, res, next) => {
+  if (req.query.sort == "reverse") {
+    const courses = await courseModel
+      .find({ status: "Published" })
+      .sort({ createdAt: -1 });
+    return res.status(200).json({ courses });
+  }
+  const courses = await courseModel.find({ status: "Published" });
+  return res.status(200).json({ courses });
+});
