@@ -138,35 +138,37 @@ export const getChat = asyncHandler(async (req, res, next) => {
         new Error("Enter Vaild User (Not Yourself Psycho!)", { cause: 400 })
       );
     }
-    let Chat = await chatModel
+    let chat = await chatModel
       .findOne({
         participants: { $all: [chatId, req.user.id] },
         type: "private",
       })
-      .populate([{ path: "participants", select: "userName profilePic" }]);
-    if (!Chat) {
+      .populate([{ path: "participants", select: "userName profilePic" }])
+      .select("-messages");
+    if (!chat) {
       const checkUser = await userModel.findById(chatId);
       if (!checkUser) return next(new Error("user not found", { cause: 404 }));
       let arr = [req.user.id, chatId];
-      Chat = await chatModel.create({
+      chat = await chatModel.create({
         participants: arr,
         messages: [],
         type: "private",
       });
-      const newChat = await chatModel
-        .findById(Chat.id)
-        .populate([{ path: "participants", select: "userName profilePic" }]);
-      const { messages, ...chat } = newChat.toObject();
+      chat = await chatModel
+        .findById(chat.id)
+        .populate([{ path: "participants", select: "userName profilePic" }])
+        .select("-messages");
       return res.status(201).json({ message: "Done", chat });
     }
-    const { messages, ...chat } = Chat.toObject();
     return res.status(200).json({ message: "Done", chat });
   }
-  const Chat = await chatModel
+
+  const chat = await chatModel
     .findById(chatId)
-    .populate([{ path: "participants", select: "userName profilePic" }]);
-  if (!Chat) return next(new Error("chat not found", { cause: 404 }));
-  const { messages, ...chat } = Chat.toObject();
+    .populate([{ path: "participants", select: "userName profilePic" }])
+    .select("-messages");
+
+  if (!chat) return next(new Error("chat not found", { cause: 404 }));
   return res.status(200).json({ message: "Done", chat });
 });
 
