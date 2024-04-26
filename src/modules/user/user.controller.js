@@ -14,15 +14,15 @@ import sendEmail from "../../utils/sentEmail.js";
 import notificationModel from "../../../DB/model/notification.model.js";
 
 export const getUser = asyncHandler(async (req, res, next) => {
-  const user = await userModel
+  const newUser = await userModel
     .findById(req.user._id)
     .select("-password -socketId -popUpId");
   const cryptr = new Cryptr(process.env.CRPTO_PHONE);
   let decryptedPhone;
-  user.phone
-    ? (decryptedPhone = cryptr.decrypt(user.phone))
-    : (user.phone = "");
-  user.phone = decryptedPhone;
+  newUser.phone
+    ? (decryptedPhone = cryptr.decrypt(newUser.phone))
+    : (newUser.phone = "");
+  newUser.phone = decryptedPhone;
   const [{ notifications }] = await notificationModel.find({
     user: req.user.id,
   });
@@ -33,8 +33,8 @@ export const getUser = asyncHandler(async (req, res, next) => {
     }
   });
   console.log(count);
-  user.unreadNotifyCount = count;
-  return res.status(200).json({ message: "Done", user });
+  newUser.unreadNotifyCount = count;
+  return res.status(200).json({ message: "Done", newUser });
 });
 
 export const updateProfile = asyncHandler(async (req, res, next) => {
