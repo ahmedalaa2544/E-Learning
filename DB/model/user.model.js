@@ -80,6 +80,7 @@ const userSchmea = new Schema(
     clicked: { type: Number, default: 0 },
     totalPaidOut: { type: Number, default: 0 },
     currentBalance: { type: Number, default: 0 },
+    unreadNotifyCount: Number,
     socketId: String,
     popUpId: {
       endpoint: String,
