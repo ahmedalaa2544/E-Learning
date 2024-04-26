@@ -10,6 +10,7 @@ const notificationSchmea = new Schema(
         body: { type: String, required: true },
         url: String,
         isRead: { type: Boolean, default: false },
+        time: { type: Date, default: Date.now },
       },
     ],
   },

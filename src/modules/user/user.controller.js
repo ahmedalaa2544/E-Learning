@@ -14,15 +14,27 @@ import sendEmail from "../../utils/sentEmail.js";
 import notificationModel from "../../../DB/model/notification.model.js";
 
 export const getUser = asyncHandler(async (req, res, next) => {
-  const user = await userModel.findById(req.user._id);
+  const user = await userModel
+    .findById(req.user._id)
+    .select("-password -socketId -popUpId");
   const cryptr = new Cryptr(process.env.CRPTO_PHONE);
   let decryptedPhone;
   user.phone
     ? (decryptedPhone = cryptr.decrypt(user.phone))
     : (user.phone = "");
   user.phone = decryptedPhone;
-  const { password, ...newUser } = user.toObject();
-  return res.status(200).json({ message: "Done", newUser });
+  const [{ notifications }] = await notificationModel.find({
+    user: req.user.id,
+  });
+  let count = 0;
+  notifications.forEach((notification) => {
+    if (!notification.isRead) {
+      count += 1;
+    }
+  });
+  console.log(count);
+  user.unreadNotifyCount = count;
+  return res.status(200).json({ message: "Done", user });
 });
 
 export const updateProfile = asyncHandler(async (req, res, next) => {
@@ -377,9 +389,12 @@ export const withdraw = asyncHandler(async (req, res, next) => {
 });
 
 export const getNotify = asyncHandler(async (req, res, next) => {
-  const [{ notifications }] = await notificationModel.find({
-    user: req.user.id,
-  });
+  const [{ notifications }] = await notificationModel
+    .find({
+      user: req.user.id,
+    })
+    .slice("notifications", -10);
 
+  notifications.reverse();
   return res.status(200).json({ message: "Done", notifications });
 });
