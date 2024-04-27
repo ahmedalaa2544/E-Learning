@@ -93,27 +93,29 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
     chat.messages.status = "delivered";
 
     // add notification
-    const notification = {
+    let notification = {
       image: req.user.profilePic.url,
       title: "New Message",
       body: `${req.user.userName} sent you a message`,
       url: `https://e-learning-azure.vercel.app/instructor/messages/${chatId}`,
     };
-    const notify = await notificationModel.findOneAndUpdate(
+    let notify = await notificationModel.findOneAndUpdate(
       {
         user: { $in: destId },
       },
       {
         $push: { notifications: notification },
-      }
+      },
+      { new: true }
     );
 
     if (!notify) {
-      await notificationModel.create({
+      notify = await notificationModel.create({
         user: destId[0],
         notifications: notification,
       });
     }
+    notification = notify.notifications.reverse()[0];
     getIo().to(socketIds).emit("notification", notification);
     if (destIds[0].popUpId.endpoint) {
       webpush.sendNotification(

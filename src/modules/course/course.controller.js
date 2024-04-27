@@ -676,26 +676,29 @@ export const postComment = asyncHandler(async (req, res, next) => {
 
   // add notification
   const course = await courseModel.findById(courseId).populate("createdBy");
-  const notification = {
+  let notification = {
     image: req.user.profilePic.url,
     title: "New Comment",
     body: `${req.user.userName} comment on ${course.title}`,
     url: `https://e-learning-azure.vercel.app/courseDetails/${courseId}`,
   };
-  const notify = await notificationModel.findOneAndUpdate(
+  let notify = await notificationModel.findOneAndUpdate(
     {
       user: course.createdBy.id,
     },
     {
       $push: { notifications: notification },
-    }
+    },
+    { new: true }
   );
   if (!notify) {
-    await notificationModel.create({
+    notify = await notificationModel.create({
       user: course.createdBy.id,
       notifications: notification,
     });
   }
+
+  notification = notify.notifications.reverse()[0];
   getIo().to(course.createdBy.socketId).emit("notification", notification);
   if (course.createdBy.popUpId.endpoint) {
     webpush.sendNotification(
