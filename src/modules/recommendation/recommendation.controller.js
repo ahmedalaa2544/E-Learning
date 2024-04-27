@@ -33,7 +33,7 @@ export const getRecommendations = asyncHandler(async (req, res, next) => {
   // Fetch all courses the user has purchased
   const purchased = await Student.find({ user: req.userId });
   // Extract the wishlist directly from the user object
-  const wishLisht = req.user.wishlist;
+  const wishlist = req.user.wishlist;
 
   // Initialize the rating estimator with user data and interaction details
   const estimateRate = new EstimateRate(
@@ -42,7 +42,7 @@ export const getRecommendations = asyncHandler(async (req, res, next) => {
     ratings,
     clicked,
     purchased,
-    wishLisht
+    wishlist
   );
   // Calculate estimated rates for recommendations
   estimateRate.estimatedRates();
@@ -51,21 +51,23 @@ export const getRecommendations = asyncHandler(async (req, res, next) => {
   // Get the last visited course
   const lastVisit = estimateRate.getLastVisit();
   // Get the last item from the wishlist
-  const lastwishlisted = wishLisht?.pop();
+  const lastwishlisted = wishlist?.pop();
 
   // Setup empty arrays for different recommendation criteria
-  const RFYRecommendations = [];
-  const BYVRecommendations = [];
-  const BYSRecommendations = [];
-  const BYWRecommendations = [];
+  const recommendedForYouRecommendations = [];
+  const becauseYouViewedRecommendations = [];
+  const becauseYouSearchedRecommendations = [];
+  const becauseYouWishlistedRecommendations = [];
 
   // Calculate "Recommended for You" using ratings
-  const RFYPredictions = await contentKNN.generateRecommendations(ratings);
-  RFYPredictions.map((prediction) => {
+  const recommendedForYouPredictions = await contentKNN.generateRecommendations(
+    ratings
+  );
+  recommendedForYouPredictions.map((prediction) => {
     const course = courses.find(
       (item) => prediction.course.toString() === item._id.toString()
     );
-    RFYRecommendations.push({
+    recommendedForYouRecommendations.push({
       course,
       coverImageBlobName: undefined,
       promotionalVideoBlobName: undefined,
@@ -74,14 +76,13 @@ export const getRecommendations = asyncHandler(async (req, res, next) => {
 
   // Process the last visited course for "Because you viewed" recommendations
   if (lastVisit) {
-    const BYVPredictions = await contentKNN.generateItemBasedRecommendations([
-      lastVisit.course,
-    ]);
-    BYVPredictions.map((prediction) => {
+    const becauseYouViewedPredictions =
+      await contentKNN.generateItemBasedRecommendations([lastVisit.course]);
+    becauseYouViewedPredictions.map((prediction) => {
       const course = courses.find(
         (item) => prediction.course.toString() === item._id.toString()
       );
-      BYVRecommendations.push({
+      becauseYouViewedRecommendations.push({
         course,
         coverImageBlobName: undefined,
         promotionalVideoBlobName: undefined,
@@ -94,14 +95,13 @@ export const getRecommendations = asyncHandler(async (req, res, next) => {
 
   // Process the last item from the wishlist for "Because you wishlisted" recommendations
   if (lastwishlisted) {
-    const BYWPredictions = await contentKNN.generateItemBasedRecommendations([
-      lastwishlisted,
-    ]);
-    BYWPredictions.map((prediction) => {
+    const becauseYouWishlistedPredictions =
+      await contentKNN.generateItemBasedRecommendations([lastwishlisted]);
+    becauseYouWishlistedPredictions.map((prediction) => {
       const course = courses.find(
         (item) => prediction.course.toString() === item._id.toString()
       );
-      BYWRecommendations.push({
+      becauseYouWishlistedRecommendations.push({
         course,
         coverImageBlobName: undefined,
         promotionalVideoBlobName: undefined,
@@ -116,17 +116,19 @@ export const getRecommendations = asyncHandler(async (req, res, next) => {
   const recommendations = {
     "Because you viewed": {
       key: lastVisitTitle,
-      recommendations: BYVRecommendations,
+      recommendations: becauseYouViewedRecommendations,
     },
     "Because you wishlisted": {
       key: lastwishlistedTitle,
-      recommendations: BYWRecommendations,
+      recommendations: becauseYouWishlistedRecommendations,
     },
     "Because you searched for": {
       key: undefined,
-      recommendations: BYSRecommendations,
+      recommendations: becauseYouSearchedRecommendations,
     },
-    "Recommended for you": { recommendations: RFYRecommendations },
+    "Recommended for you": {
+      recommendations: recommendedForYouRecommendations,
+    },
     "Learners are viewing": {
       recommendations: undefined,
       message:
@@ -136,6 +138,315 @@ export const getRecommendations = asyncHandler(async (req, res, next) => {
 
   // Respond with the recommendations if successful, otherwise send an error
   return recommendations
+    ? res.status(200).json({ message: "Done", recommendations })
+    : res.status(500).json({ message: "Something went wrong" });
+});
+/**
+ * Retrieves and calculates personalized course recommendations for the user based on their interactions.
+ * This function first fetches all published courses and various user-specific interaction data such as ratings,
+ * views, and purchased courses. It also extracts wishlist items from the user profile. Using this data, it initializes
+ * and computes a recommendation score through an estimator and a content-based K-nearest neighbors algorithm.
+ * The function compiles a list of course recommendations personalized to the user's preferences and interactions,
+ * which is then returned as a response.
+ *
+ * @param {Object} req - The HTTP request object, containing user-specific identifiers and data (e.g., userId).
+ * @param {Object} res - The HTTP response object used to send back the calculated recommendations.
+ * @param {Function} next - The next middleware function in the Express.js routing chain.
+ * @returns {Promise<void>} Outputs directly through HTTP response: either the recommended courses or an error message.
+ */
+
+export const recommendedForYou = asyncHandler(async (req, res, next) => {
+  // Retrieve all courses that are currently marked as 'Published'
+  const courses = await Course.find({ status: "Published" });
+
+  // Fetch all ratings submitted by the current user
+  const ratings = await Rating.find({ user: req.userId });
+
+  // Fetch all views from this user that have an updatedAt value greater than 0
+  const clicked = await View.find({ user: req.userId, updatedAt: { $gt: 0 } });
+
+  // Retrieve all courses that the user has enrolled in
+  const purchased = await Student.find({ user: req.userId });
+
+  // Extract the courses in the user's wishlist from the user object
+  const wishlist = req.user.wishlist;
+
+  // Initialize a rating estimator with user interactions and course data
+  const estimateRate = new EstimateRate(
+    req.user,
+    courses,
+    ratings,
+    clicked,
+    purchased,
+    wishlist
+  );
+
+  // Compute estimated rates to use in generating recommendations
+  estimateRate.estimatedRates();
+
+  // Create a content-based recommender system instance for this user
+  const contentKNN = new ContentKNN(req.userId);
+
+  // Prepare an array to store the final recommendations
+  const recommendedForYouRecommendations = [];
+
+  // Generate personalized course recommendations based on user ratings
+  const recommendedForYouPredictions = await contentKNN.generateRecommendations(
+    ratings
+  );
+  recommendedForYouPredictions.forEach((prediction) => {
+    // Match each prediction with the corresponding course in the database
+    const course = courses.find(
+      (item) => prediction.course.toString() === item._id.toString()
+    );
+    // Add the course and its media details to the recommendations list
+    recommendedForYouRecommendations.push({
+      course,
+      coverImageBlobName: undefined, // Placeholder for future implementation
+      promotionalVideoBlobName: undefined, // Placeholder for future implementation
+    });
+  });
+
+  // Send the compiled list of recommendations to the user or handle errors
+  if (recommendedForYouRecommendations.length > 0) {
+    res.status(200).json({
+      message: "Done",
+      recommendations: recommendedForYouRecommendations,
+    });
+  } else {
+    res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
+export const learnersAreViewing = asyncHandler(async (req, res, next) => {
+  // Placeholder response until the actual implementation is ready
+  res.status(200).json({
+    message:
+      "It will be implemented with Matrix Factorization until we collect data to train with.",
+  });
+});
+
+/**
+ * Generates course recommendations based on the last course viewed by the user, provided the viewing
+ * was recent (within the last two days). This function retrieves all published courses, identifies the most
+ * recently viewed course, and uses a content-based K-nearest neighbors algorithm to find similar courses.
+ * Recommendations are based on the similarity to the last viewed course and are returned if the last view
+ * was recent enough to be relevant.
+ *
+ * @param {Object} req - The HTTP request object, containing user-specific identifiers and data, such as userId.
+ * @param {Object} res - The HTTP response object used to send back the calculated recommendations.
+ * @param {Function} next - The next middleware function in the Express.js routing chain.
+ * @returns {Promise<void>} Outputs directly through HTTP response: either the recommendations or an error message.
+ */
+export const becauseYouViewed = asyncHandler(async (req, res, next) => {
+  // Retrieve all courses that are currently published
+  const courses = await Course.find({ status: "Published" });
+
+  // Initialize a content-based KNN recommender with the current user's ID
+  const contentKNN = new ContentKNN(req.userId);
+
+  // Prepare an array to store recommendations
+  const becauseYouViewedRecommendations = [];
+
+  // Fetch all views by the user with a non-zero updatedAt timestamp
+  const clicked = await View.find({ user: req.userId, updatedAt: { $gt: 0 } });
+
+  // Determine the most recent course viewed by the user, if any
+  const lastVisit = clicked[0];
+  if (lastVisit) {
+    // Find the course details from the list of published courses
+    var lastVisitCourse = courses.find(
+      (item) => lastVisit.course.toString() === item._id.toString()
+    );
+
+    // Extract the title of the last visited course for the recommendation key
+    var lastVisitTitle = lastVisitCourse
+      ? lastVisitCourse.title
+      : "Recently Viewed Course";
+
+    // Calculate the time difference from the last visit to now in days
+    const lastVisitTime = lastVisit.updatedAt;
+    const timeDifference = (new Date() - lastVisitTime) / (1000 * 60 * 60 * 24);
+
+    // Check if the last visit was within the last two days
+    if (timeDifference < 2) {
+      // Generate recommendations based on the last visited course
+      const becauseYouViewedPredictions =
+        await contentKNN.generateItemBasedRecommendations([lastVisit.course]);
+      becauseYouViewedPredictions.map((prediction) => {
+        const course = courses.find(
+          (item) => prediction.course.toString() === item._id.toString()
+        );
+        becauseYouViewedRecommendations.push({
+          course,
+          coverImageBlobName: undefined,
+          promotionalVideoBlobName: undefined,
+        });
+      });
+    }
+  }
+
+  // Construct the final recommendations object
+  const recommendations = {
+    key: lastVisitTitle,
+    recommendations: becauseYouViewedRecommendations,
+  };
+
+  // Send the recommendations if any, otherwise handle error
+  if (becauseYouViewedRecommendations.length > 0) {
+    res.status(200).json({ message: "Done", recommendations });
+  } else {
+    res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
+/**
+ * Generates course recommendations based on the last course added to the user's wishlist. The function
+ * retrieves all published courses, identifies the last wishlisted course, and uses a content-based
+ * K-nearest neighbors algorithm to find similar courses. Recommendations are produced if the wishlist
+ * activity is recent and relevant.
+ *
+ * @param {Object} req - The HTTP request object, containing user-specific identifiers and data, such as userId and user object.
+ * @param {Object} res - The HTTP response object used to send back the calculated recommendations.
+ * @param {Function} next - The next middleware function in the Express.js routing chain.
+ * @returns {Promise<void>} Outputs directly through HTTP response: either the recommendations or an error message.
+ */
+export const becauseYouWishlsted = asyncHandler(async (req, res, next) => {
+  // Retrieve all courses that are currently published to filter against the wishlist
+  const courses = await Course.find({ status: "Published" });
+
+  // Initialize a content-based KNN recommender with the current user's ID
+  const contentKNN = new ContentKNN(req.userId);
+
+  // Prepare an array to store recommendations
+  const becauseYouWishlistedRecommendations = [];
+
+  // Access the user's wishlist from the request object
+  const wishlist = req.user.wishlist;
+
+  // Identify the last item added to the wishlist, if it exists
+  const lastwishlisted = wishlist?.pop();
+
+  // Retrieve details of the last wishlisted course from the fetched courses
+  const lastwishlistedCourse = courses.find(
+    (item) => lastwishlisted.toString() === item._id.toString()
+  );
+
+  // Extract the title for use in the recommendation key
+  const lastwishlistedTitle = lastwishlistedCourse
+    ? lastwishlistedCourse.title
+    : "Recently Wishlisted Course";
+
+  // Uncomment the following lines if tracking the time since wishlist addition is necessary
+  // const lastwishlistedTime = lastwishlistedCourse.updatedAt;
+  // const timeDifference = (new Date() - lastwishlistedTime) / (1000 * 60 * 60 * 24); // Calculate time difference in days
+
+  // Assuming time difference is calculated and valid (uncomment and use if applicable)
+  // if (timeDifference < 2) {
+  // Generate recommendations based on the last wishlisted course using the KNN model
+  const becauseYouWishlistedPredictions =
+    await contentKNN.generateItemBasedRecommendations([lastwishlisted]);
+  becauseYouWishlistedPredictions.map((prediction) => {
+    const course = courses.find(
+      (item) => prediction.course.toString() === item._id.toString()
+    );
+    becauseYouWishlistedRecommendations.push({
+      course,
+      coverImageBlobName: undefined,
+      promotionalVideoBlobName: undefined,
+    });
+  });
+  // }
+
+  // Construct the final recommendations object with the key and recommendations list
+  const recommendations = {
+    key: lastwishlistedTitle,
+    recommendations: becauseYouWishlistedRecommendations,
+  };
+
+  // Send the recommendations if available, otherwise report an error
+  return recommendations.recommendations.length > 0
+    ? res.status(200).json({ message: "Done", recommendations })
+    : res.status(500).json({ message: "Something went wrong" });
+});
+
+/**
+ * Generates course recommendations based on the last course purchased by the user, provided the purchase
+ * was recent (within the last three days). This function retrieves all published courses, identifies the most
+ * recently purchased course, and uses a content-based K-nearest neighbors algorithm to find similar courses.
+ * Recommendations are produced if the purchase activity is recent and relevant.
+ *
+ * @param {Object} req - The HTTP request object, containing user-specific identifiers and data, such as userId.
+ * @param {Object} res - The HTTP response object used to send back the calculated recommendations.
+ * @param {Function} next - The next middleware function in the Express.js routing chain.
+ * @returns {Promise<void>} Outputs directly through HTTP response: either the recommendations or an error message.
+ */
+export const becauseYouPurchased = asyncHandler(async (req, res, next) => {
+  // Retrieve all courses that are currently published to filter against the purchases
+  const courses = await Course.find({ status: "Published" });
+
+  // Initialize a content-based KNN recommender with the current user's ID
+  const contentKNN = new ContentKNN(req.userId);
+
+  // Prepare an array to store recommendations
+  const becauseYouPurchasedRecommendations = [];
+
+  // Fetch all courses the user has purchased, sorted by most recent purchase
+  const purchased = await Student.find({ user: req.userId }).sort({
+    updatedAt: -1,
+  });
+
+  // Identify the last item purchased by the user, if any
+  const lastPurchased = purchased[0];
+  if (lastPurchased) {
+    // Retrieve details of the last purchased course from the fetched courses
+    var lastPurchasedCourse = courses.find(
+      (item) => lastPurchased.course.toString() === item._id.toString()
+    );
+
+    // Extract the title of the last purchased course for the recommendation key
+    var lastPurchasedTitle = lastPurchasedCourse
+      ? lastPurchasedCourse.title
+      : "Recently Purchased Course";
+
+    // Calculate the time difference from the last purchase to now in days
+    const lastPurchasedTime = lastPurchased.updatedAt;
+    const timeDifference =
+      (new Date() - lastPurchasedTime) / (1000 * 60 * 60 * 24);
+
+    // Uncomment the following lines if tracking the time since purchase is necessary
+    // console.log(timeDifference);
+    // console.log(lastPurchasedTime);
+    // console.log(new Date());
+
+    // Check if the last purchase was within the last three days
+    if (timeDifference < 3) {
+      // Generate recommendations based on the last purchased course using the KNN model
+      const becauseYouPurchasedPredictions =
+        await contentKNN.generateItemBasedRecommendations([
+          lastPurchased.course,
+        ]);
+      becauseYouPurchasedPredictions.map((prediction) => {
+        const course = courses.find(
+          (item) => prediction.course.toString() === item._id.toString()
+        );
+        becauseYouPurchasedRecommendations.push({
+          course,
+          coverImageBlobName: undefined,
+          promotionalVideoBlobName: undefined,
+        });
+      });
+    }
+  }
+
+  // Construct the final recommendations object with the key and recommendations list
+  const recommendations = {
+    key: lastPurchasedTitle,
+    recommendations: becauseYouPurchasedRecommendations,
+  };
+
+  // Send the recommendations if available, otherwise report an error
+  return recommendations.recommendations.length > 0
     ? res.status(200).json({ message: "Done", recommendations })
     : res.status(500).json({ message: "Something went wrong" });
 });

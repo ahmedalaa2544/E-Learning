@@ -9,6 +9,7 @@ import courseRouter from "./modules/course/course.router.js";
 import categRouter from "./modules/category/categ.router.js";
 import cartRouter from "./modules/cart/cart.router.js";
 import orderRouter from "./modules/order/order.router.js";
+import paymentRouter from "./modules/payment/payment.router.js";
 import couponRouter from "./modules/coupon/coupon.router.js";
 import analyticsRouter from "./modules/analytics/analytics.router.js";
 import quizRouter from "./modules/quiz/quiz.router.js";
@@ -58,6 +59,7 @@ const appRouter = (app, express) => {
   app.use("/category", categRouter);
   app.use("/cart", cartRouter);
   app.use("/order", orderRouter);
+  app.use("/payment", paymentRouter);
   app.use("/coupon", couponRouter);
   app.use("/analytics", analyticsRouter);
   app.use("/quiz", quizRouter);

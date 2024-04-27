@@ -136,6 +136,10 @@ const courseSchema = new Schema(
 
     rating: { type: Number, default: 0 },
     coupons: [{ type: Types.ObjectId, ref: "Coupon" }],
+    connectedAccountId: {
+      type: String,
+      required: true,
+    },
   },
   {
     id: false,
