@@ -24,6 +24,7 @@ import courseModel from "../../../DB/model/course.model.js";
 import notificationModel from "../../../DB/model/notification.model.js";
 import { getIo } from "../../utils/server.js";
 import webpush from "web-push";
+import searchModel from "../../../DB/model/search.keys.js";
 
 /**
  * Create a new course with the provided title.
@@ -762,6 +763,11 @@ export const submitCourse = asyncHandler(async (req, res, next) => {
 export const search = asyncHandler(async (req, res, next) => {
   let { title, page } = req.query;
 
+  // If title is empty, don't perform the search
+  if (title === "") {
+    courses = "";
+    return res.status(200).json({ message: "Done", courses });
+  }
   // Set default values for page and limit if not provided
   page = parseInt(page) || 1;
   const limit = 5;
@@ -774,6 +780,7 @@ export const search = asyncHandler(async (req, res, next) => {
       { title: { $regex: title, $options: "i" } },
       { tags: { $regex: title, $options: "i" } },
     ],
+    status: "Published",
   };
 
   let courses = await courseModel
@@ -782,11 +789,12 @@ export const search = asyncHandler(async (req, res, next) => {
     .skip(skip)
     .limit(limit);
 
-  // If title is empty, don't perform the search
-  if (title === "") {
-    courses = "";
+  if (req.headers.token) {
+    await searchModel.create({
+      user: req.userId,
+      key: title,
+    });
   }
-
   // respone
   return res.status(200).json({ message: "Done", courses });
 });

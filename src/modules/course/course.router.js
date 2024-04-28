@@ -13,7 +13,18 @@ import { fileUpload, customValidation } from "../../utils/multer.js";
  */
 router.use("/:courseId/chapter", chapterRouter);
 
-router.get("/search", courseController.search);
+router.get(
+  "/search",
+  (req, res, next) => {
+    if (!req.headers.token) {
+      courseController.search(req, res, next);
+    } else {
+      next();
+    }
+  },
+  isAuthenticated,
+  courseController.search
+);
 
 router.get("/all-courses", courseController.getAll);
 
