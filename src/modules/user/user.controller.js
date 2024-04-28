@@ -23,17 +23,18 @@ export const getUser = asyncHandler(async (req, res, next) => {
     ? (decryptedPhone = cryptr.decrypt(newUser.phone))
     : (newUser.phone = "");
   newUser.phone = decryptedPhone;
-  const [{ notifications }] = await notificationModel.find({
+  const notification = await notificationModel.findOne({
     user: req.user.id,
   });
-  let count = 0;
-  notifications.forEach((notification) => {
-    if (!notification.isRead) {
-      count += 1;
-    }
-  });
-  console.log(count);
-  newUser.unreadNotifyCount = count;
+  if (notification) {
+    let count = 0;
+    notification.notifications.forEach((notification) => {
+      if (!notification.isRead) {
+        count += 1;
+      }
+    });
+    newUser.unreadNotifyCount = count;
+  }
   return res.status(200).json({ message: "Done", newUser });
 });
 
