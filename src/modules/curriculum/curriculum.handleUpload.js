@@ -19,7 +19,9 @@ export const uploadVideo = async (
   courseId,
   chapterId,
   curriculumId,
-  videoEdited = undefined
+  videoEdited = undefined,
+  generateHLS = false,
+  generateVtt = false
 ) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -51,7 +53,9 @@ export const uploadVideo = async (
           files.video[0].path,
           blobVideoName,
           "video",
-          blobVideoExtension
+          blobVideoExtension,
+          generateHLS,
+          generateVtt
         );
       }
       // Resolve the Promise with the updated video details

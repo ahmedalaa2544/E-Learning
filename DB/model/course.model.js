@@ -72,6 +72,7 @@ const courseSchema = new Schema(
       },
       set: (value) => (value === "" ? null : value),
     },
+    promotionalVideoVttBlobName: String,
     price: {
       type: Number,
       min: 0,
@@ -138,7 +139,7 @@ const courseSchema = new Schema(
     coupons: [{ type: Types.ObjectId, ref: "Coupon" }],
     connectedAccountId: {
       type: String,
-      required: true,
+      // required: true,
     },
   },
   {

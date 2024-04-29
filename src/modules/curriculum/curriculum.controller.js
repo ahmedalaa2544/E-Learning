@@ -27,6 +27,7 @@ import { mergeSort, calculateDuration } from "../../utils/dataSructures.js";
  * @returns {Object} - Response indicating the success or failure of the video creation process.
  */
 export const createVideo = asyncHandler(async (req, res, next) => {
+  console.log("reach create video");
   // Extract parameters from the request
   const { courseId, chapterId } = req.params;
   const { title, description } = req.body;
@@ -36,6 +37,8 @@ export const createVideo = asyncHandler(async (req, res, next) => {
 
   // Generate a unique curriculumId using MongoDB ObjectId
   const curriculumId = new mongoose.Types.ObjectId();
+  const generateHLS = req.query.generateHLS;
+  const generateVtt = req.query.generateVtt;
 
   // Retrieve existing curriculums for the chapter
   let curriculums = await Curriculum.find({ chapter: chapterId });
@@ -93,12 +96,22 @@ export const createVideo = asyncHandler(async (req, res, next) => {
       courseId,
       chapterId,
       curriculumId,
-      false
+      false,
+      generateHLS,
+      generateVtt
     ));
+    if (generateHLS) {
+      blobVideoName = blobVideoName + "\\HLS" + "\\manifest.m3u8";
+    }
+    if (generateVtt) {
+      var vttBlobName = blobVideoName + "\\thumbnails" + "\\thumbnails.vtt";
+      console.log("promotionalVideoVttBlobName ", vttBlobName);
+    }
     // Save in DataBase
     await Video.findByIdAndUpdate(videoId, {
       ...(videoUrl && { url: videoUrl }),
       ...(blobVideoName && { blobName: blobVideoName }),
+      ...(vttBlobName && { vttBlobName: vttBlobName }),
       ...(duration && { duration: duration }),
     });
   });
@@ -599,6 +612,12 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
       "r",
       "60"
     );
+    // Obtain the Shared Access Signature (SAS) URL for the video blob
+    const { accountSasTokenUrl: vttUrl } = await generateSASUrl(
+      video.vttBlobName,
+      "r",
+      "60"
+    );
     const { accountSasTokenUrl: subtitlesUrl } = await generateSASUrl(
       video.subtitles.blobName,
       "r",
@@ -615,10 +634,12 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
             chapter: curriculum.chapter,
             type: "video",
             title: curriculum.title,
-            url: videoUrl,
+            url: videoUrl.replace(/%5C/g, "/"),
             blobName: undefined,
             resources: resources,
             subtitles: subtitlesUrl,
+            vttBlobName: undefined,
+            vttUrl,
           },
         })
       : res.status(500).json({ message: "Something went wrong" });

@@ -32,6 +32,9 @@ const videoSchema = new Schema(
     blobName: {
       type: String,
     },
+    vttBlobName: {
+      type: String,
+    },
     duration: Number,
   },
 
