@@ -49,6 +49,7 @@ const workshopSchema = new Schema(
     instructor: { type: Types.ObjectId, ref: "User" },
     rooms: [{ type: Types.ObjectId, ref: "Room" }],
     numberOfStudents: { type: Number, default: 0 },
+    coupons: [{ type: Types.ObjectId, ref: "Coupon" }],
   },
   {
     id: false,
