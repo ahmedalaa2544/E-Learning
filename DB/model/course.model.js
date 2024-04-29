@@ -138,7 +138,7 @@ const courseSchema = new Schema(
     coupons: [{ type: Types.ObjectId, ref: "Coupon" }],
     connectedAccountId: {
       type: String,
-      required: true,
+      // required: true,
     },
   },
   {
