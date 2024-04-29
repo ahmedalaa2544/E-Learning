@@ -13,6 +13,7 @@ import {
   compressionFile,
   generateHLSManifestAndUpload,
   generateVttAndUpload,
+  generateSRTAndUpload,
 } from "./MediaProcessing.js";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegStatic from "ffmpeg-static";
@@ -147,10 +148,10 @@ const upload = async (
     temp.track();
 
     // Create a temporary directory
-    temp.mkdir("upload", async (err, r) => {
+    temp.mkdir("upload", async (err, tempDirPath) => {
       if (!err) {
         // initialize outputFileName with that value will be used id there is no compress
-        let outputFileName = inputFilePath;
+        // let outputFileName = inputFilePath;
         const tempDirPath = "F:hls";
         let fileTempUrl;
         try {
@@ -167,7 +168,7 @@ const upload = async (
             //   type
             // );
           }
-
+          // await generateSRTAndUpload(blobName, tempDirPath, outputFileName);
           if (generateHLS) {
             const inputVideoPath = outputFileName;
             fileTempUrl = await generateHLSManifestAndUpload(

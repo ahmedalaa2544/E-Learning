@@ -17,6 +17,7 @@
   "license": "ISC",
   "dependencies": {
     "@azure/storage-blob": "^12.16.0",
+    "@google-cloud/speech": "^6.5.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.0.0",
     "cookie-parser": "^1.4.6",
