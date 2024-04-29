@@ -1,12 +1,3 @@
-/**
- * Compresses a file using FFmpeg based on the specified compression type.
- *
- * @param {string} inputFileName - The path to the input file to be compressed.
- * @param {string} outputFileName - The path to save the compressed output file.
- * @param {string} type - The type of compression to apply (e.g., "video" or "image").
- * @returns {Promise<string>} - A Promise resolving to the path of the compressed file.
- * @throws {Error} - Throws an error if the compression process encounters an error or if the compression type is invalid.
- */
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegStatic from "ffmpeg-static";
 ffmpeg.setFfmpegPath(ffmpegStatic);
@@ -21,6 +12,17 @@ import {
 import { generateSASUrl } from "./azureServices.js";
 import fs from "fs";
 import path from "path";
+import speech from "@google-cloud/speech";
+import { v4 as uuidv4 } from "uuid";
+/**
+ * Compresses a file using FFmpeg based on the specified compression type.
+ *
+ * @param {string} inputFileName - The path to the input file to be compressed.
+ * @param {string} outputFileName - The path to save the compressed output file.
+ * @param {string} type - The type of compression to apply (e.g., "video" or "image").
+ * @returns {Promise<string>} - A Promise resolving to the path of the compressed file.
+ * @throws {Error} - Throws an error if the compression process encounters an error or if the compression type is invalid.
+ */
 
 export const compressionFile = (inputFileName, outputFileName, type) => {
   return new Promise(async (resolve, reject) => {
@@ -271,4 +273,114 @@ export async function createVTTFile(directory, interval) {
   fs.writeFileSync(path.join(directory, "thumbnails.vtt"), vttContent);
   console.log("VTT file created.");
   return segmentCount;
+}
+export const generateSRTAndUpload = async (
+  blobName,
+  tempDirPath,
+  inputVideoPath
+  // padding
+) => {
+  return new Promise(async (resolve, reject) => {
+    console.log("reach gnerate Srt file");
+    const outputAudioPath = `${tempDirPath}\\${uuidv4()}.wav`;
+    const srtOutputpath = `${tempDirPath}\\transcription.srt`;
+    await extractAudio(inputVideoPath, outputAudioPath);
+    const transcription = await transcribeAudio(outputAudioPath);
+    console.log("transcription : " + transcription);
+    fs.writeFile(srtOutputpath, formatSRT(transcription), async (err, data) => {
+      if (err) {
+        reject(err);
+      }
+      // try {
+      //   await blockBlobClient.uploadData(data);
+      //   // Call next function here if uploadData succeeds
+      // } catch (uploadError) {
+      //   reject(uploadError);
+      // }
+    });
+    // fs.writeFileSync(srtOutputpath, formatSRT(transcription));
+  });
+};
+export async function extractAudio(inputVideoPath, outputAudioPath) {
+  return new Promise(async (resolve, reject) => {
+    // Create ffmpeg command to extract audio
+    ffmpeg(inputVideoPath)
+      .output(outputAudioPath)
+      .noVideo() // Exclude video stream
+      .audioCodec("pcm_s16le") // Set audio codec to PCM signed 16-bit little-endian
+      .audioFrequency(44100) // Set audio sample rate to 44100 Hz
+      .audioChannels(2) // Set audio channels to stereo (2 channels)
+      .on("end", () => {
+        console.log("Audio extraction completed");
+        resolve();
+      })
+      .on("error", (err) => {
+        console.error("Error extracting audio:", err);
+      })
+      .run();
+  });
+}
+
+async function transcribeAudio(audioFilePath) {
+  return new Promise(async (resolve, reject) => {
+    console.log("reach transcribeAudio");
+    const client = new speech.SpeechClient();
+    const audioBytes = fs.readFileSync(audioFilePath);
+
+    const audio = {
+      content: audioBytes.toString("base64"),
+    };
+
+    const config = {
+      encoding: "LINEAR16",
+      sampleRateHertz: 44100,
+      languageCode: "en-US",
+    };
+
+    const request = {
+      audio: audio,
+      config: config,
+    };
+
+    const [response] = await client.recognize(request);
+    const transcription = response.results
+      .map((result) => result.alternatives[0].transcript)
+      .join("\n");
+
+    resolve(transcription);
+  });
+}
+function formatSRT(transcription) {
+  const lines = transcription.split("\n");
+  let srt = "";
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const startTime = i * 5; // Replace with actual timestamps
+    const endTime = (i + 1) * 5; // Replace with actual timestamps
+
+    srt += `${i + 1}\n`;
+    srt += `${formatTime(startTime)} --> ${formatTime(endTime)}\n`;
+    srt += `${line}\n\n`;
+  }
+
+  return srt;
+}
+
+function formatTime(seconds) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  const millis = Math.floor((seconds % 1) * 1000);
+
+  return `${padZero(hours)}:${padZero(minutes)}:${padZero(secs)},${padZero(
+    millis,
+    3
+  )}`;
+}
+
+function padZero(num, size = 2) {
+  let s = num.toString();
+  while (s.length < size) s = "0" + s;
+  return s;
 }
