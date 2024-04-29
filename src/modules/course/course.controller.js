@@ -17,6 +17,7 @@ import upload, {
   deleteDirectory,
   deleteBlob,
   generateSASUrl,
+  uploadHls,
 } from "../../utils/azureServices.js";
 import instructorModel from "../../../DB/model/instructor.model.js";
 import fetch from "node-fetch";
@@ -90,6 +91,7 @@ export const editCourse = asyncHandler(async (req, res, next) => {
   let blobImageName;
   let blobVideoName;
 
+  console.log(courseId);
   // Check if the request includes a query parameter for uploading a cover image.
   if (req.query.upload === "coverImage") {
     // Check if a cover image file is provided in the request.
@@ -100,7 +102,7 @@ export const editCourse = asyncHandler(async (req, res, next) => {
         .pop();
 
       // Define the path for the cover image in the user's course directory.
-      blobImageName = `Users\\${req.userId}\\Courses\\${courseId}\\Course_Cover_Image.${blobImageExtension}`;
+      blobImageName = `Users\\${req.user.userName}_${req.user._id}\\Courses\\${courseId}\\Course_Cover_Image.${blobImageExtension}`;
 
       // Upload the cover image and obtain its URL.
       coverImageUrl = await upload(
@@ -114,6 +116,7 @@ export const editCourse = asyncHandler(async (req, res, next) => {
 
   // Check if the request includes a query parameter for uploading a promotional video.
   if (req.query.upload === "promotionalVideo") {
+    console.log("reach that");
     // Check if a promotional video file is provided in the request.
     if (req.files?.promotionalVideo) {
       // Extract the extension for the promotional video.
@@ -122,15 +125,36 @@ export const editCourse = asyncHandler(async (req, res, next) => {
         .pop();
 
       // Define the path for the promotional video in the user's course directory.
-      blobVideoName = `Users\\${req.userId}\\Courses\\${courseId}\\Course_Promotional_Video.${blobVideoExtension}`;
-
+      blobVideoName = `Users\\${req.user.userName}_${req.user._id}\\Courses\\${courseId}`;
+      console.log(`promotionalVideoUrl ${req.files.promotionalVideo[0].path}`);
+      // const { manifestURL, thumbnailsURL } = await uploadHls(
+      //   req.files.promotionalVideo[0].path,
+      //   blobVideoName
+      // );
+      // promotionalVideoUrl = manifestURL;
       // Upload the promotional video and obtain its URL.
+      const generateHLS = req.query.generateHLS;
+      const generateVtt = req.query.generateVtt;
       promotionalVideoUrl = await upload(
         req.files.promotionalVideo[0].path,
         blobVideoName,
         "video",
-        blobVideoExtension
+        blobVideoExtension,
+        false,
+        generateHLS,
+        generateVtt
       );
+      if (generateHLS) {
+        blobVideoName = blobVideoName + "\\HLS" + "\\manifest.m3u8";
+      }
+      if (generateVtt) {
+        var promotionalVideoVttBlobName =
+          blobVideoName + "\\thumbnails" + "\\thumbnails.vtt";
+        console.log(
+          "promotionalVideoVttBlobName ",
+          promotionalVideoVttBlobName
+        );
+      }
     }
   }
 
@@ -207,6 +231,7 @@ export const editCourse = asyncHandler(async (req, res, next) => {
       coverImageBlobName: blobImageName,
       promotionalVideoUrl: promotionalVideoUrl,
       promotionalVideoBlobName: blobVideoName,
+      promotionalVideoVttBlobName,
       price: price,
       discount: discount,
       category: category,
@@ -237,7 +262,13 @@ export const editCourse = asyncHandler(async (req, res, next) => {
     "r",
     "60"
   );
-
+  // Extract the blob name associated with the course's promotional video and generate a Shared Access Signature (SAS) URL with read access and a 60-minute expiry.
+  const blobVttName = editedCourse.promotionalVideoVttBlobName;
+  const { accountSasTokenUrl: vttUrl } = await generateSASUrl(
+    blobVttName,
+    "r",
+    "60"
+  );
   // Return a JSON response indicating the success or failure of the course edit operation.
   return editedCourse
     ? res.status(200).json({
@@ -246,8 +277,10 @@ export const editCourse = asyncHandler(async (req, res, next) => {
           ...editedCourse._doc,
           coverImageUrl: imageUrl,
           coverImageBlobName: undefined,
-          promotionalVideoUrl: videoUrl,
+          promotionalVideoUrl: videoUrl.replace(/%5C/g, "/"),
           promotionalVideoBlobName: undefined,
+          promotionalVideoVttBlobName: undefined,
+          promotionalVideovttUrl: vttUrl.replace(/%5C/g, "/"),
         },
       })
     : res.status(500).json({ message: "Something went wrong" });
@@ -413,6 +446,12 @@ export const getCourse = asyncHandler(async (req, res, next) => {
     "60"
   );
 
+  const { accountSasTokenUrl: vttUrl } = await generateSASUrl(
+    fetchedCourse.promotionalVideoVttBlobName,
+    "r",
+    "60"
+  );
+
   // Return a JSON response based on the success or failure of the operation.
   return fetchedCourse
     ? res.status(200).json({
@@ -421,8 +460,10 @@ export const getCourse = asyncHandler(async (req, res, next) => {
           ...fetchedCourse._doc,
           coverImageUrl: imageUrl,
           coverImageBlobName: undefined,
-          promotionalVideoUrl: videoUrl,
+          promotionalVideoUrl: videoUrl.replace(/%5C/g, "/"),
           promotionalVideoBlobName: undefined,
+          promotionalVideovttUrl: vttUrl.replace(/%5C/g, "/"),
+          promotionalVideoVttBlobName: undefined,
           comments: userMeta,
           finalPrice: fetchedCourse.finalPrice,
         },

@@ -9,7 +9,15 @@ import {
 import temp from "temp";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
-import { compressionFile } from "./compression.js";
+import {
+  compressionFile,
+  generateHLSManifestAndUpload,
+  generateVttAndUpload,
+} from "./MediaProcessing.js";
+import ffmpeg from "fluent-ffmpeg";
+import ffmpegStatic from "ffmpeg-static";
+ffmpeg.setFfmpegPath(ffmpegStatic);
+import path from "path";
 
 /**
  * Creates a new container in Azure Blob Storage or retrieves an existing one.
@@ -127,17 +135,24 @@ const upload = async (
   blobName,
   type,
   fileExtension,
-  compress = true
+  compress = true,
+  generateHLS = false,
+  generateVtt = false,
+  thumbnailInterval = 10,
+  sampleRate = 10,
+  padding = 5
 ) => {
   return new Promise((resolve, reject) => {
     // Initialize the temp module for temporary directory management
     temp.track();
 
     // Create a temporary directory
-    temp.mkdir("upload", async (err, tempDirPath) => {
+    temp.mkdir("upload", async (err, r) => {
       if (!err) {
         // initialize outputFileName with that value will be used id there is no compress
         let outputFileName = inputFilePath;
+        const tempDirPath = "F:hls";
+        let fileTempUrl;
         try {
           // if flag compress true compress will happen for certain types
           if (compress) {
@@ -153,33 +168,54 @@ const upload = async (
             // );
           }
 
-          // Generate a Shared Access Signature (SAS) URL for secure blob access
-          const { accountSasTokenUrl, fileUrl } = await generateSASUrl(
-            blobName,
-            "racwd",
-            100
-          );
-
-          // Create a BlockBlobClient using the SAS URL
-          const blockBlobClient = new BlockBlobClient(accountSasTokenUrl);
-          // Read the compressed file and upload its data to Azure Blob Storage
-          fs.readFile(outputFileName, async (err, data) => {
-            if (err) {
-              reject(err);
-            }
-            try {
-              await blockBlobClient.uploadData(data);
-              // Call next function here if uploadData succeeds
-            } catch (uploadError) {
-              reject(uploadError);
-            }
-          });
-
+          if (generateHLS) {
+            const inputVideoPath = outputFileName;
+            fileTempUrl = await generateHLSManifestAndUpload(
+              blobName,
+              tempDirPath,
+              inputVideoPath,
+              sampleRate,
+              padding
+            );
+            console.log("fileTempUrl   : ", fileTempUrl);
+          } else {
+            // Generate a Shared Access Signature (SAS) URL for secure blob access
+            const { accountSasTokenUrl, fileUrl } = await generateSASUrl(
+              blobName,
+              "racwd",
+              100
+            );
+            fileTempUrl = accountSasTokenUrl;
+            // Create a BlockBlobClient using the SAS URL
+            const blockBlobClient = new BlockBlobClient(accountSasTokenUrl);
+            // Read the compressed file and upload its data to Azure Blob Storage
+            fs.readFile(outputFileName, async (err, data) => {
+              if (err) {
+                reject(err);
+              }
+              try {
+                await blockBlobClient.uploadData(data);
+                // Call next function here if uploadData succeeds
+              } catch (uploadError) {
+                reject(uploadError);
+              }
+            });
+          }
+          if (generateVtt) {
+            const inputVideoPath = outputFileName;
+            var thumbnailsURL = await generateVttAndUpload(
+              blobName,
+              tempDirPath,
+              inputVideoPath,
+              padding,
+              thumbnailInterval
+            );
+          }
           // Cleanup: Remove the temporary directory when the upload is complete
           temp.cleanup();
 
           // Return the fileUrl after successful upload
-          resolve(fileUrl);
+          resolve(fileTempUrl);
         } catch (error) {
           // Cleanup in case of an error
           temp.cleanup();
@@ -194,6 +230,241 @@ const upload = async (
   });
 };
 
+export const uploadHls = async (inputVideoPath, blobName) => {
+  return new Promise((resolve, reject) => {
+    console.log("reach generathls Manifest");
+
+    // Initialize the temp module for temporary directory management
+    temp.track();
+
+    // Create a temporary directory
+    temp.mkdir("upload", async (err, r) => {
+      // const outputManifestPath = `${tempDirPath}\\manifest.m3u8`;
+      // const outputSegmentPath = `${tempDirPath}\\segment%d.ts`;
+      // const outputThumbnailstPath = `${tempDirPath}\\thumbnails.vtt`;
+      // const outputThumbnailsSegmentPath = `${tempDirPath}/thumb%0${padding}d.jpg`;
+      // let manifestURL;
+      try {
+        const tempDirPath = "F:hls";
+        const thumbnailInterval = 10; // Interval in seconds for generating thumbnails
+        const sampleRate = 10;
+        const padding = 5;
+        const manifestURL = await generateHLSManifestAndUpload(
+          blobName,
+          tempDirPath,
+          inputVideoPath,
+          sampleRate,
+          padding
+        );
+        const thumbnailsURL = await generateVttAndUpload(
+          blobName,
+          tempDirPath,
+          inputVideoPath,
+          padding,
+          thumbnailInterval
+        );
+        //   let segmentCount;
+        //   // Step 1: Generate HLS Manifest
+        //   await new Promise((resolve, reject) => {
+        //     ffmpeg(inputVideoPath)
+        //       .outputOptions([
+        //         "-c:v h264",
+        //         "-hls_time 10",
+        //         "-hls_list_size 0",
+        //         "-start_number 0",
+        //         "-f hls",
+        //       ])
+        //       .outputOptions(
+        //         "-hls_segment_filename " + tempDirPath + `/%0${padding}d.ts`
+        //       ) // Set the segment file name pattern
+        //       .output(tempDirPath + "/manifest.m3u8") // Output HLS playlist file
+        //       .on("end", () => {
+        //         // Count the number of segments written to the output directory
+        //         const files = fs.readdirSync(tempDirPath);
+        //         segmentCount = files.filter((file) =>
+        //           file.endsWith(".ts")
+        //         ).length;
+        //         ffmpeg(inputVideoPath)
+        //           .outputOptions([
+        //             "-vf",
+        //             "fps=1/10", // Generates one thumbnail every 10 seconds
+        //             "-s",
+        //             "320x180", // Sets the size of the thumbnail
+        //           ])
+        //           .output(outputThumbnailsSegmentPath)
+        //           .on("end", async () => {
+        //             await createVTTFile(tempDirPath, thumbnailInterval);
+
+        //             console.log("Thumbnails generated.");
+        //             resolve();
+        //           })
+        //           .on("error", (err) => {
+        //             console.error("Error generating thumbnails:", err);
+        //             reject(err);
+        //           })
+        //           .run();
+        //         console.log(segmentCount);
+        //         // const manifestContent = `#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:10\n#EXT-X-MEDIA-SEQUENCE:0\n#EXTINF:10.0,\n${path.basename(
+        //         //   outputSegmentPath
+        //         // )}`;
+        //         // fs.writeFileSync(outputManifestPath, manifestContent);
+        //         resolve();
+        //       })
+        //       .on("error", (err) => {
+        //         reject(err);
+        //       })
+        //       .run();
+        //   });
+        //   //uploading
+        //   // Generate a Shared Access Signature (SAS) URL for secure blob access
+        //   const { accountSasTokenUrl, fileUrl } = await generateSASUrl(
+        //     `${blobName}\\manifest.m3u8`,
+        //     "racwd",
+        //     100
+        //   );
+        //   manifestURL = fileUrl;
+        //   // Create a BlockBlobClient using the SAS URL
+        //   const blockBlobClient = new BlockBlobClient(accountSasTokenUrl);
+
+        //   // Read the manifest file and upload its data to Azure Blob Storage
+        //   fs.readFile(outputManifestPath, async (err, data) => {
+        //     if (err) {
+        //       reject(err);
+        //     }
+        //     try {
+        //       await blockBlobClient.uploadData(data);
+        //       // Call next function here if uploadData succeeds
+        //     } catch (uploadError) {
+        //       reject(uploadError);
+        //     }
+        //   });
+        //   if (1 > 0) {
+        //     // Generate a Shared Access Signature (SAS) URL for secure blob access
+        //     const { accountSasTokenUrl, fileUrl } = await generateSASUrl(
+        //       `${blobName}\\thumbnails.vtt`,
+        //       "racwd",
+        //       100
+        //     );
+        //     var thumbnailsURL = fileUrl;
+        //     // Create a BlockBlobClient using the SAS URL
+        //     const thumbnailsBlockBlobClient = new BlockBlobClient(
+        //       accountSasTokenUrl
+        //     );
+
+        //     // Read the outputThumbnailstPath file and upload its data to Azure Blob Storage
+        //     fs.readFile(outputThumbnailstPath, async (err, data) => {
+        //       if (err) {
+        //         reject(err);
+        //       }
+        //       try {
+        //         await thumbnailsBlockBlobClient.uploadData(data);
+        //         console.log("successfully uploaded thumbnails.vtt");
+        //         // Call next function here if uploadData succeeds
+        //       } catch (uploadError) {
+        //         reject(uploadError);
+        //       }
+        //     });
+        //   }
+        //   // Upload video segments
+        //   for (let i = 0; i < segmentCount; i++) {
+        //     // Format the segment number with leading zeros using padStart
+        //     const segmentFileName = `${i.toString().padStart(padding, "0")}.ts`;
+
+        //     const segmentFilePath = `${tempDirPath}\\${segmentFileName}`;
+        //     console.log(segmentFilePath);
+        //     // Generate a Shared Access Signature (SAS) URL for secure blob access
+        //     const { accountSasTokenUrl, fileUrl } = await generateSASUrl(
+        //       `${blobName}\\${segmentFileName}`,
+        //       "racwd",
+        //       100
+        //     );
+        //     // Create a BlockBlobClient using the SAS URL
+        //     const blockBlobClient = new BlockBlobClient(accountSasTokenUrl);
+        //     fs.readFile(
+        //       `${segmentFilePath}`,
+        //       // "utf-8",
+        //       async (err, data) => {
+        //         if (err) {
+        //           reject(err);
+        //         }
+        //         try {
+        //           await blockBlobClient.uploadData(data);
+
+        //           // Call next function here if uploadData succeeds
+        //         } catch (uploadError) {
+        //           reject(uploadError);
+        //         }
+        //       }
+        //     );
+        //   }
+
+        //   for (let i = 1; i < 15; i++) {
+        //     // Format the segment number with leading zeros using padStart
+        //     const thumbFileName = `thumb${i
+        //       .toString()
+        //       .padStart(padding, "0")}.jpg`;
+
+        //     const thumbFilePath = `${tempDirPath}\\${thumbFileName}`;
+        //     console.log(thumbFilePath);
+        //     // Generate a Shared Access Signature (SAS) URL for secure blob access
+        //     const { accountSasTokenUrl, fileUrl } = await generateSASUrl(
+        //       `${blobName}\\${thumbFileName}`,
+        //       "racwd",
+        //       100
+        //     );
+        //     // Create a BlockBlobClient using the SAS URL
+        //     const blockBlobClient = new BlockBlobClient(accountSasTokenUrl);
+        //     fs.readFile(
+        //       `${thumbFilePath}`,
+        //       // "utf-8",
+        //       async (err, data) => {
+        //         if (err) {
+        //           reject(err);
+        //         }
+        //         try {
+        //           await blockBlobClient.uploadData(data);
+        //           // Call next function here if uploadData succeeds
+        //         } catch (uploadError) {
+        //           reject(uploadError);
+        //         }
+        //       }
+        //     );
+        //   }
+        // Cleanup: Remove the temporary directory when the upload is complete
+        temp.cleanup();
+
+        // Return the manifestURL after successful upload
+        resolve(manifestURL, thumbnailsURL);
+      } catch (error) {
+        // Cleanup in case of an error
+        temp.cleanup();
+        reject(error);
+      }
+    });
+  });
+};
+
+async function createVTTFile(directory, interval) {
+  const files = fs
+    .readdirSync(directory)
+    .filter((file) => file.startsWith("thumb") && file.endsWith(".jpg"));
+  let vttContent = "WEBVTT\n\n";
+
+  files.forEach((file, index) => {
+    const startTime = index * interval;
+    const endTime = (index + 1) * interval;
+    const startTimestamp = new Date(startTime * 1000)
+      .toISOString()
+      .substr(11, 8);
+    const endTimestamp = new Date(endTime * 1000).toISOString().substr(11, 8);
+
+    vttContent += `${startTimestamp} --> ${endTimestamp}\n`;
+    vttContent += `${file}#xywh=0,0,320,180\n\n`;
+  });
+
+  fs.writeFileSync(path.join(directory, "thumbnails.vtt"), vttContent);
+  console.log("VTT file created.");
+}
 /**
  * Delete a Blob from Azure Blob Storage using the provided Blob name.
  *

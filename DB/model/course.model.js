@@ -72,6 +72,7 @@ const courseSchema = new Schema(
       },
       set: (value) => (value === "" ? null : value),
     },
+    promotionalVideoVttBlobName: String,
     price: {
       type: Number,
       min: 0,
