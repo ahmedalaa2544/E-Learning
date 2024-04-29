@@ -370,7 +370,7 @@ export const refund = asyncHandler(async (req, res, next) => {
   }
   return next(
     new Error(
-      `You Cannot Refund ${course.title ? course.title : workShop.title} Course`
+      "Refund request denied, Purchases older than 3 days are ineligible"
     ),
     {
       cause: 400,
