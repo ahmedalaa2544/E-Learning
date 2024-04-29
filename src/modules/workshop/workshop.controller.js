@@ -352,7 +352,7 @@ export const getSpecificWorkshop = asyncHandler(async (req, res, next) => {
   const { workshopId } = req.params;
 
   // check workshop existence
-  const workshop = await workshopModel.findById(workshopId);
+  const workshop = await workshopModel.findById(workshopId).populate("coupons");
 
   if (!workshop) return next(new Error("Workshop not found!", { cause: 404 }));
 

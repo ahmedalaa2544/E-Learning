@@ -770,7 +770,7 @@ export const search = asyncHandler(async (req, res, next) => {
   }
   // Set default values for page and limit if not provided
   page = parseInt(page) || 1;
-  const limit = 5;
+  const limit = 8;
 
   // Calculate the number of documents to skip based on the page and limit
   const skip = (page - 1) * limit;
