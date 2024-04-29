@@ -90,6 +90,10 @@ const userSchmea = new Schema(
         auth: String,
       },
     },
+    connectedAccountId: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true }
 );
