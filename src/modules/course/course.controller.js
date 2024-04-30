@@ -87,6 +87,8 @@ export const editCourse = asyncHandler(async (req, res, next) => {
     tags,
     description,
     level,
+    duration,
+    createdBy,
   } = req.body;
   // Extract courseId from the request parameters.
   const { courseId } = req.params;
@@ -99,6 +101,7 @@ export const editCourse = asyncHandler(async (req, res, next) => {
   console.log(courseId);
   // Check if the request includes a query parameter for uploading a cover image.
   if (req.query.upload === "coverImage") {
+    console.log("reach upload image");
     // Check if a cover image file is provided in the request.
     if (req.files?.coverImage) {
       // Extract the extension for the cover image.
@@ -117,6 +120,7 @@ export const editCourse = asyncHandler(async (req, res, next) => {
         blobImageExtension
       );
     }
+    console.log("reach" + coverImageUrl);
   }
 
   // Check if the request includes a query parameter for uploading a promotional video.
@@ -242,6 +246,8 @@ export const editCourse = asyncHandler(async (req, res, next) => {
       category: category,
       subCategory: subCategory,
       tags: tags,
+      duration,
+      createdBy,
     }
   );
 
@@ -282,10 +288,14 @@ export const editCourse = asyncHandler(async (req, res, next) => {
           ...editedCourse._doc,
           coverImageUrl: imageUrl,
           coverImageBlobName: undefined,
-          promotionalVideoUrl: videoUrl.replace(/%5C/g, "/"),
+          promotionalVideoUrl: videoUrl
+            ? videoUrl.replace(/%5C/g, "/")
+            : undefined,
           promotionalVideoBlobName: undefined,
           promotionalVideoVttBlobName: undefined,
-          promotionalVideovttUrl: vttUrl.replace(/%5C/g, "/"),
+          promotionalVideovttUrl: vttUrl
+            ? vttUrl.replace(/%5C/g, "/")
+            : undefined,
         },
       })
     : res.status(500).json({ message: "Something went wrong" });
@@ -433,12 +443,11 @@ export const getCourse = asyncHandler(async (req, res, next) => {
 
       // Modify comment.user.profilePic to contain only the URL property.
       comment.user.profilePic = { url: urlProfilePic };
-
       return {
         ...comment._doc,
-        rating: ratings.find(
+        rating: ratings?.find(
           (rating) => rating.user.toString() === comment.user._id.toString()
-        ).rating,
+        )?.rating,
       };
     })
   );
@@ -473,7 +482,9 @@ export const getCourse = asyncHandler(async (req, res, next) => {
           coverImageBlobName: undefined,
           promotionalVideoUrl: videoUrl.replace(/%5C/g, "/"),
           promotionalVideoBlobName: undefined,
-          promotionalVideovttUrl: vttUrl.replace(/%5C/g, "/"),
+          promotionalVideovttUrl: vttUrl
+            ? vttUrl.replace(/%5C/g, "/")
+            : undefined,
           promotionalVideoVttBlobName: undefined,
           comments: userMeta,
           finalPrice: fetchedCourse.finalPrice,

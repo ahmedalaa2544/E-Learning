@@ -141,6 +141,7 @@ const courseSchema = new Schema(
       type: String,
       // required: true,
     },
+    duration: Number,
   },
   {
     id: false,

@@ -48,8 +48,8 @@ router.post(
 router.patch(
   "/:courseId",
   isAuthenticated,
-  isAuthorized(["Instructor"]),
-  validation(validators.editCourseSchema),
+  // isAuthorized(["Instructor"]),
+  // validation(validators.editCourseSchema),
   fileUpload(customValidation.image.concat(customValidation.video)).fields([
     { name: "coverImage", maxCount: 1 },
     { name: "promotionalVideo", maxCount: 1 },
