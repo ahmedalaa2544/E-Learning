@@ -279,7 +279,7 @@ export const revenue = asyncHandler(async (req, res, next) => {
   const currentBalance = user.currentBalance;
   const totalPaidOut = user.totalPaidOut;
 
-  //chart revenue
+  //chart revenue per day
   const now = new Date();
   const lastmonth = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const cc = await courseModel.find({ createdBy: req.user.id });
