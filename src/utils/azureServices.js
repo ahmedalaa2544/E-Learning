@@ -151,8 +151,8 @@ const upload = async (
     temp.mkdir("upload", async (err, tempDirPath) => {
       if (!err) {
         // initialize outputFileName with that value will be used id there is no compress
-        // let outputFileName = inputFilePath;
-        const tempDirPath = "F:hls";
+        let outputFileName = inputFilePath;
+        // const tempDirPath = "F:hls";
         let fileTempUrl;
         try {
           // if flag compress true compress will happen for certain types
