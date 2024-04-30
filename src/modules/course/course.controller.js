@@ -25,6 +25,7 @@ import notificationModel from "../../../DB/model/notification.model.js";
 import { getIo } from "../../utils/server.js";
 import webpush from "web-push";
 import searchModel from "../../../DB/model/search.keys.js";
+import userModel from "../../../DB/model/user.model.js";
 
 /**
  * Create a new course with the provided title.
@@ -52,6 +53,10 @@ export const createCourse = asyncHandler(async (req, res, next) => {
     course: createdCourse._id,
     courseOwner: req.userId,
     user: req.userId,
+  });
+
+  await userModel.findByIdAndUpdate(req.userId, {
+    $inc: { totalNumberOfCourses: 1 },
   });
 
   // Return a JSON response based on the success or failure of the operation.
@@ -318,7 +323,13 @@ export const getCourse = asyncHandler(async (req, res, next) => {
 
   // Find the course in the database by its ID and populate the instructors field.
   const fetchedCourse = await Course.findById(courseId)
-    .populate([{ path: "instructors", select: "userName profilePic" }])
+    .populate([
+      {
+        path: "createdBy",
+        select:
+          "userName profilePic occupation about totalNumberOfStudents totalNumberOfCourses",
+      },
+    ])
     .populate("coupons");
 
   // If the course is not found, invoke the error middleware with a 404 status.
