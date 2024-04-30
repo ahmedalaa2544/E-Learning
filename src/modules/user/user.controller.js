@@ -333,6 +333,7 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
     createdAt: { $gt: lastmonth },
   });
 
+  //chart sales
   const salesCountPerDay = {};
 
   salesLastMonth.forEach((sale) => {
