@@ -85,7 +85,7 @@ export const LogIn = asyncHandler(async (req, res, next) => {
   if (!checkEmail) return next(new Error("User not found"), { cause: 404 });
   // check confirmation
   if (!checkEmail.isConfirm)
-    return next(new Error("unConfirmed Email"), { cause: 400 });
+    return next(new Error("Please, Confirm Your Email"), { cause: 400 });
   // check password
   const matchPass = await bcryptjs.compare(password, checkEmail.password);
   if (!matchPass) return next(new Error("Wrong password"), { cause: 400 });

@@ -8,19 +8,19 @@ const isAuth = asyncHandler(async (req, res, next) => {
   let { token } = req.headers;
 
   if (!token?.startsWith(process.env.BEARER_TOKEN)) {
-    return next(new Error("required valid token", { cause: 401 }));
+    return res.redirect("https://e-learning-azure.vercel.app/logout");
   }
   // check payload
   token = token.split(process.env.BEARER_TOKEN)[1];
   const decoded = jwt.verify(token, process.env.TOKEN_SIGNTURE);
   if (!decoded?.id) {
-    return next(new Error("inVaild Payload", { cause: 401 }));
+    return res.redirect("https://e-learning-azure.vercel.app/logout");
   }
   req.userId = decoded.id;
   const user = await userModel.findById(decoded.id);
   // check Online and deleted accounts
   if (!user?.isOnline) {
-    return next(new Error("LogIn First", { cause: 401 }));
+    return res.redirect("https://e-learning-azure.vercel.app/logout");
   }
   if (user.isDeleted) {
     return next(
@@ -32,7 +32,7 @@ const isAuth = asyncHandler(async (req, res, next) => {
   // check token in DB
   const tokenDB = await tokenModel.findOne({ token, valid: true });
   if (!tokenDB) {
-    return next(new Error("Token Not Vaild", { cause: 401 }));
+    return res.redirect("https://e-learning-azure.vercel.app/logout");
   }
   // pass user
   req.user = user;
