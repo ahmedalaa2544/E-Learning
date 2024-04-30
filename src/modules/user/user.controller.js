@@ -273,10 +273,41 @@ export const revenue = asyncHandler(async (req, res, next) => {
   const user = await userModel.findById(req.user.id);
   user.currentBalance = totalRevenue - user.totalPaidOut;
   user.totalNumberOfStudents = totalNumberOfStudents;
+  user.totalRevenue = totalRevenue;
   user.save();
 
   const currentBalance = user.currentBalance;
   const totalPaidOut = user.totalPaidOut;
+
+  //chart revenue per day
+  const now = new Date();
+  const lastmonth = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const cc = await courseModel.find({ createdBy: req.user.id });
+  const workShop = await workshopModel.find({ instructor: req.user.id });
+  const ccs = cc.concat(workShop);
+  const salesLastMonth = await orderModel.find({
+    user: req.user.id,
+    "courses.courseId": { $in: ccs },
+    status: "Paid",
+    createdAt: { $gt: lastmonth },
+  });
+
+  const revenuePerDay = {};
+  salesLastMonth.forEach((sale) => {
+    const createdAtDate = new Date(sale.createdAt);
+    const dayOfMonth = createdAtDate.getDate(); // Extracting only the day part
+
+    sale.courses.forEach((course) => {
+      const coursePrice = course.coursePrice;
+
+      if (!revenuePerDay[dayOfMonth]) {
+        revenuePerDay[dayOfMonth] = 0;
+      }
+
+      revenuePerDay[dayOfMonth] += coursePrice;
+    });
+  });
+
   // respone
   return res.status(200).json({
     message: "Done",
@@ -285,6 +316,7 @@ export const revenue = asyncHandler(async (req, res, next) => {
     totalNumberOfStudents,
     currentBalance,
     totalPaidOut,
+    revenuePerDay,
   });
 });
 
@@ -301,6 +333,7 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
     createdAt: { $gt: lastmonth },
   });
 
+  //chart sales
   const salesCountPerDay = {};
 
   salesLastMonth.forEach((sale) => {
@@ -314,7 +347,14 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
     }
   });
 
-  return res.status(200).json({ message: "Done", salesCountPerDay });
+  const analsis = {
+    totalStudent: req.user.totalNumberOfStudents,
+    totalRevenue: req.user.totalRevenue,
+    totalViews: req.user.clicked,
+    salesCountPerDay,
+  };
+
+  return res.status(200).json({ message: "Done", analsis });
 });
 
 export const order = asyncHandler(async (req, res, next) => {
@@ -391,11 +431,15 @@ export const withdraw = asyncHandler(async (req, res, next) => {
 });
 
 export const getNotify = asyncHandler(async (req, res, next) => {
-  const [{ notifications }] = await notificationModel
+  let [{ notifications }] = await notificationModel
     .find({
       user: req.user.id,
     })
     .slice("notifications", -10);
+
+  if (!notifications) {
+    notifications = [];
+  }
 
   notifications.reverse();
   return res.status(200).json({ message: "Done", notifications });
