@@ -42,7 +42,7 @@ router.get("/search", userController.search);
 
 router.get("/revenue", isAuth, userController.revenue);
 
-router.get("/SalesPerMonth", isAuth, userController.detailsRevenue);
+router.get("/analysis", isAuth, userController.detailsRevenue);
 
 router.get("/order", isAuth, userController.order);
 
