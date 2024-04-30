@@ -623,7 +623,7 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
       "r",
       "60"
     );
-
+    console.log(videoUrl);
     // Send a response containing video details
     return video
       ? res.status(200).json({
