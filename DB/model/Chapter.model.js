@@ -21,6 +21,7 @@ const chapterSchema = new Schema(
       max: 200,
       set: (value) => (value === "" ? null : value),
     },
+    duration: { type: Number, default: 0 },
   },
 
   { timestamps: true }

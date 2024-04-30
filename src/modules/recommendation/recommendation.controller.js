@@ -241,16 +241,15 @@ export const learnersAreViewing = asyncHandler(async (req, res, next) => {
 export const becauseYouViewed = asyncHandler(async (req, res, next) => {
   // Retrieve all courses that are currently published
   const courses = await Course.find({ status: "Published" });
-
+  console.log("reach because you viewed" + req.userId);
   // Initialize a content-based KNN recommender with the current user's ID
   const contentKNN = new ContentKNN(req.userId);
 
   // Prepare an array to store recommendations
   const becauseYouViewedRecommendations = [];
-
+  let timeDifference = 100000000;
   // Fetch all views by the user with a non-zero updatedAt timestamp
   const clicked = await View.find({ user: req.userId, updatedAt: { $gt: 0 } });
-
   // Determine the most recent course viewed by the user, if any
   const lastVisit = clicked[0];
   if (lastVisit) {
@@ -266,10 +265,11 @@ export const becauseYouViewed = asyncHandler(async (req, res, next) => {
 
     // Calculate the time difference from the last visit to now in days
     const lastVisitTime = lastVisit.updatedAt;
-    const timeDifference = (new Date() - lastVisitTime) / (1000 * 60 * 60 * 24);
+    timeDifference = (new Date() - lastVisitTime) / (1000 * 60 * 60 * 24);
 
     // Check if the last visit was within the last two days
     if (timeDifference < 2) {
+      console.log(`clicked first element ${timeDifference}`);
       // Generate recommendations based on the last visited course
       const becauseYouViewedPredictions =
         await contentKNN.generateItemBasedRecommendations([lastVisit.course]);
@@ -288,16 +288,17 @@ export const becauseYouViewed = asyncHandler(async (req, res, next) => {
 
   // Construct the final recommendations object
   const recommendations = {
-    key: lastVisitTitle,
+    key: { _id: lastVisit.course, title: lastVisitTitle },
     recommendations: becauseYouViewedRecommendations,
   };
 
-  // Send the recommendations if any, otherwise handle error
-  if (becauseYouViewedRecommendations.length > 0) {
-    res.status(200).json({ message: "Done", recommendations });
-  } else {
-    res.status(500).json({ message: "Something went wrong" });
-  }
+  // Send the recommendations if available, otherwise report an error
+  return recommendations
+    ? res.status(200).json({
+        message: "Done",
+        recommendations: timeDifference < 2 ? recommendations : undefined,
+      })
+    : res.status(500).json({ message: "Something went wrong" });
 });
 
 /**
@@ -360,12 +361,12 @@ export const becauseYouWishlsted = asyncHandler(async (req, res, next) => {
 
   // Construct the final recommendations object with the key and recommendations list
   const recommendations = {
-    key: lastwishlistedTitle,
+    key: { _id: lastwishlisted, title: lastwishlistedTitle },
     recommendations: becauseYouWishlistedRecommendations,
   };
 
   // Send the recommendations if available, otherwise report an error
-  return recommendations.recommendations.length > 0
+  return recommendations
     ? res.status(200).json({ message: "Done", recommendations })
     : res.status(500).json({ message: "Something went wrong" });
 });
@@ -395,7 +396,7 @@ export const becauseYouPurchased = asyncHandler(async (req, res, next) => {
   const purchased = await Student.find({ user: req.userId }).sort({
     updatedAt: -1,
   });
-
+  let timeDifference = 10000000;
   // Identify the last item purchased by the user, if any
   const lastPurchased = purchased[0];
   if (lastPurchased) {
@@ -411,22 +412,22 @@ export const becauseYouPurchased = asyncHandler(async (req, res, next) => {
 
     // Calculate the time difference from the last purchase to now in days
     const lastPurchasedTime = lastPurchased.updatedAt;
-    const timeDifference =
-      (new Date() - lastPurchasedTime) / (1000 * 60 * 60 * 24);
+    timeDifference = (new Date() - lastPurchasedTime) / (1000 * 60 * 60 * 24);
 
     // Uncomment the following lines if tracking the time since purchase is necessary
     // console.log(timeDifference);
     // console.log(lastPurchasedTime);
     // console.log(new Date());
-
+    console.log(lastPurchased);
     // Check if the last purchase was within the last three days
     if (timeDifference < 3) {
       // Generate recommendations based on the last purchased course using the KNN model
+
       const becauseYouPurchasedPredictions =
         await contentKNN.generateItemBasedRecommendations([
           lastPurchased.course,
         ]);
-      becauseYouPurchasedPredictions.map((prediction) => {
+      becauseYouPurchasedPredictions?.map((prediction) => {
         const course = courses.find(
           (item) => prediction.course.toString() === item._id.toString()
         );
@@ -441,12 +442,14 @@ export const becauseYouPurchased = asyncHandler(async (req, res, next) => {
 
   // Construct the final recommendations object with the key and recommendations list
   const recommendations = {
-    key: lastPurchasedTitle,
+    key: { _id: lastPurchased.course, title: lastPurchasedTitle },
     recommendations: becauseYouPurchasedRecommendations,
   };
-
   // Send the recommendations if available, otherwise report an error
-  return recommendations.recommendations.length > 0
-    ? res.status(200).json({ message: "Done", recommendations })
+  return recommendations
+    ? res.status(200).json({
+        message: "Done",
+        recommendations: timeDifference < 3 ? recommendations : undefined,
+      })
     : res.status(500).json({ message: "Something went wrong" });
 });

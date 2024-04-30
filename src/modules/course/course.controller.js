@@ -27,6 +27,7 @@ import { getIo } from "../../utils/server.js";
 import webpush from "web-push";
 import searchModel from "../../../DB/model/search.keys.js";
 import userModel from "../../../DB/model/user.model.js";
+import curriculumModel from "../../../DB/model/curriculum.model.js";
 
 /**
  * Create a new course with the provided title.
@@ -374,7 +375,12 @@ export const getCourse = asyncHandler(async (req, res, next) => {
       },
     ])
     .populate("coupons");
-
+  const videos = await Video.find({ course: courseId });
+  const numberOfVideos = videos.length;
+  const articles = await Article.find({ course: courseId });
+  const numberOfArticles = articles.length;
+  const quizes = await Quiz.find({ course: courseId });
+  const numberOfQuizes = quizes.length;
   // If the course is not found, invoke the error middleware with a 404 status.
   if (!fetchedCourse) {
     return next(new Error("Course not found"), { cause: 404 });
@@ -480,7 +486,9 @@ export const getCourse = asyncHandler(async (req, res, next) => {
           ...fetchedCourse._doc,
           coverImageUrl: imageUrl,
           coverImageBlobName: undefined,
-          promotionalVideoUrl: videoUrl.replace(/%5C/g, "/"),
+          promotionalVideoUrl: videoUrl
+            ? videoUrl.replace(/%5C/g, "/")
+            : undefined,
           promotionalVideoBlobName: undefined,
           promotionalVideovttUrl: vttUrl
             ? vttUrl.replace(/%5C/g, "/")
@@ -488,7 +496,51 @@ export const getCourse = asyncHandler(async (req, res, next) => {
           promotionalVideoVttBlobName: undefined,
           comments: userMeta,
           finalPrice: fetchedCourse.finalPrice,
+          numberOfVideos,
+          numberOfArticles,
+          numberOfQuizes,
         },
+      })
+    : res.status(500).json({ message: "Something went wrong" });
+});
+/**
+ * Retrieves the content of a course including its chapters and associated curriculum.
+ *
+ * @param {Object} req - The HTTP request object containing the courseId in the parameters.
+ * @param {Object} res - The HTTP response object used to send back the course content.
+ * @param {Function} next - The next middleware function in the Express.js route handling.
+ * @returns {Object} A JSON response containing the course content or an error message.
+ */
+export const getCourseContent = asyncHandler(async (req, res, next) => {
+  // Extract courseId from the request parameters.
+  const { courseId } = req.params;
+
+  // Retrieve basic course information.
+  const course = await Course.findById(courseId).select("title _id");
+
+  // Retrieve chapters belonging to the course, sorted by order.
+  const chapters = await Chapter.find({ course: courseId })
+    .select("title _id")
+    .sort({ order: 1 });
+
+  // Retrieve curriculum associated with each chapter.
+  const chapterPromises = chapters.map(async (chapter) => {
+    const curriculum = await curriculumModel
+      .find({ chapter: chapter._id })
+      .select("title _id type")
+      .sort({ order: 1 });
+
+    return { ...chapter._doc, curriculum };
+  });
+
+  // Wait for all chapter promises to resolve.
+  const chapterResults = await Promise.all(chapterPromises);
+
+  // Respond with the course content if successful, otherwise send an error.
+  return chapterResults
+    ? res.status(200).json({
+        message: "Success",
+        course: { course, chapterResults },
       })
     : res.status(500).json({ message: "Something went wrong" });
 });

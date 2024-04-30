@@ -107,6 +107,12 @@ export const createVideo = asyncHandler(async (req, res, next) => {
       var vttBlobName = blobVideoName + "\\thumbnails" + "\\thumbnails.vtt";
       console.log("promotionalVideoVttBlobName ", vttBlobName);
     }
+    await Course.findByIdAndUpdate(courseId, {
+      $inc: { duration: duration },
+    });
+    await Chapter.findByIdAndUpdate(chapterId, {
+      $inc: { duration: duration },
+    });
     // Save in DataBase
     await Video.findByIdAndUpdate(videoId, {
       ...(videoUrl && { url: videoUrl }),
@@ -135,10 +141,15 @@ export const createArticle = asyncHandler(async (req, res, next) => {
   const curriculumId = new mongoose.Types.ObjectId();
   let curriculums = await Curriculum.find({ chapter: chapterId });
   //calculate duration for article based on number of words
-  const duration = calculateDuration(quillContent);
+  const duration = calculateDuration(quillContent) * 60;
   // Calculate the order value for the next curriculum by adding 1 to the number of existing curriculums.
   const order = curriculums.length + 1;
-
+  await Course.findByIdAndUpdate(courseId, {
+    $inc: { duration: duration },
+  });
+  await Chapter.findByIdAndUpdate(chapterId, {
+    $inc: { duration: duration },
+  });
   // Create a new Article document in the database
   const article = new Article({
     _id: articleId,
@@ -341,6 +352,12 @@ export const editVideo = asyncHandler(async (req, res, next) => {
         video.blobName
       ));
     });
+    await Course.findByIdAndUpdate(courseId, {
+      $inc: { duration: duration },
+    });
+    await Chapter.findByIdAndUpdate(chapterId, {
+      $inc: { duration: duration },
+    });
   }
 
   // Check if the request involves uploading resources.
@@ -417,7 +434,9 @@ export const editVideo = asyncHandler(async (req, res, next) => {
     blobName: blobVideoName,
     duration: duration,
   });
-
+  await Course.findByIdAndUpdate(courseId, {
+    $inc: { duration: duration },
+  });
   // Update the curriculum document with the edited details
   const editedCurriculum = await Curriculum.findByIdAndUpdate(curriculumId, {
     title: title,
@@ -490,12 +509,18 @@ export const editArticle = asyncHandler(async (req, res, next) => {
     duration,
     resources: resources,
   });
+
   // Update the curriculum document with the edited details
   const editedCurriculum = await Curriculum.findByIdAndUpdate(curriculumId, {
     title: title,
     resources: resources,
   });
-
+  await Course.findByIdAndUpdate(courseId, {
+    $inc: { duration: duration },
+  });
+  await Chapter.findByIdAndUpdate(chapterId, {
+    $inc: { duration: duration },
+  });
   // Send a response indicating the success or failure of the article editing process
   return editedCurriculum
     ? res.status(200).json({ message: "Done" })

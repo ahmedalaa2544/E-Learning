@@ -88,6 +88,12 @@ router.get(
   validation(validators.getCourseSchema),
   courseController.getCourse
 );
+// retrieves course content only
+router.get(
+  "/:courseId/content",
+  validation(validators.getCourseSchema),
+  courseController.getCourseContent
+);
 
 /**
  * Route: GET /courses
