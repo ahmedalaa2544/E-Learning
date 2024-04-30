@@ -634,12 +634,12 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
             chapter: curriculum.chapter,
             type: "video",
             title: curriculum.title,
-            url: videoUrl.replace(/%5C/g, "/"),
+            url: videoUrl ? videoUrl.replace(/%5C/g, "/") : undefined,
             blobName: undefined,
             resources: resources,
             subtitles: subtitlesUrl,
             vttBlobName: undefined,
-            vttUrl,
+            vttUrl: vttUrl ? vttUrl.replace(/%5C/g, "/") : undefined,
           },
         })
       : res.status(500).json({ message: "Something went wrong" });

@@ -97,7 +97,7 @@ export const editCourse = asyncHandler(async (req, res, next) => {
   let promotionalVideoUrl;
   let blobImageName;
   let blobVideoName;
-
+  //
   console.log(courseId);
   // Check if the request includes a query parameter for uploading a cover image.
   if (req.query.upload === "coverImage") {
