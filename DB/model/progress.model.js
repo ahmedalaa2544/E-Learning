@@ -1,6 +1,6 @@
 import { Schema, model, Types } from "mongoose";
 
-const accomplishmentSchema = new Schema(
+const progressSchema = new Schema(
   {
     course: {
       type: Types.ObjectId,
@@ -33,9 +33,12 @@ const accomplishmentSchema = new Schema(
     // },
 
     lastWatchedSecond: {
-      type: String,
-      required: function () {
-        return this.type === "video";
+      type: Number,
+
+      default: function () {
+        if (this.type === "video") {
+          return 0;
+        }
       },
     },
     completed: { type: Boolean, default: false },
@@ -44,5 +47,5 @@ const accomplishmentSchema = new Schema(
   { timestamps: true }
 );
 
-const accomplishmentModel = model("Accomplishment", accomplishmentSchema);
-export default accomplishmentModel;
+const progressModel = model("Progress", progressSchema);
+export default progressModel;

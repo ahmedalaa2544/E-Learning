@@ -12,7 +12,7 @@ const studentSchema = new Schema(
     courseOwner: { type: Types.ObjectId, ref: "User", required: true },
     // price: { type: Number },
     paid: { type: Number },
-    accomplishement: { type: Number, default: 0 },
+    accomplishementPercentage: { type: Number, default: 0 },
 
     graduated: { type: Boolean, default: false },
   },

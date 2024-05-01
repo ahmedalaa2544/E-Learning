@@ -43,40 +43,33 @@ const authorization = (accessRoles = []) => {
 
     // Check if the user is an instructor or the course creator if "Instructor" is in the access roles.
     if (accessRoles.includes("Instructor")) {
-      const isInstructor = (await Instructor.findOne({
+      var isInstructor = (await Instructor.findOne({
         course: courseId,
         user: req.userId,
       }).select("_id"))
         ? true
         : false;
-      const isCreator = course.createdBy.toString() === req.userId;
-
-      // Deny access if the user is neither an instructor nor the creator.
-      if (!isInstructor && !isCreator && !accessRoles.includes("Student")) {
-        return next(new Error("You do not have access"), { cause: 403 });
-      }
-      // If no specific checks are necessary, proceed to the next middleware.
-
-      return next();
+      var isCreator = course.createdBy.toString() === req.userId;
     }
 
     // Check if the user is a student if "Student" is in the access roles.
     if (accessRoles.includes("Student")) {
-      const isStudent = (await Student.findOne({
+      // var student = await Student.findOne({
+      //   course: courseId,
+      //   user: req.userId,
+      // });
+      var isStudent = (await Student.findOne({
         course: courseId,
         user: req.userId,
       }).select("_id"))
         ? true
         : false;
-      // Deny access if the user is not a registered student of the course.
-      if (!isStudent) {
-        return next(new Error("You do not have access"), { cause: 403 });
-      }
-
-      // If the user is a student, proceed.
-      return next();
     }
-
+    // console.log(student);
+    // Deny access if the user is neither an instructor nor the creator nor student in the course.
+    if (!isInstructor && !isCreator && !isStudent) {
+      return next(new Error("You do not have access"), { cause: 403 });
+    }
     // If no specific checks are necessary, proceed to the next middleware.
     return next();
   });

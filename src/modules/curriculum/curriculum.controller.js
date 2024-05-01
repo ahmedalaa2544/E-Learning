@@ -7,6 +7,7 @@ import Video from "../../../DB/model/video.model.js";
 import Article from "../../../DB/model/article.model.js";
 import Quiz from "../../../DB/model/quiz.model.js";
 import Progress from "../../../DB/model/progress.model.js";
+import Student from "../../../DB/model/student.model.js";
 
 import mongoose from "mongoose";
 import {
@@ -29,7 +30,6 @@ import { mergeSort, calculateDuration } from "../../utils/dataSructures.js";
  * @returns {Object} - Response indicating the success or failure of the video creation process.
  */
 export const createVideo = asyncHandler(async (req, res, next) => {
-  console.log("reach create video");
   // Extract parameters from the request
   const { courseId, chapterId } = req.params;
   const { title, description } = req.body;
@@ -107,7 +107,6 @@ export const createVideo = asyncHandler(async (req, res, next) => {
     }
     if (generateVtt) {
       var vttBlobName = blobVideoName + "\\thumbnails" + "\\thumbnails.vtt";
-      console.log("promotionalVideoVttBlobName ", vttBlobName);
     }
     await Course.findByIdAndUpdate(courseId, {
       $inc: { duration: duration },
@@ -310,48 +309,179 @@ export const editCurriculum = asyncHandler(async (req, res, next) => {
     ? res.status(200).json({ message: "Done" })
     : res.status(500).json({ message: "Something went wrong" });
 });
-export const editAccomplishement = asyncHandler(async (req, res, next) => {
+/**
+ * Handles updating video progress for a student.
+ *
+ * @param {Object} req - The HTTP request object containing parameters and body data.
+ * @param {Object} res - The HTTP response object used to send back the progress update status.
+ * @param {Function} next - The next middleware function in the Express.js route handling.
+ * @returns {void} - Sends a JSON response indicating the status of the progress update.
+ */
+export const videoProgress = asyncHandler(async (req, res, next) => {
   // Extract chapterId, curriculumId, and new positions from the request parameters and body.
   const { courseId, chapterId, curriculumId } = req.params;
   const { lastWatchedSecond } = req.body;
   const student = req.userId;
-  const courseOwner = req.course.cre;
+  const courseOwner = (await Course.findById(courseId)).createdBy;
+  let completed = false;
+  let accomplishementPercentage;
+
   // Find the curriculum item to be edited.
-  const curriculum = await Curriculum.findById(curriculumId)
-    .populate({ path: "video", select: "duration" })
-    // .populate({ path: "quiz", select: "duration" })
-    .populate({ path: "article", select: "duration" });
+  const curriculum = await Curriculum.findById(curriculumId).populate({
+    path: "video",
+    select: "duration",
+  });
 
   // Check if the curriculum item exists.
   if (!curriculum) {
     return next(new Error("Curriculum not found"), { cause: 404 });
   }
 
+  // Determine device type based on user agent.
   const deviceType = req.useragent.isMobile
-    ? "Mobile"
+    ? "mobile"
     : req.useragent.isTablet
-    ? "Tablet"
-    : "Computer";
+    ? "tablet"
+    : "computer";
+
+  // Allow cross-origin credentials.
   res.setHeader("Access-Control-Allow-Credentials", "true");
 
+  // Find existing progress record for the curriculum.
   const progress = await Progress.findOne({
     curriculum: curriculumId,
     student: req.userId,
   });
+  const numberOfCurriculumsInCourse = await Curriculum.countDocuments({
+    course: courseId,
+  });
+  const numberOfCompletedCurriculums = await Progress.countDocuments({
+    course: courseId,
+    student,
+    completed: true,
+  });
+  console.log(numberOfCompletedCurriculums);
+  console.log(numberOfCurriculumsInCourse);
+  // Check if video is completed.
+  if (
+    lastWatchedSecond > curriculum.video.duration - 5 &&
+    !progress.completed
+  ) {
+    completed = true;
+    accomplishementPercentage =
+      ((numberOfCompletedCurriculums + 1) / numberOfCurriculumsInCourse) * 100;
+    console.log("ddd " + accomplishementPercentage);
+  }
+
+  // Update or create progress record.
   if (progress) {
     progress.lastWatchedSecond = lastWatchedSecond;
-    if (lastWatchedSecond > curriculum) await progress.save();
+    progress.completed = completed;
+    await progress.save();
   } else {
-    Progress.create({
+    await Progress.create({
       course: courseId,
       chapter: chapterId,
       curriculum: curriculumId,
-      type: curriculum.type,
       student,
+      courseOwner,
+      type: curriculum.type,
       deviceType,
+      lastWatchedSecond,
+      completed,
     });
   }
+  if (completed) {
+    const graduated = accomplishementPercentage === 100 ? true : false;
+    await Student.findOneAndUpdate(
+      { user: student },
+      { accomplishementPercentage, graduated }
+    );
+  }
+
+  // Respond with the progress update status.
+  res.status(200).json({ message: "Done", completed });
 });
+
+/**
+ * Marks the curriculum item as completed for a student.
+ *
+ * @param {Object} req - The HTTP request object containing parameters and body data.
+ * @param {Object} res - The HTTP response object used to send back the completion status.
+ * @param {Function} next - The next middleware function in the Express.js route handling.
+ * @returns {void} - Sends a JSON response indicating the completion status.
+ */
+export const curriculumCompleted = asyncHandler(async (req, res, next) => {
+  // Extract chapterId, curriculumId, and new positions from the request parameters and body.
+  const { courseId, chapterId, curriculumId } = req.params;
+  const student = req.userId;
+  const courseOwner = req.course.createdBy;
+  const completed = JSON.parse(req.body.completed);
+  let accomplishementPercentage;
+  // Find the curriculum item to be marked as completed.
+  const curriculum = await Curriculum.findById(curriculumId);
+
+  // Check if the curriculum item exists.
+  if (!curriculum) {
+    return next(new Error("Curriculum not found"), { cause: 404 });
+  }
+
+  // Find existing progress record for the curriculum.
+  const progress = await Progress.findOne({
+    curriculum: curriculumId,
+    student: req.userId,
+  });
+  const numberOfCurriculumsInCourse = await Curriculum.countDocuments({
+    course: courseId,
+  });
+  const numberOfCompletedCurriculums = await Progress.countDocuments({
+    course: courseId,
+    student,
+    completed: true,
+  });
+  console.log(numberOfCompletedCurriculums);
+  console.log(numberOfCurriculumsInCourse);
+
+  // Update or create progress record to mark the curriculum as completed.
+  if (progress) {
+    if (!progress.completed && completed) {
+      accomplishementPercentage =
+        ((numberOfCompletedCurriculums + 1) / numberOfCurriculumsInCourse) *
+        100;
+    } else if (progress.completed && !completed) {
+      accomplishementPercentage =
+        ((numberOfCompletedCurriculums - 1) / numberOfCurriculumsInCourse) *
+        100;
+    }
+    progress.completed = completed;
+    await progress.save();
+  } else {
+    if (completed) {
+      accomplishementPercentage =
+        ((numberOfCompletedCurriculums + 1) / numberOfCurriculumsInCourse) *
+        100;
+    }
+    await Progress.create({
+      course: courseId,
+      chapter: chapterId,
+      curriculum: curriculumId,
+      student,
+      courseOwner,
+      type: curriculum.type,
+      completed,
+    });
+  }
+  const graduated = accomplishementPercentage === 100 ? true : false;
+  console.log(`accomplishementPercentage ${accomplishementPercentage}`);
+  await Student.findOneAndUpdate(
+    { user: student },
+    { accomplishementPercentage, graduated }
+  );
+
+  // Respond with the completion status.
+  res.status(200).json({ message: "Done" });
+});
+
 /**
  * Controller function to edit a video within a course chapter, file uploads, and database updates.
  *
@@ -691,7 +821,6 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
       "r",
       "60"
     );
-    console.log(videoUrl);
     // Send a response containing video details
     return video
       ? res.status(200).json({

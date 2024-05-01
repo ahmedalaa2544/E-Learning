@@ -9,7 +9,7 @@ import isAuthorized from "./analytics.authorization.js";
 router.get(
   "/courses",
   isAuthenticated,
-  isAuthorized(["Instructor"]),
+  // isAuthorized(["Instructor"]),
   // validation(validators.getCourseSchema),
   analyticsController.coursesAnalytics
 );

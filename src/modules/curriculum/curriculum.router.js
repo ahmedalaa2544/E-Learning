@@ -37,13 +37,21 @@ router.post(
   curriculumController.createQuiz
 );
 
-// save an accomplishement in curriculum order
+// save an videoProgress in curriculum order
 router.patch(
-  "/:curriculumId",
+  "/:curriculumId/videoProgress",
   isAuthenticated,
   isAuthorized(["Student"]),
   // validation(validators.editCurriculumSchema),
-  curriculumController.editAccomplishement
+  curriculumController.videoProgress
+);
+
+router.post(
+  "/:curriculumId/completed",
+  isAuthenticated,
+  isAuthorized(["Student"]),
+  // validation(validators.editCurriculumSchema),
+  curriculumController.curriculumCompleted
 );
 
 // Edit an existing curriculum order

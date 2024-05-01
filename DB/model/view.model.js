@@ -16,7 +16,7 @@ const viewSchema = new Schema(
 
     cookie: { type: String, required: true },
     count: Number,
-    agent: { type: String, enum: ["Computer", "Tablet", "Mobile"] },
+    agent: { type: String, enum: ["computer", "tablet", "mobile"] },
   },
 
   { timestamps: true }
