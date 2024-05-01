@@ -62,5 +62,17 @@ export const updateWorkshopSchema = joi
 export const getAllWorkshopsSchema = joi
   .object({
     view: joi.string().valid("all", "instructor").required(),
+    categoryId: objectId.allow(""),
+    search: joi.string().allow(""),
+    limit: joi.number().integer().min(1).optional().allow(""),
+    page: joi.number().integer().min(1).allow(""),
+    paginated: joi.boolean().allow(""),
+  })
+  .required();
+
+export const getSpecificWorkshopSchema = joi
+  .object({
+    workshopId: objectId.required(),
+    view: joi.string().valid("all", "instructor").required(),
   })
   .required();
