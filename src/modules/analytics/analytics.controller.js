@@ -19,9 +19,9 @@ import upload, {
   generateSASUrl,
 } from "../../utils/azureServices.js";
 
+// This function gathers and sends analytics data for courses taught by the current user who is an instructor.
 export const coursesAnalytics = asyncHandler(async (req, res, next) => {
-  // Extract courseId from the request parameters.
-  // const { courseId } = req.params;
+  // Initialize counters for various metrics.
   let totalViews = 0,
     totalStudents = 0,
     totalRevenue = 0,
@@ -29,42 +29,49 @@ export const coursesAnalytics = asyncHandler(async (req, res, next) => {
     computerWatchedHours = 0,
     tabletWatchedHours = 0,
     mobileWatchedHours = 0;
+
+  // Retrieve all instructor records for the current user.
   const userIsinstructorAt = await Instructor.find({ user: req.userId });
+
+  // Process each course the instructor is associated with.
   await Promise.all(
-    userIsinstructorAt.map(async (instrucor_doc) => {
-      const views = await View.find({
-        course: instrucor_doc.course,
-      });
+    userIsinstructorAt.map(async (instructor_doc) => {
+      // Fetch view statistics for the course.
+      const views = await View.find({ course: instructor_doc.course });
+      // Fetch all students enrolled in the course.
+      const students = await Student.find({ course: instructor_doc.course });
 
-      const students = await Student.find({
-        course: instrucor_doc.course,
-      });
+      // Aggregate the number of students and calculate total revenue.
       totalStudents += students.length;
-
       students.map((student) => {
         totalRevenue += student.paid;
-        if (student.graduated) {
-          totalGraduates++;
-        }
       });
 
+      // Aggregate the total views from all view records.
       views.map((view) => {
         totalViews += view.count;
       });
-      const progresses = await Progress.find({ course: instrucor_doc.course });
+
+      // Fetch all progress records for the course to calculate watched hours and device-specific usage.
+      const progresses = await Progress.find({ course: instructor_doc.course });
       progresses.map((progress) => {
         const lastWatchedSecond = progress.lastWatchedSecond;
         watchedHours += lastWatchedSecond;
         const deviceType = progress.deviceType.toLowerCase();
-        if (deviceType == "computer") computerWatchedHours += lastWatchedSecond;
-        if (deviceType == "tablet") tabletWatchedHours += lastWatchedSecond;
-        if (deviceType == "mobile") mobileWatchedHours += lastWatchedSecond;
+
+        // Calculate watched hours per device type.
+        if (deviceType === "computer")
+          computerWatchedHours += lastWatchedSecond;
+        if (deviceType === "tablet") tabletWatchedHours += lastWatchedSecond;
+        if (deviceType === "mobile") mobileWatchedHours += lastWatchedSecond;
       });
     })
   );
+
+  // Calculate the usage percentage for each type of device.
   const devicesUsage = [
     {
-      device: "comuter",
+      device: "computer",
       usagePercentage: (computerWatchedHours / watchedHours) * 100,
     },
     {
@@ -76,11 +83,14 @@ export const coursesAnalytics = asyncHandler(async (req, res, next) => {
       usagePercentage: (mobileWatchedHours / watchedHours) * 100,
     },
   ];
+
+  // Send the analytics data as a JSON response.
   res.status(200).json({
     message: "done",
     analytics: {
       totalViews,
       totalStudents,
+      totalRevenue,
       watchedHours,
       devicesUsage,
     },
