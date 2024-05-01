@@ -6,6 +6,8 @@ import Curriculum from "../../../DB/model/curriculum.model.js";
 import Video from "../../../DB/model/video.model.js";
 import Article from "../../../DB/model/article.model.js";
 import Quiz from "../../../DB/model/quiz.model.js";
+import Progress from "../../../DB/model/progress.model.js";
+
 import mongoose from "mongoose";
 import {
   uploadVideo,
@@ -308,7 +310,48 @@ export const editCurriculum = asyncHandler(async (req, res, next) => {
     ? res.status(200).json({ message: "Done" })
     : res.status(500).json({ message: "Something went wrong" });
 });
+export const editAccomplishement = asyncHandler(async (req, res, next) => {
+  // Extract chapterId, curriculumId, and new positions from the request parameters and body.
+  const { courseId, chapterId, curriculumId } = req.params;
+  const { lastWatchedSecond } = req.body;
+  const student = req.userId;
+  const courseOwner = req.course.cre;
+  // Find the curriculum item to be edited.
+  const curriculum = await Curriculum.findById(curriculumId)
+    .populate({ path: "video", select: "duration" })
+    // .populate({ path: "quiz", select: "duration" })
+    .populate({ path: "article", select: "duration" });
 
+  // Check if the curriculum item exists.
+  if (!curriculum) {
+    return next(new Error("Curriculum not found"), { cause: 404 });
+  }
+
+  const deviceType = req.useragent.isMobile
+    ? "Mobile"
+    : req.useragent.isTablet
+    ? "Tablet"
+    : "Computer";
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+
+  const progress = await Progress.findOne({
+    curriculum: curriculumId,
+    student: req.userId,
+  });
+  if (progress) {
+    progress.lastWatchedSecond = lastWatchedSecond;
+    if (lastWatchedSecond > curriculum) await progress.save();
+  } else {
+    Progress.create({
+      course: courseId,
+      chapter: chapterId,
+      curriculum: curriculumId,
+      type: curriculum.type,
+      student,
+      deviceType,
+    });
+  }
+});
 /**
  * Controller function to edit a video within a course chapter, file uploads, and database updates.
  *

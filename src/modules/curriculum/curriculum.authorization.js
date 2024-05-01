@@ -1,44 +1,85 @@
 import Chapter from "../../../DB/model/chapter.model.js";
 import Course from "../../../DB/model/course.model.js";
+import Instructor from "../../../DB/model/instructor.model.js";
+import Student from "../../../DB/model/student.model.js";
 import { asyncHandler } from "../../utils/asyncHandling.js";
 
 /**
- * Authorization middleware to check if the user has the necessary permissions to perform an action.
- * The user is authorized if they are the creator of the specified course and the corresponding curriculum exists.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @param {function} next - Express next middleware function.
- * @returns {void} - Proceeds to the next middleware if the user is authorized; otherwise, sends an error response.
+ * Authorization middleware to control access to course-related actions based on user roles and ownership.
+ * It checks if the user is either the creator of the course, an assigned instructor, or a registered student,
+ * depending on the required access roles specified.
+ *
+ * @param {string[]} accessRoles - An array of roles that are allowed access to the endpoint.
+ * @returns {Function} A middleware function that checks user permissions and either continues to the next
+ * middleware or returns an error response if unauthorized.
  */
-const authorization = asyncHandler(async (req, res, next) => {
-  // Extract parameters from the request
-  const { courseId, chapterId } = req.params;
+const authorization = (accessRoles = []) => {
+  return asyncHandler(async (req, res, next) => {
+    // Log the access roles for debugging.
+    console.log("accessRoles:", accessRoles);
 
-  // Find the corresponding course based on courseId
-  const course = await Course.findById(courseId);
-  req.course = course;
-  if (!course) {
-    // If the course is not found, send a 404 error response
-    return next(new Error("Course not found"), { cause: 404 });
-  }
-  console.log(course.createdBy.toString());
-  console.log(req.userId);
-  // Check if the user has access to the specified course (is the creator)
-  if (!(course.createdBy.toString() === req.userId)) {
-    // If the user does not have access, send a 401 error response
-    return next(new Error("You do not have access"), { cause: 401 });
-  }
+    // Extract courseId and chapterId from the request parameters.
+    const { courseId, chapterId } = req.params;
 
-  // Find the corresponding chapter based on chapterId
-  const chapter = await Chapter.findById(chapterId);
-  req.chapter = chapter;
-  if (!chapter) {
-    // If the chapter is not found, send a 404 error response
-    return next(new Error("Chapter not found"), { cause: 404 });
-  }
+    // Retrieve the course from the database.
+    const course = await Course.findById(courseId);
+    // Attach the course to the request object for potential use in downstream middleware.
+    req.course = course;
 
-  // If the user is the creator of the course and the chapter exists, proceed to the next middleware
-  return next();
-});
+    // If the course does not exist, trigger a 404 Not Found error.
+    if (!course) {
+      return next(new Error("Course not found"), { cause: 404 });
+    }
+
+    // Retrieve the chapter from the database.
+    const chapter = await Chapter.findById(chapterId);
+    // Attach the chapter to the request object for potential use in downstream middleware.
+    req.chapter = chapter;
+
+    // If the chapter does not exist, trigger a 404 Not Found error.
+    if (!chapter) {
+      return next(new Error("Chapter not found"), { cause: 404 });
+    }
+
+    // Check if the user is an instructor or the course creator if "Instructor" is in the access roles.
+    if (accessRoles.includes("Instructor")) {
+      const isInstructor = (await Instructor.findOne({
+        course: courseId,
+        user: req.userId,
+      }).select("_id"))
+        ? true
+        : false;
+      const isCreator = course.createdBy.toString() === req.userId;
+
+      // Deny access if the user is neither an instructor nor the creator.
+      if (!isInstructor && !isCreator && !accessRoles.includes("Student")) {
+        return next(new Error("You do not have access"), { cause: 403 });
+      }
+      // If no specific checks are necessary, proceed to the next middleware.
+
+      return next();
+    }
+
+    // Check if the user is a student if "Student" is in the access roles.
+    if (accessRoles.includes("Student")) {
+      const isStudent = (await Student.findOne({
+        course: courseId,
+        user: req.userId,
+      }).select("_id"))
+        ? true
+        : false;
+      // Deny access if the user is not a registered student of the course.
+      if (!isStudent) {
+        return next(new Error("You do not have access"), { cause: 403 });
+      }
+
+      // If the user is a student, proceed.
+      return next();
+    }
+
+    // If no specific checks are necessary, proceed to the next middleware.
+    return next();
+  });
+};
 
 export default authorization;

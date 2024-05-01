@@ -516,21 +516,43 @@ export const getCourseContent = asyncHandler(async (req, res, next) => {
   const { courseId } = req.params;
 
   // Retrieve basic course information.
-  const course = await Course.findById(courseId).select("title _id");
-
+  const course = await Course.findById(courseId).select("title _id duration");
+  const numberOfCurriculmInCourse = await curriculumModel.countDocuments({
+    course: courseId,
+  });
   // Retrieve chapters belonging to the course, sorted by order.
   const chapters = await Chapter.find({ course: courseId })
-    .select("title _id")
+    .select("title _id duration")
     .sort({ order: 1 });
+  const numberOfChapters = chapters.length;
 
   // Retrieve curriculum associated with each chapter.
   const chapterPromises = chapters.map(async (chapter) => {
-    const curriculum = await curriculumModel
+    let curriculum = await curriculumModel
       .find({ chapter: chapter._id })
-      .select("title _id type")
+      .select("title _id type ")
+      .populate({ path: "video", select: "duration" })
+      .populate({ path: "quiz", select: "duration" })
+      .populate({ path: "article", select: "duration" })
       .sort({ order: 1 });
 
-    return { ...chapter._doc, curriculum };
+    curriculum = curriculum.map((curriculum) => {
+      return {
+        ...curriculum._doc,
+        video: undefined,
+        article: undefined,
+        quiz: undefined,
+        duration: curriculum[curriculum.type].duration,
+      };
+    });
+    const numberOfCurriculmInChapter = await curriculumModel.countDocuments({
+      chapter: chapter._id,
+    });
+    return {
+      ...chapter._doc,
+      numberOfCurriculms: numberOfCurriculmInChapter,
+      curriculum,
+    };
   });
 
   // Wait for all chapter promises to resolve.
@@ -540,7 +562,12 @@ export const getCourseContent = asyncHandler(async (req, res, next) => {
   return chapterResults
     ? res.status(200).json({
         message: "Success",
-        course: { course, chapterResults },
+        course: {
+          ...course._doc,
+          numberOfChapters,
+          numberOfCurriculms: numberOfCurriculmInCourse,
+          chpaters: chapterResults,
+        },
       })
     : res.status(500).json({ message: "Something went wrong" });
 });
