@@ -8,6 +8,8 @@ import Article from "../../../DB/model/article.model.js";
 import Quiz from "../../../DB/model/quiz.model.js";
 import Progress from "../../../DB/model/progress.model.js";
 import Student from "../../../DB/model/student.model.js";
+import notificationModel from "../../../DB/model/notification.model.js";
+import { getIo } from "../../utils/server.js";
 
 import mongoose from "mongoose";
 import {
@@ -322,7 +324,8 @@ export const videoProgress = asyncHandler(async (req, res, next) => {
   const { courseId, chapterId, curriculumId } = req.params;
   const { lastWatchedSecond } = req.body;
   const student = req.userId;
-  const courseOwner = (await Course.findById(courseId)).createdBy;
+  const course = await Course.findById(courseId);
+  const courseOwner = course.createdBy;
   let completed = false;
   let accomplishementPercentage;
 
@@ -393,6 +396,39 @@ export const videoProgress = asyncHandler(async (req, res, next) => {
   }
   if (completed) {
     const graduated = accomplishementPercentage === 100 ? true : false;
+    // send notification when graduation
+    if (graduated) {
+      let notification = {
+        image: course.coverImageUrl,
+        title: "Course Completion",
+        body: `${req.user.userName}, Congratulations on completing the course! 🎉`,
+        url: `https://e-learning-azure.vercel.app/courseDetails/${courseId}`,
+      };
+      let notify = await notificationModel.findOneAndUpdate(
+        {
+          user: req.user.id,
+        },
+        {
+          $push: { notifications: notification },
+        },
+        { new: true }
+      );
+
+      if (!notify) {
+        notify = await notificationModel.create({
+          user: req.user.id,
+          notifications: notification,
+        });
+      }
+      notification = notify.notifications.reverse()[0];
+      getIo().to(socketIds).emit("notification", notification);
+      if (req.user.popUpId.endpoint) {
+        webpush.sendNotification(
+          req.user.popUpId,
+          JSON.stringify(notification)
+        );
+      }
+    }
     await Student.findOneAndUpdate(
       { user: student },
       { accomplishementPercentage, graduated }
@@ -472,6 +508,37 @@ export const curriculumCompleted = asyncHandler(async (req, res, next) => {
     });
   }
   const graduated = accomplishementPercentage === 100 ? true : false;
+  // send notification when graduation
+  if (graduated) {
+    const course = await Course.findById(courseId);
+    let notification = {
+      image: course.coverImageUrl,
+      title: "Course Completion",
+      body: `${req.user.userName}, Congratulations on completing the course! 🎉`,
+      url: `https://e-learning-azure.vercel.app/courseDetails/${courseId}`,
+    };
+    let notify = await notificationModel.findOneAndUpdate(
+      {
+        user: req.user.id,
+      },
+      {
+        $push: { notifications: notification },
+      },
+      { new: true }
+    );
+
+    if (!notify) {
+      notify = await notificationModel.create({
+        user: req.user.id,
+        notifications: notification,
+      });
+    }
+    notification = notify.notifications.reverse()[0];
+    getIo().to(socketIds).emit("notification", notification);
+    if (req.user.popUpId.endpoint) {
+      webpush.sendNotification(req.user.popUpId, JSON.stringify(notification));
+    }
+  }
   console.log(`accomplishementPercentage ${accomplishementPercentage}`);
   await Student.findOneAndUpdate(
     { user: student },
