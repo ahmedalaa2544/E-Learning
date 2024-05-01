@@ -330,19 +330,32 @@ export const uploadImageOrVideo = asyncHandler(async (req, res, next) => {
 
 export const getAllWorkshops = asyncHandler(async (req, res, next) => {
   // data
-  const { view } = req.query;
+  const { view, categoryId, search, paginated } = req.query;
+  const page = paginated ? req?.query?.page || 1 : 0;
+  const limit = paginated ? req?.query?.limit || 10 : 0;
 
   let workshops;
 
-  // get all workshops
-  if (view === "all") {
-    workshops = await workshopModel.find();
+  if (categoryId) {
+    const category = await categoryModel.findById(categoryId);
+
+    if (!category) {
+      return next(new Error("Category Not found!", { cause: 404 }));
+    }
   }
 
-  // get all workshops of logged instructor
-  else if (view === "instructor") {
-    workshops = await workshopModel.find({ instructor: req.user._id });
-  }
+  workshops = await workshopModel
+    .find({
+      ...(view === "instructor" && { instructor: req.user._id }),
+      ...(categoryId && categoryId),
+      ...(search && { title: { $regex: search, $options: "i" } }),
+    })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .select("promotionImage title subtitle startDay sessionTime price")
+    .populate({ path: "categoryId", select: "name" })
+    .populate({ path: "subCategoryId", select: "name" })
+    .populate({ path: "instructor", select: "userName profilePic" });
 
   return res.status(200).json({ success: true, results: workshops });
 });
@@ -350,18 +363,35 @@ export const getAllWorkshops = asyncHandler(async (req, res, next) => {
 export const getSpecificWorkshop = asyncHandler(async (req, res, next) => {
   // data
   const { workshopId } = req.params;
+  const { view } = req.query;
 
-  // check workshop existence
-  const workshop = await workshopModel
-    .findById(workshopId)
-    .populate("coupons")
-    .populate([
-      {
-        path: "instructor",
-        select:
-          "userName profilePic occupation about totalNumberOfStudents totalNumberOfCourses",
-      },
-    ]);
+  let workshop;
+
+  if (view === "instructor") {
+    workshop = await workshopModel
+      .findById(workshopId)
+      .populate("coupons")
+      .populate({ path: "categoryId", select: "name" })
+      .populate({ path: "subCategoryId", select: "name" })
+      .populate([
+        {
+          path: "instructor",
+          select:
+            "userName profilePic occupation about totalNumberOfStudents totalNumberOfCourses",
+        },
+      ]);
+  }
+
+  // all
+  else if (view === "all") {
+    workshop = await workshopModel
+      .findById(workshopId)
+      .select(
+        "title description requirements price promotionVideo durationInWeek languages level"
+      )
+      .populate({ path: "categoryId", select: "name" })
+      .populate({ path: "subCategoryId", select: "name" });
+  }
 
   if (!workshop) return next(new Error("Workshop not found!", { cause: 404 }));
 
