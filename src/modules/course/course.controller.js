@@ -11,6 +11,8 @@ import ratingModel from "../../../DB/model/rating.model.js";
 import commentModel from "../../../DB/model/comment.model.js";
 import User from "../../../DB/model/user.model.js";
 import View from "../../../DB/model/view.model.js";
+import Progress from "../../../DB/model/progress.model.js";
+
 import Similarities from "../../../DB/model/similarities.model.js";
 import mongoose from "mongoose";
 import upload, {
@@ -99,10 +101,8 @@ export const editCourse = asyncHandler(async (req, res, next) => {
   let blobImageName;
   let blobVideoName;
   //
-  console.log(courseId);
   // Check if the request includes a query parameter for uploading a cover image.
   if (req.query.upload === "coverImage") {
-    console.log("reach upload image");
     // Check if a cover image file is provided in the request.
     if (req.files?.coverImage) {
       // Extract the extension for the cover image.
@@ -121,12 +121,10 @@ export const editCourse = asyncHandler(async (req, res, next) => {
         blobImageExtension
       );
     }
-    console.log("reach" + coverImageUrl);
   }
 
   // Check if the request includes a query parameter for uploading a promotional video.
   if (req.query.upload === "promotionalVideo") {
-    console.log("reach that");
     // Check if a promotional video file is provided in the request.
     if (req.files?.promotionalVideo) {
       // Extract the extension for the promotional video.
@@ -136,7 +134,6 @@ export const editCourse = asyncHandler(async (req, res, next) => {
 
       // Define the path for the promotional video in the user's course directory.
       blobVideoName = `Users\\${req.user.userName}_${req.user._id}\\Courses\\${courseId}`;
-      console.log(`promotionalVideoUrl ${req.files.promotionalVideo[0].path}`);
       // const { manifestURL, thumbnailsURL } = await uploadHls(
       //   req.files.promotionalVideo[0].path,
       //   blobVideoName
@@ -160,10 +157,6 @@ export const editCourse = asyncHandler(async (req, res, next) => {
       if (generateVtt) {
         var promotionalVideoVttBlobName =
           blobVideoName + "\\thumbnails" + "\\thumbnails.vtt";
-        console.log(
-          "promotionalVideoVttBlobName ",
-          promotionalVideoVttBlobName
-        );
       }
     }
   }
@@ -311,7 +304,6 @@ export const editCourse = asyncHandler(async (req, res, next) => {
  * @returns {Object} - JSON response indicating success or failure of the course deletion operation.
  */
 export const deleteCourse = asyncHandler(async (req, res, next) => {
-  console.log("reach delete");
   // Extract courseId from the request parameters.
   const { courseId } = req.params;
 
@@ -389,7 +381,6 @@ export const getCourse = asyncHandler(async (req, res, next) => {
   // Update view count based on user cookie or create a new view entry.
   if (req.cookies.cookieId) {
     const cookieId = req.cookies.cookieId;
-    console.log(cookieId);
     const delay = new Date(Date.now() - 5 * 60 * 100); // 5 minutes ago
     const view = await View.findOneAndUpdate(
       {
@@ -571,6 +562,78 @@ export const getCourseContent = asyncHandler(async (req, res, next) => {
       })
     : res.status(500).json({ message: "Something went wrong" });
 });
+export const getCourseContentForSudent = asyncHandler(
+  async (req, res, next) => {
+    // Extract courseId from the request parameters.
+    const { courseId } = req.params;
+
+    // Retrieve basic course information.
+    const course = await Course.findById(courseId).select("title _id duration");
+    const numberOfCurriculmInCourse = await curriculumModel.countDocuments({
+      course: courseId,
+    });
+    // Retrieve chapters belonging to the course, sorted by order.
+    const chapters = await Chapter.find({ course: courseId })
+      .select("title _id duration")
+      .sort({ order: 1 });
+    const numberOfChapters = chapters.length;
+
+    // Retrieve curriculum associated with each chapter.
+    const chapterPromises = chapters.map(async (chapter) => {
+      let curriculum = await curriculumModel
+        .find({ chapter: chapter._id })
+        .select("title _id type ")
+        .populate({ path: "video", select: "duration" })
+        .populate({ path: "quiz", select: "duration" })
+        .populate({ path: "article", select: "duration" })
+        .sort({ order: 1 });
+
+      const curriculumPromises = curriculum.map(async (curriculum) => {
+        const progress = await Progress.findOne({
+          curriculum: curriculum._id,
+        }).select("completed");
+        const completed = progress ? progress.completed : false;
+        const lastWatchedSecond = progress ? progress.lastWatchedSecond : 0;
+
+        return {
+          ...curriculum._doc,
+          video: undefined,
+          article: undefined,
+          quiz: undefined,
+          duration: curriculum[curriculum.type].duration,
+          completed,
+          lastWatchedSecond,
+        };
+      });
+      // Wait for all chapter promises to resolve.
+      const curriculumResults = await Promise.all(curriculumPromises);
+      const numberOfCurriculmInChapter = await curriculumModel.countDocuments({
+        chapter: chapter._id,
+      });
+      return {
+        ...chapter._doc,
+        numberOfCurriculms: numberOfCurriculmInChapter,
+        curriculum: curriculumResults,
+      };
+    });
+
+    // Wait for all chapter promises to resolve.
+    const chapterResults = await Promise.all(chapterPromises);
+
+    // Respond with the course content if successful, otherwise send an error.
+    return chapterResults
+      ? res.status(200).json({
+          message: "Success",
+          course: {
+            ...course._doc,
+            numberOfChapters,
+            numberOfCurriculms: numberOfCurriculmInCourse,
+            chpaters: chapterResults,
+          },
+        })
+      : res.status(500).json({ message: "Something went wrong" });
+  }
+);
 
 /**
  * Retrieve a list of courses .

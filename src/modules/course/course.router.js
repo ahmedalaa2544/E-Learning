@@ -94,7 +94,12 @@ router.get(
   validation(validators.getCourseSchema),
   courseController.getCourseContent
 );
-
+// retrieves course content only
+router.get(
+  "/:courseId/contentForStudent",
+  validation(validators.getCourseSchema),
+  courseController.getCourseContentForSudent
+);
 /**
  * Route: GET /courses
  * Description: Retrieve a list of courses created by the authenticated user.

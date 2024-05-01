@@ -22,7 +22,6 @@ import upload, {
 export const coursesAnalytics = asyncHandler(async (req, res, next) => {
   // Extract courseId from the request parameters.
   // const { courseId } = req.params;
-  console.log(" reach course analytics ");
   let totalViews = 0,
     totalStudents = 0,
     totalRevenue = 0,
@@ -30,7 +29,6 @@ export const coursesAnalytics = asyncHandler(async (req, res, next) => {
     computerWatchedHours = 0,
     tabletWatchedHours = 0,
     mobileWatchedHours = 0;
-  console.log(req.userId);
   const userIsinstructorAt = await Instructor.find({ user: req.userId });
   await Promise.all(
     userIsinstructorAt.map(async (instrucor_doc) => {
@@ -44,8 +42,6 @@ export const coursesAnalytics = asyncHandler(async (req, res, next) => {
       totalStudents += students.length;
 
       students.map((student) => {
-        // console.log(instrucor_doc.course);
-        // console.log(student);
         totalRevenue += student.paid;
         if (student.graduated) {
           totalGraduates++;
@@ -54,9 +50,8 @@ export const coursesAnalytics = asyncHandler(async (req, res, next) => {
 
       views.map((view) => {
         totalViews += view.count;
-        // console.log(totalViews);
       });
-      const progresses = await Progress.find({ course: instrucor_doc });
+      const progresses = await Progress.find({ course: instrucor_doc.course });
       progresses.map((progress) => {
         const lastWatchedSecond = progress.lastWatchedSecond;
         watchedHours += lastWatchedSecond;
