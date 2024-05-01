@@ -397,7 +397,7 @@ export const videoProgress = asyncHandler(async (req, res, next) => {
   if (completed) {
     const graduated = accomplishementPercentage === 100 ? true : false;
     // send notification when graduation
-    if (graduated) {
+    if (graduated && !progress.completed) {
       let notification = {
         image: course.coverImageUrl,
         title: "Course Completion",
@@ -509,7 +509,7 @@ export const curriculumCompleted = asyncHandler(async (req, res, next) => {
   }
   const graduated = accomplishementPercentage === 100 ? true : false;
   // send notification when graduation
-  if (graduated) {
+  if (graduated && !progress.completed) {
     const course = await Course.findById(courseId);
     let notification = {
       image: course.coverImageUrl,
