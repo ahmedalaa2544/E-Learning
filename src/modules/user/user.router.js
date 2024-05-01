@@ -44,8 +44,6 @@ router.get("/revenue", isAuth, userController.revenue);
 
 router.get("/analysis", isAuth, userController.detailsRevenue);
 
-router.get("/analytics", isAuth, userController.coursesAnalytics);
-
 router.get("/order", isAuth, userController.order);
 
 router.patch(

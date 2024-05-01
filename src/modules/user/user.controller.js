@@ -356,21 +356,6 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
     totalViews: req.user.clicked,
     salesCountPerDay,
   };
-
-  return res.status(200).json({ message: "Done", analsis });
-});
-
-export const order = asyncHandler(async (req, res, next) => {
-  const orders = await orderModel.find({
-    user: req.user.id,
-    status: { $in: ["Paid", "Refunded"] },
-  });
-
-  // response
-  return res.status(200).json({ message: "Done", orders });
-});
-// This function gathers and sends analytics data for courses taught by the current user who is an instructor.
-export const coursesAnalytics = asyncHandler(async (req, res, next) => {
   // Initialize counters for various metrics.
   let totalViews = 0,
     totalStudents = 0,
@@ -434,9 +419,9 @@ export const coursesAnalytics = asyncHandler(async (req, res, next) => {
     },
   ];
 
-  // Send the analytics data as a JSON response.
-  res.status(200).json({
-    message: "done",
+  return res.status(200).json({
+    message: "Done",
+    analsis,
     analytics: {
       totalViews,
       totalStudents,
@@ -445,6 +430,16 @@ export const coursesAnalytics = asyncHandler(async (req, res, next) => {
       devicesUsage,
     },
   });
+});
+
+export const order = asyncHandler(async (req, res, next) => {
+  const orders = await orderModel.find({
+    user: req.user.id,
+    status: { $in: ["Paid", "Refunded"] },
+  });
+
+  // response
+  return res.status(200).json({ message: "Done", orders });
 });
 
 export const refund = asyncHandler(async (req, res, next) => {
