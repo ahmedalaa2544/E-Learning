@@ -350,16 +350,8 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
     }
   });
 
-  const analsis = {
-    totalStudent: req.user.totalNumberOfStudents,
-    totalRevenue: req.user.totalRevenue,
-    totalViews: req.user.clicked,
-    salesCountPerDay,
-  };
   // Initialize counters for various metrics.
   let totalViews = 0,
-    totalStudents = 0,
-    totalRevenue = 0,
     watchedHours = 0,
     computerWatchedHours = 0,
     tabletWatchedHours = 0,
@@ -386,10 +378,10 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
       const students = await Student.find({ course: instructor_doc.course });
 
       // Aggregate the number of students and calculate total revenue.
-      totalStudents += students.length;
-      students.map((student) => {
-        totalRevenue += student.paid;
-      });
+      // totalStudents += students.length;
+      // students.map((student) => {
+      //   totalRevenue += student.paid;
+      // });
 
       // Aggregate the total views from all view records.
       views.map((view) => {
@@ -433,11 +425,11 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
   const satifactionPercentage = (satifaction / (5 * numberOfCourses)) * 100;
   return res.status(200).json({
     message: "Done",
-    analsis,
     analytics: {
       totalViews,
-      totalStudents,
-      totalRevenue,
+      totalStudents: req.user.totalNumberOfStudents,
+      totalRevenue: req.user.totalRevenue,
+      salesCountPerDay,
       watchedHours,
       devicesUsage,
       satifactionPercentage,
@@ -459,6 +451,7 @@ export const refund = asyncHandler(async (req, res, next) => {
   const { courseId } = req.params;
   const course = await courseModel.findById(courseId);
   const workShop = await workshopModel.findById(courseId);
+
   if (!course && !workShop) {
     return next(new Error("Course not found", { cause: 404 }));
   }
@@ -484,17 +477,25 @@ export const refund = asyncHandler(async (req, res, next) => {
       status: "Refunded",
       courses: [
         {
-          courseId: course._id,
-          coursePrice: course.price,
-          name: course.title,
+          courseId,
+          coursePrice: course ? course.price : workShop.price,
+          name: course ? course.title : workShop.title,
         },
       ],
-      price: course.price,
+      price: course ? course.price : workShop.price,
     });
+    course
+      ? await courseModel.updateOne(
+          { _id: courseId },
+          { $inc: { numberOfStudents: -1 } }
+        )
+      : await workshopModel.updateOne(
+          { _id: courseId },
+          { $inc: { numberOfStudents: -1 } }
+        );
+
     return res.status(200).json({
-      message: `You Refunded ${
-        course.title ? course.title : workShop.title
-      } Course`,
+      message: `You Refunded ${course ? course.title : workShop.title} Course`,
     });
   }
   return next(
