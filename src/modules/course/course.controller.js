@@ -397,10 +397,10 @@ export const getCourse = asyncHandler(async (req, res, next) => {
     const maxAge = 3 * 30 * 24 * 60 * 60; // 3 months in seconds
     const cookieId = new mongoose.Types.ObjectId().toString();
     const deviceType = req.useragent.isMobile
-      ? "Mobile"
+      ? "mobile"
       : req.useragent.isTablet
-      ? "Tablet"
-      : "Computer";
+      ? "tablet"
+      : "computer";
     res.setHeader("Access-Control-Allow-Credentials", "true");
 
     res.setHeader(

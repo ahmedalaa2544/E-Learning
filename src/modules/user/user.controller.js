@@ -368,7 +368,7 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
       const course = await courseModel
         .findById(instructor_doc.course)
         .select("rating");
-      // console.log(cou)
+
       numberOfCourses += 1;
       const rating = course?.rating ? course.rating : 0;
       satifaction += rating;
