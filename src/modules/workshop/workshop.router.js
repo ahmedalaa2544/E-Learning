@@ -51,7 +51,7 @@ router.get(
 router.get(
   "/:workshopId",
   isAuth,
-  validation(workshopValidation.workshopIdSchema),
+  validation(workshopValidation.getSpecificWorkshopSchema),
   workshopController.getSpecificWorkshop
 );
 
