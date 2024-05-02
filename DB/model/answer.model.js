@@ -1,6 +1,6 @@
 import { Schema, model, Types } from "mongoose";
 
-const questionSchema = new Schema(
+const answerSchema = new Schema(
   {
     id: {
       type: Types.ObjectId,
@@ -23,37 +23,27 @@ const questionSchema = new Schema(
       ref: "Curriculum",
       reuired: true,
     },
-    quiz: {
+    question: {
       type: Types.ObjectId,
-      ref: "Quiz",
+      ref: "Question",
       reuired: true,
     },
-    order: {
-      type: Number,
-      required: true,
+    aswer: {
+      type: Types.ObjectId,
+      ref: "option",
+      reuired: true,
     },
-    type: {
-      type: String,
-      enum: ["text", "mcq", "file"],
-      required: true,
+    student: {
+      type: Types.ObjectId,
+      ref: "User",
+      reuired: true,
     },
-    text: String,
-    imageUrl: {
-      type: String,
-    },
-    imageBlobName: {
-      type: String,
-    },
+    isCorrect: { type: Boolean, required: true },
     multiple: { type: Boolean, default: false },
-
-    optionsNumber: { Number },
-    sorted: { type: Boolean },
-    points: Number,
-    required: Boolean,
   },
 
   { timestamps: true }
 );
 
-const questionModel = model("Question", questionSchema);
-export default questionModel;
+const answerModel = model("Answer", answerSchema);
+export default answerModel;

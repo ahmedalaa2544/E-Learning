@@ -27,6 +27,13 @@ router.post(
   quizController.createOption
 );
 
+router.get(
+  "/:curriculumId/submitQuiz",
+  isAuthenticated,
+  isAuthorized(["Student"]),
+  // validation(validators.createQuestionSchema),
+  quizController.submitQuiz
+);
 // Update details of a specific curriculum
 router.patch(
   "/:curriculumId",
@@ -90,6 +97,14 @@ router.get(
   isAuthorized(["Instructor"]),
   validation(validators.createQuestionSchema),
   quizController.getQuiz
+);
+
+router.get(
+  "/:curriculumId/quizForStudent",
+  isAuthenticated,
+  isAuthorized(["Student"]),
+  // validation(validators.createQuestionSchema),
+  quizController.retrieveCourseForStudent
 );
 
 export default router;

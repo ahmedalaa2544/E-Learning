@@ -3,7 +3,10 @@ import Curriculum from "../../../DB/model/curriculum.model.js";
 import Quiz from "../../../DB/model/quiz.model.js";
 import Question from "../../../DB/model/question.model.js";
 import Option from "../../../DB/model/option.model.js";
-import { mergeSort } from "../../utils/dataSructures.js";
+import Answers from "../../../DB/model/answer.model.js";
+import QuizPerformance from "../../../DB/model/quizPerformance.js";
+
+import { mergeSort, shuffleArray } from "../../utils/dataSructures.js";
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import upload, {
@@ -595,21 +598,36 @@ export const getQuiz = asyncHandler(async (req, res, next) => {
   const { curriculumId } = req.params;
   let quiz = await Quiz.findById(req.quiz);
   // Retrieve questions associated with the quiz
-  let questions = await Question.find({ quiz: req.quiz });
+  let questions = await Question.find({ quiz: req.quiz }).sort({ order: 1 });
   // Retrieve options for each question and enhance the data
   questions = await Promise.all(
     questions.map(async (question) => {
-      let options = await Option.find({ question: question._id });
-      options = options.map((option) => {
-        return {
-          ...option._doc,
-          course: undefined,
-          chapter: undefined,
-          curriculum: undefined,
-          question: undefined,
-          imageBlobName: undefined,
-        };
+      const { accountSasTokenUrl: questionImageUrl } = await generateSASUrl(
+        question.imageBlobName,
+        "r",
+        "60"
+      );
+      let options = await Option.find({ question: question._id }).sort({
+        order: 1,
       });
+      options = await Promise.all(
+        options.map(async (option) => {
+          const { accountSasTokenUrl: optionImageUrl } = await generateSASUrl(
+            question.imageBlobName,
+            "r",
+            "60"
+          );
+          return {
+            ...option._doc,
+            course: undefined,
+            chapter: undefined,
+            curriculum: undefined,
+            question: undefined,
+            imageBlobName: undefined,
+            imageUrl: optionImageUrl,
+          };
+        })
+      );
       // Enhance question data with additional information
       return {
         ...question._doc,
@@ -618,8 +636,8 @@ export const getQuiz = asyncHandler(async (req, res, next) => {
         curriculum: undefined,
         quiz: undefined,
         imageBlobName: undefined,
+        imageUrl: questionImageUrl,
         optionsNumber: options.length,
-        options: mergeSort(options, "order"),
       };
     })
   );
@@ -631,11 +649,176 @@ export const getQuiz = asyncHandler(async (req, res, next) => {
     chapter: req.curriculum.chapter,
     title: req.curriculum.title,
     questionsNumber: questions.length,
-    questions: mergeSort(questions, "order"),
+    // questions: mergeSort(questions, "order"),
   };
 
   // Return the quiz details in the response
   return quiz
     ? res.status(200).json({ message: "Done", quiz })
     : res.status(500).json({ message: "Something went wrong" });
+});
+export const retrieveCourseForStudent = asyncHandler(async (req, res, next) => {
+  console.log("reach retrieve course for student");
+  // Extract parameters from the request
+  const { curriculumId } = req.params;
+  let quiz = await Quiz.findById(req.quiz);
+  const page = req.query.page || 0;
+  const limit = quiz.maxQuestionsInPage;
+  const startIndex = +page * limit;
+
+  // Retrieve questions associated with the quiz
+  let questions = await Question.find({ quiz: req.quiz })
+    .sort({ order: 1 })
+    .skip(startIndex)
+    .limit(limit);
+
+  if (quiz.shuffleQuestions) {
+    questions = shuffleArray(questions);
+  }
+
+  // Retrieve options for each question and enhance the data
+  questions = await Promise.all(
+    questions.map(async (question) => {
+      const { accountSasTokenUrl: questionImageUrl } = await generateSASUrl(
+        question.imageBlobName,
+        "r",
+        "60"
+      );
+      let options = await Option.find({ question: question._id }).sort({
+        order: 1,
+      });
+      if (quiz.shuffleAnswers) {
+        options = shuffleArray(options);
+      }
+      options = await Promise.all(
+        options.map(async (option) => {
+          const { accountSasTokenUrl: optionImageUrl } = await generateSASUrl(
+            question.imageBlobName,
+            "r",
+            "60"
+          );
+          return {
+            ...option._doc,
+            course: undefined,
+            chapter: undefined,
+            curriculum: undefined,
+            question: undefined,
+            imageBlobName: undefined,
+            imageUrl: optionImageUrl,
+            correctAnswer: undefined,
+            order: undefined,
+          };
+        })
+      );
+      // Enhance question data with additional information
+      return {
+        ...question._doc,
+        course: undefined,
+        chapter: undefined,
+        curriculum: undefined,
+        quiz: undefined,
+        imageBlobName: undefined,
+        imageUrl: questionImageUrl,
+        optionsNumber: options.length,
+        options,
+        order: undefined,
+      };
+    })
+  );
+
+  // Construct the quiz object with enhanced question data
+  quiz = {
+    ...quiz._doc,
+    course: req.curriculum.course,
+    chapter: req.curriculum.chapter,
+    title: req.curriculum.title,
+    questionsNumber: questions.length,
+    questions,
+    // questions: mergeSort(questions, "order"),
+  };
+
+  // Return the quiz details in the response
+  return quiz
+    ? res.status(200).json({ message: "Done", quiz })
+    : res.status(500).json({ message: "Something went wrong" });
+});
+
+export const submitQuiz = asyncHandler(async (req, res, next) => {
+  console.log("reach submitQuiz");
+  // Extract parameters from the request
+  const { curriculumId } = req.params;
+  const { quiz } = req.body;
+  let totalPoints = 0;
+  let fullMark = 0;
+  const questionsPerformance = [];
+  // quiz = [{ _id, answers: [ _id ,  _id ] },{ _id, answers: _id }];
+  await Promise.all(
+    quiz.map(async (question) => {
+      const questionDoc = await Question.findById(question._id);
+      const questionPoints = questionDoc.points;
+      fullMark += questionPoints;
+      const multiple = questionDoc.multiple;
+      if (multiple) {
+        const stundentAnswers = question.answers;
+        const correctAnswers = await Option.find({
+          question: question._id,
+          correctAnswer: true,
+        });
+        let isUserSolutionCorrect =
+          correctAnswers.length === stundentAnswers.length;
+        await Promise.all(
+          stundentAnswers.map(async (answer) => {
+            const isUserAnswerCorrect = correctAnswers.some(
+              (item) => answer === item._id.toString()
+            );
+            if (!isUserAnswerCorrect) isUserSolutionCorrect = false;
+
+            await Answers.create({
+              course: req.course,
+              chapter: req.chapter,
+              curriculum: curriculumId,
+              question: question._id,
+              answer: answer,
+              student: req.userId,
+              isCorrect: isUserAnswerCorrect,
+              multiple,
+            });
+          })
+        );
+        if (isUserSolutionCorrect) {
+          totalPoints += questionPoints;
+        }
+        questionsPerformance.push({
+          question: questionDoc._id,
+          isUserSolutionCorrect,
+        });
+      } else {
+        const stundentAnswer = question.answers;
+        const correctAnswer = await Option.findOne({
+          question: question._id,
+          correctAnswer: true,
+        });
+        let isUserSolutionCorrect = correctAnswer === stundentAnswer;
+        if (isUserSolutionCorrect) {
+          totalPoints += questionPoints;
+        }
+        await Answers.create({
+          course: req.course,
+          chapter: req.chapter,
+          curriculum: curriculumId,
+          question: question._id,
+          answer: stundentAnswer,
+          student: req.userId,
+          isCorrect: isUserAnswerCorrect,
+          multiple,
+        });
+        questionsPerformance.push({
+          question: questionDoc._id,
+          isUserSolutionCorrect,
+        });
+      }
+    })
+  );
+  // const
+  res.status(200).json({ message: "Done" });
 });

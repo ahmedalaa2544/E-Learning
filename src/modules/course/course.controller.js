@@ -903,7 +903,7 @@ export const postComment = asyncHandler(async (req, res, next) => {
       notifications: notification,
     });
   }
-
+  const predictedSentiment = Math.floor(Math.random() * 2);
   notification = notify.notifications.reverse()[0];
   getIo().to(course.createdBy.socketId).emit("notification", notification);
   if (course.createdBy.popUpId.endpoint) {
@@ -915,7 +915,7 @@ export const postComment = asyncHandler(async (req, res, next) => {
 
   // Return a JSON response indicating the success or failure of the comment posting process
   return createdComment
-    ? res.status(200).json({ message: "Done" })
+    ? res.status(200).json({ message: "Done", predictedSentiment })
     : res.status(500).json({ message: "Failed to post comment" });
 });
 

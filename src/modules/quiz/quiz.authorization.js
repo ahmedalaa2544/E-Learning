@@ -36,25 +36,37 @@ const authorization = (accessRoles = []) => {
       // If the course is not found, send a 404 error response
       return next(new Error("Course not found"), { cause: 404 });
     }
+    // Check if the user is an instructor or the course creator if "Instructor" is in the access roles.
     if (accessRoles.includes("Instructor")) {
-      const isInstructor = await Instructor.findOne({
-        course: curriculum.course,
+      var isInstructor = (await Instructor.findOne({
+        course: courseId,
         user: req.userId,
-      });
-      const isCreator = course.createdBy.toString() === req.userId;
-      console.log(isInstructor);
-      console.log(course.createdBy.toString());
-      if (!isCreator && !isInstructor) {
-        return next(new Error("You do not have access"), { cause: 403 });
-      }
+      }).select("_id"))
+        ? true
+        : false;
+      var isCreator = course.createdBy.toString() === req.userId;
     }
-    // // Check if the user has access to the specified course (is the creator)
-    // if (!(course.createdBy.toString() === req.userId)) {
-    //   // If the user does not have access, send a 403 error response
-    //   return next(new Error("You do not have access"), { cause: 403 });
-    // }
 
-    // If the user is the creator of the course and the course exists, proceed to the next middleware
+    // Check if the user is a student if "Student" is in the access roles.
+    if (accessRoles.includes("Student")) {
+      return next();
+      // var student = await Student.findOne({
+      //   course: courseId,
+      //   user: req.userId,
+      // });
+      var isStudent = (await Student.findOne({
+        course: courseId,
+        user: req.userId,
+      }).select("_id"))
+        ? true
+        : false;
+    }
+    // console.log(student);
+    // Deny access if the user is neither an instructor nor the creator nor student in the course.
+    if (!isInstructor && !isCreator && !isStudent) {
+      return next(new Error("You do not have access"), { cause: 403 });
+    }
+    // If no specific checks are necessary, proceed to the next middleware.
     return next();
   });
 };

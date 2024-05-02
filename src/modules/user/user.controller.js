@@ -363,7 +363,9 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
     watchedHours = 0,
     computerWatchedHours = 0,
     tabletWatchedHours = 0,
-    mobileWatchedHours = 0;
+    mobileWatchedHours = 0,
+    satifaction = 0,
+    numberOfCourses = 0;
 
   // Retrieve all instructor records for the current user.
   const userIsinstructorAt = await Instructor.find({ user: req.userId });
@@ -371,6 +373,13 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
   // Process each course the instructor is associated with.
   await Promise.all(
     userIsinstructorAt.map(async (instructor_doc) => {
+      const course = await courseModel
+        .findById(instructor_doc.course)
+        .select("rating");
+      // console.log(cou)
+      numberOfCourses += 1;
+      const rating = course?.rating ? course.rating : 0;
+      satifaction += rating;
       // Fetch view statistics for the course.
       const views = await View.find({ course: instructor_doc.course });
       // Fetch all students enrolled in the course.
@@ -407,18 +416,21 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
   const devicesUsage = [
     {
       device: "computer",
-      usagePercentage: (computerWatchedHours / watchedHours) * 100,
+      usagePercentage:
+        watchedHours > 0 ? (computerWatchedHours / watchedHours) * 100 : 0,
     },
     {
       device: "tablet",
-      usagePercentage: (tabletWatchedHours / watchedHours) * 100,
+      usagePercentage:
+        watchedHours > 0 ? (tabletWatchedHours / watchedHours) * 100 : 0,
     },
     {
       device: "mobile",
-      usagePercentage: (mobileWatchedHours / watchedHours) * 100,
+      usagePercentage:
+        watchedHours > 0 ? (mobileWatchedHours / watchedHours) * 100 : 0,
     },
   ];
-
+  const satifactionPercentage = (satifaction / (5 * numberOfCourses)) * 100;
   return res.status(200).json({
     message: "Done",
     analsis,
@@ -428,6 +440,7 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
       totalRevenue,
       watchedHours,
       devicesUsage,
+      satifactionPercentage,
     },
   });
 });
