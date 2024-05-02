@@ -37,9 +37,10 @@ const quizPerformanceSchema = new Schema(
         },
       },
     ],
-    attempts: { type: Number, default: 0 },
-    fullMark: { type: Number, required: true },
-    totalPoints: { type: Number, default: 0 },
+    numberOfAttempt: { type: Number, default: 0 },
+    quizFullMark: { type: Number, required: true },
+    studentTotalPoints: { type: Number, default: 0 },
+    returned: { type: Boolean, default: false },
   },
 
   { timestamps: true }

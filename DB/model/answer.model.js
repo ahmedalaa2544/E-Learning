@@ -28,7 +28,7 @@ const answerSchema = new Schema(
       ref: "Question",
       reuired: true,
     },
-    aswer: {
+    answer: {
       type: Types.ObjectId,
       ref: "option",
       reuired: true,
@@ -40,6 +40,7 @@ const answerSchema = new Schema(
     },
     isCorrect: { type: Boolean, required: true },
     multiple: { type: Boolean, default: false },
+    numberOfAttempt: { type: Number, default: 0 },
   },
 
   { timestamps: true }

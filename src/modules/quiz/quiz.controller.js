@@ -6,7 +6,7 @@ import Option from "../../../DB/model/option.model.js";
 import Answers from "../../../DB/model/answer.model.js";
 import QuizPerformance from "../../../DB/model/quizPerformance.js";
 
-import { mergeSort, shuffleArray } from "../../utils/dataSructures.js";
+import { mergeSort, shuffleArray, findMax } from "../../utils/dataSructures.js";
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import upload, {
@@ -31,7 +31,6 @@ export const createQuestion = asyncHandler(async (req, res, next) => {
 
   // Fetch existing questions for the quiz
   const questions = await Question.find({ quiz: req.quiz });
-
   // Calculate the order of the new question
   const order = questions.length + 1;
   // Generate a unique questionId using MongoDB ObjectId
@@ -198,11 +197,11 @@ export const editQuiz = asyncHandler(async (req, res, next) => {
     timeLimit,
     shuffleQuestions,
     shuffleAnswers,
-    showCorrectAnswer,
     maxAttempts,
     maxQuestionsInPage,
     lockdown,
     numberOfQuestions,
+    allowedToReturn,
   } = req.body;
 
   // Retrieve the curriculum associated with the provided curriculumId
@@ -217,11 +216,11 @@ export const editQuiz = asyncHandler(async (req, res, next) => {
     timeLimit,
     shuffleQuestions,
     shuffleAnswers,
-    showCorrectAnswer,
     maxAttempts,
     maxQuestionsInPage,
     lockdown,
     numberOfQuestions,
+    allowedToReturn,
   });
 
   // Send a response indicating the success or failure of the quiz editing process
@@ -669,6 +668,16 @@ export const retrieveCourseForStudent = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { curriculumId } = req.params;
   let quiz = await Quiz.findById(req.quiz);
+  const maxAttempts = quiz.maxAttempts;
+  const studentNumberOfAttempts = await QuizPerformance.countDocuments({
+    curriculum: curriculumId,
+    student: req.userId,
+  });
+  if (maxAttempts <= studentNumberOfAttempts) {
+    return next(new Error("You have exhausted all your attempts"), {
+      cause: 403,
+    });
+  }
   const page = req.query.page || 0;
   const limit = quiz.maxQuestionsInPage;
   const startIndex = +page * limit;
@@ -755,15 +764,29 @@ export const submitQuiz = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { curriculumId } = req.params;
   const { quiz } = req.body;
-  let totalPoints = 0;
-  let fullMark = 0;
+  const quizDoc = await Quiz.findById(req.quiz);
+  const allowedToReturn = quizDoc.allowedToReturn;
+  const maxAttempts = quizDoc.maxAttempts;
+  const studentNumberOfAttempts = await QuizPerformance.countDocuments({
+    curriculum: curriculumId,
+    student: req.userId,
+  });
+  if (maxAttempts <= studentNumberOfAttempts) {
+    return next(new Error("You have exhausted all your attempts"), {
+      cause: 403,
+    });
+  }
+  const numberOfAttempt = studentNumberOfAttempts + 1;
+  let studentTotalPoints = 0;
+  let quizFullMark = 0;
   const questionsPerformance = [];
   // quiz = [{ _id, answers: [ _id ,  _id ] },{ _id, answers: [_id ]}];
   await Promise.all(
     quiz.map(async (question) => {
       const questionDoc = await Question.findById(question._id);
       const questionPoints = questionDoc.points;
-      fullMark += questionPoints;
+      console.log("questionPoints", questionPoints);
+      quizFullMark += questionPoints;
       const multiple = questionDoc.multiple;
       if (multiple) {
         const stundentAnswers = question.answers;
@@ -789,11 +812,12 @@ export const submitQuiz = asyncHandler(async (req, res, next) => {
               student: req.userId,
               isCorrect: isUserAnswerCorrect,
               multiple,
+              numberOfAttempt,
             });
           })
         );
         if (isUserSolutionCorrect) {
-          totalPoints += questionPoints;
+          studentTotalPoints += questionPoints;
         }
         questionsPerformance.push({
           question: questionDoc._id,
@@ -801,13 +825,17 @@ export const submitQuiz = asyncHandler(async (req, res, next) => {
         });
       } else {
         const stundentAnswer = question.answers[0];
-        const correctAnswer = await Option.findOne({
+        const correctAnswerDoc = await Option.findOne({
           question: question._id,
           correctAnswer: true,
-        });
+        }).select("_id");
+        const correctAnswer = correctAnswerDoc._id.toString();
         let isUserSolutionCorrect = correctAnswer === stundentAnswer;
+        console.log("correctAnswer : " + correctAnswer);
+        console.log("stundentAnswer : " + stundentAnswer);
+
         if (isUserSolutionCorrect) {
-          totalPoints += questionPoints;
+          studentTotalPoints += questionPoints;
         }
         await Answers.create({
           course: req.course,
@@ -816,8 +844,9 @@ export const submitQuiz = asyncHandler(async (req, res, next) => {
           question: question._id,
           answer: stundentAnswer,
           student: req.userId,
-          isCorrect: isUserAnswerCorrect,
+          isCorrect: isUserSolutionCorrect,
           multiple,
+          numberOfAttempt,
         });
         questionsPerformance.push({
           question: questionDoc._id,
@@ -826,6 +855,71 @@ export const submitQuiz = asyncHandler(async (req, res, next) => {
       }
     })
   );
+  await Quiz.findByIdAndUpdate(req.quiz, { fullMark: quizFullMark });
+  const quizPerformance = await QuizPerformance.create({
+    course: req.course,
+    chapter: req.chapter,
+    curriculum: curriculumId,
+    student: req.userId,
+    questionsPerformance,
+    quizFullMark,
+    studentTotalPoints,
+    numberOfAttempt,
+  });
   // const
-  res.status(200).json({ message: "Done" });
+  return quizPerformance
+    ? res.status(200).json({ message: "Done", allowedToReturn })
+    : res.status(500).json({ message: "Something went wrong" });
+});
+
+export const quizResult = asyncHandler(async (req, res, next) => {
+  console.log("reach quiz result");
+  console.log(req.userId);
+  const { curriculumId } = req.params;
+  const student = req.userId;
+  const quiz = await Quiz.findById(req.quiz);
+  const fullMark = quiz.fullMark;
+  const allowedToReturn = quiz.allowedToReturn;
+  if (!allowedToReturn) {
+    return next(
+      new Error("Insructor didn't allow to return you reslut , yet ."),
+      {
+        cause: 403,
+      }
+    );
+  }
+  const resluts = await QuizPerformance.find({
+    curriculum: curriculumId,
+    student,
+  }).select("numberOfAttempt studentTotalPoints -_id");
+  const maxResult = findMax(resluts, "studentTotalPoints");
+  return resluts
+    ? res
+        .status(200)
+        .json({ message: "Done", result: { fullMark, maxResult, resluts } })
+    : res.status(500).json({ message: "Something went wrong" });
+});
+
+export const quizPerformance = asyncHandler(async (req, res, next) => {
+  const { curriculumId } = req.params;
+  const numberOfAttempt = req.query.numberOfAttempt || 1;
+  const quiz = await Quiz.findById(req.quiz);
+  const allowedToReturn = quiz.allowedToReturn;
+  if (!allowedToReturn) {
+    return next(
+      new Error("Insructor didn't allow to return you reslut , yet ."),
+      {
+        cause: 403,
+      }
+    );
+  }
+  const resluts = await QuizPerformance.findOne({
+    curriculum: curriculumId,
+    student,
+    numberOfAttempt,
+  }).select("numberOfAttempt studentTotalPoints questionsPerformance -_id");
+  const quizPerformance = await Promise.all(resluts.map());
+  return quizPerformance
+    ? res.status(200).json({ message: "Done", allowedToReturn })
+    : res.status(500).json({ message: "Something went wrong" });
 });

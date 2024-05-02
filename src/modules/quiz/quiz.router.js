@@ -27,7 +27,7 @@ router.post(
   quizController.createOption
 );
 
-router.get(
+router.post(
   "/:curriculumId/submitQuiz",
   isAuthenticated,
   isAuthorized(["Student"]),
@@ -105,6 +105,22 @@ router.get(
   isAuthorized(["Student"]),
   // validation(validators.createQuestionSchema),
   quizController.retrieveCourseForStudent
+);
+
+router.get(
+  "/:curriculumId/quizResult",
+  isAuthenticated,
+  isAuthorized(["Student"]),
+  // validation(validators.createQuestionSchema),
+  quizController.quizResult
+);
+
+router.get(
+  "/:curriculumId/quizPerformance",
+  isAuthenticated,
+  isAuthorized(["Student"]),
+  // validation(validators.createQuestionSchema),
+  quizController.quizPerformance
 );
 
 export default router;

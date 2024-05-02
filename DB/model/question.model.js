@@ -48,7 +48,7 @@ const questionSchema = new Schema(
 
     optionsNumber: { Number },
     sorted: { type: Boolean },
-    points: Number,
+    points: { type: Number, default: 0 },
     required: Boolean,
   },
 

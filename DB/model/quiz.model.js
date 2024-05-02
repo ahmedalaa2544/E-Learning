@@ -34,6 +34,8 @@ const quizSchema = new Schema(
     maxQuestionsInPage: { type: Number, default: 1 },
     lockdown: Boolean,
     numberOfQuestions: { type: Number, default: 1 },
+    allowedToReturn: { type: Boolean, default: true },
+    fullMark: { type: Number, default: 0 },
   },
 
   { timestamps: true }

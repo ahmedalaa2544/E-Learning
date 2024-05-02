@@ -49,7 +49,7 @@ export const coursesAnalytics = asyncHandler(async (req, res, next) => {
 
       // Aggregate the total views from all view records.
       views.map((view) => {
-        totalViews += view.count;
+        totalViews += view.length;
       });
 
       // Fetch all progress records for the course to calculate watched hours and device-specific usage.
