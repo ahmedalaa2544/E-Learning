@@ -613,7 +613,7 @@ export const getQuiz = asyncHandler(async (req, res, next) => {
       options = await Promise.all(
         options.map(async (option) => {
           const { accountSasTokenUrl: optionImageUrl } = await generateSASUrl(
-            question.imageBlobName,
+            option.imageBlobName,
             "r",
             "60"
           );
@@ -695,7 +695,7 @@ export const retrieveCourseForStudent = asyncHandler(async (req, res, next) => {
       options = await Promise.all(
         options.map(async (option) => {
           const { accountSasTokenUrl: optionImageUrl } = await generateSASUrl(
-            question.imageBlobName,
+            option.imageBlobName,
             "r",
             "60"
           );
