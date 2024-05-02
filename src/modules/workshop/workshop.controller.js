@@ -372,6 +372,17 @@ export const getSpecificWorkshop = asyncHandler(async (req, res, next) => {
       .findById(workshopId)
       .populate("coupons")
       .populate({ path: "categoryId", select: "name" })
+      .populate({ path: "subCategoryId", select: "name" });
+  }
+
+  // all
+  else if (view === "all") {
+    workshop = await workshopModel
+      .findById(workshopId)
+      .select(
+        "title description requirements price promotionVideo durationInWeek languages level instructor"
+      )
+      .populate({ path: "categoryId", select: "name" })
       .populate({ path: "subCategoryId", select: "name" })
       .populate([
         {
@@ -380,17 +391,6 @@ export const getSpecificWorkshop = asyncHandler(async (req, res, next) => {
             "userName profilePic occupation about totalNumberOfStudents totalNumberOfCourses",
         },
       ]);
-  }
-
-  // all
-  else if (view === "all") {
-    workshop = await workshopModel
-      .findById(workshopId)
-      .select(
-        "title description requirements price promotionVideo durationInWeek languages level"
-      )
-      .populate({ path: "categoryId", select: "name" })
-      .populate({ path: "subCategoryId", select: "name" });
   }
 
   if (!workshop) return next(new Error("Workshop not found!", { cause: 404 }));

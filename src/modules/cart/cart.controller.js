@@ -98,7 +98,7 @@ export const delCoupon = asyncHandler(async (req, res, next) => {
 
 export const getCart = asyncHandler(async (req, res) => {
   //get courses
-  const { course } = await cartModel
+  const { course, coupon } = await cartModel
     .findOne({ user: req.user.id })
     .populate({ path: "coupon" })
     .populate({
@@ -147,7 +147,7 @@ export const getCart = asyncHandler(async (req, res) => {
 
     const courses = Fcourses.concat(Scourses);
 
-    return res.status(200).json({ message: "Done", courses });
+    return res.status(200).json({ message: "Done", courses, coupon });
   }
-  return res.status(200).json({ message: "Done", courses: Fcourses });
+  return res.status(200).json({ message: "Done", courses: Fcourses, coupon });
 });
