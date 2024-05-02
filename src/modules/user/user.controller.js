@@ -289,12 +289,12 @@ export const revenue = asyncHandler(async (req, res, next) => {
   const workShop = await workshopModel.find({ instructor: req.user.id });
   const ccs = cc.concat(workShop);
   const salesLastMonth = await orderModel.find({
-    user: req.user.id,
     "courses.courseId": { $in: ccs },
     status: "Paid",
     createdAt: { $gt: lastmonth },
   });
 
+  console.log(salesLastMonth);
   const revenuePerDay = {};
   salesLastMonth.forEach((sale) => {
     const createdAtDate = new Date(sale.createdAt);
