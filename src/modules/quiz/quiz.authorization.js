@@ -39,7 +39,7 @@ const authorization = (accessRoles = []) => {
     // Check if the user is an instructor or the course creator if "Instructor" is in the access roles.
     if (accessRoles.includes("Instructor")) {
       var isInstructor = (await Instructor.findOne({
-        course: courseId,
+        course: req.course,
         user: req.userId,
       }).select("_id"))
         ? true
@@ -55,7 +55,7 @@ const authorization = (accessRoles = []) => {
       //   user: req.userId,
       // });
       var isStudent = (await Student.findOne({
-        course: courseId,
+        course: req.course,
         user: req.userId,
       }).select("_id"))
         ? true

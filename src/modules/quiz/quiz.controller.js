@@ -649,6 +649,7 @@ export const getQuiz = asyncHandler(async (req, res, next) => {
     chapter: req.curriculum.chapter,
     title: req.curriculum.title,
     questionsNumber: questions.length,
+    questions,
     // questions: mergeSort(questions, "order"),
   };
 
@@ -751,7 +752,7 @@ export const submitQuiz = asyncHandler(async (req, res, next) => {
   let totalPoints = 0;
   let fullMark = 0;
   const questionsPerformance = [];
-  // quiz = [{ _id, answers: [ _id ,  _id ] },{ _id, answers: _id }];
+  // quiz = [{ _id, answers: [ _id ,  _id ] },{ _id, answers: [_id ]}];
   await Promise.all(
     quiz.map(async (question) => {
       const questionDoc = await Question.findById(question._id);
@@ -793,7 +794,7 @@ export const submitQuiz = asyncHandler(async (req, res, next) => {
           isUserSolutionCorrect,
         });
       } else {
-        const stundentAnswer = question.answers;
+        const stundentAnswer = question.answers[0];
         const correctAnswer = await Option.findOne({
           question: question._id,
           correctAnswer: true,
