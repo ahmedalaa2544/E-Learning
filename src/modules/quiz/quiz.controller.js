@@ -138,9 +138,11 @@ export const createOption = asyncHandler(async (req, res, next) => {
     const blobImageExtension = req.file?.originalname.split(".").pop();
 
     // Define the path for the option image in the user's course directory.
-    imageBlobName = `Users\\${req.userId}\\Courses\\${req.course._id}\\${
-      req.chapter
-    }\\Chapters\\${req.chapter._id.toString()}\\Quiz\\${curriculumId}\\question\\${questionId}\\options\\${optionId}\\${
+    imageBlobName = `Users\\${req.userId}\\Courses\\${
+      req.course._id
+    }\\Chapters\\${
+      req.chapter._id
+    }\\Quiz\\${curriculumId}\\question\\${questionId}\\options\\${optionId}\\${
       req.file.originalname
     }_${uuidv4()}.${blobImageExtension}`;
 
@@ -440,9 +442,11 @@ export const editOption = asyncHandler(async (req, res, next) => {
     const blobImageExtension = req.file?.originalname.split(".").pop();
 
     // Define the path for the option image in the user's course directory.
-    imageBlobName = `Users\\${req.userId}\\Courses\\${req.course._id}\\${
-      req.chapter
-    }\\Chapters\\${req.chapter._id.toString()}\\Quiz\\${curriculumId}\\question\\${questionId}\\options\\${optionId}\\${
+    imageBlobName = `Users\\${req.userId}\\Courses\\${
+      req.course._id
+    }\\Chapters\\${
+      req.chapter._id
+    }\\Quiz\\${curriculumId}\\question\\${questionId}\\options\\${optionId}\\${
       req.file.originalname
     }_${uuidv4()}.${blobImageExtension}`;
 
@@ -610,6 +614,7 @@ export const getQuiz = asyncHandler(async (req, res, next) => {
       let options = await Option.find({ question: question._id }).sort({
         order: 1,
       });
+      // console.log(questionImageUrl.replace(/%5C/g, "/"));
       options = await Promise.all(
         options.map(async (option) => {
           const { accountSasTokenUrl: optionImageUrl } = await generateSASUrl(
