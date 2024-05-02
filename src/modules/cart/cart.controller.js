@@ -75,6 +75,14 @@ export const addCoupon = asyncHandler(async (req, res, next) => {
   if (!chcekCoupon) {
     return next(new Error("Coupon not found", { cause: 404 }));
   }
+
+  const currentTimestamp = new Date().getTime();
+
+  // Check if the coupon has expired
+  if (currentTimestamp > chcekCoupon.expireAt) {
+    return next(new Error("Coupon has Expired", { cause: 400 }));
+  }
+
   const cart = await cartModel.findOneAndUpdate(
     { user: req.user.id },
     {
