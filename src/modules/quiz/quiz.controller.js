@@ -3,7 +3,7 @@ import Curriculum from "../../../DB/model/curriculum.model.js";
 import Quiz from "../../../DB/model/quiz.model.js";
 import Question from "../../../DB/model/question.model.js";
 import Option from "../../../DB/model/option.model.js";
-import Answers from "../../../DB/model/answer.model.js";
+import Answer from "../../../DB/model/answer.model.js";
 import QuizPerformance from "../../../DB/model/quizPerformance.js";
 
 import { mergeSort, shuffleArray, findMax } from "../../utils/dataSructures.js";
@@ -673,7 +673,7 @@ export const retrieveCourseForStudent = asyncHandler(async (req, res, next) => {
     curriculum: curriculumId,
     student: req.userId,
   });
-  if (maxAttempts <= studentNumberOfAttempts) {
+  if (maxAttempts <= studentNumberOfAttempts && !maxAttempts === 0) {
     return next(new Error("You have exhausted all your attempts"), {
       cause: 403,
     });
@@ -760,7 +760,6 @@ export const retrieveCourseForStudent = asyncHandler(async (req, res, next) => {
 });
 
 export const submitQuiz = asyncHandler(async (req, res, next) => {
-  console.log("reach submitQuiz");
   // Extract parameters from the request
   const { curriculumId } = req.params;
   const { quiz } = req.body;
@@ -771,7 +770,7 @@ export const submitQuiz = asyncHandler(async (req, res, next) => {
     curriculum: curriculumId,
     student: req.userId,
   });
-  if (maxAttempts <= studentNumberOfAttempts) {
+  if (maxAttempts <= studentNumberOfAttempts && !maxAttempts === 0) {
     return next(new Error("You have exhausted all your attempts"), {
       cause: 403,
     });
@@ -780,18 +779,20 @@ export const submitQuiz = asyncHandler(async (req, res, next) => {
   let studentTotalPoints = 0;
   let quizFullMark = 0;
   const questionsPerformance = [];
-  // quiz = [{ _id, answers: [ _id ,  _id ] },{ _id, answers: [_id ]}];
+  // quiz = [{ questionId, answers: [ _id ,  _id ] },{ _id, answers: [_id ]}];
   await Promise.all(
     quiz.map(async (question) => {
-      const questionDoc = await Question.findById(question._id);
+      const questionId = question.questionId;
+      const questionDoc = await Question.findById(questionId);
       const questionPoints = questionDoc.points;
+      console.log(questionPoints);
       console.log("questionPoints", questionPoints);
       quizFullMark += questionPoints;
       const multiple = questionDoc.multiple;
       if (multiple) {
         const stundentAnswers = question.answers;
         const correctAnswers = await Option.find({
-          question: question._id,
+          question: questionId,
           correctAnswer: true,
         });
         let isUserSolutionCorrect =
@@ -803,11 +804,11 @@ export const submitQuiz = asyncHandler(async (req, res, next) => {
             );
             if (!isUserAnswerCorrect) isUserSolutionCorrect = false;
 
-            await Answers.create({
+            await Answer.create({
               course: req.course,
               chapter: req.chapter,
               curriculum: curriculumId,
-              question: question._id,
+              question: questionId,
               answer: answer,
               student: req.userId,
               isCorrect: isUserAnswerCorrect,
@@ -826,7 +827,7 @@ export const submitQuiz = asyncHandler(async (req, res, next) => {
       } else {
         const stundentAnswer = question.answers[0];
         const correctAnswerDoc = await Option.findOne({
-          question: question._id,
+          question: questionId,
           correctAnswer: true,
         }).select("_id");
         const correctAnswer = correctAnswerDoc._id.toString();
@@ -837,11 +838,11 @@ export const submitQuiz = asyncHandler(async (req, res, next) => {
         if (isUserSolutionCorrect) {
           studentTotalPoints += questionPoints;
         }
-        await Answers.create({
+        await Answer.create({
           course: req.course,
           chapter: req.chapter,
           curriculum: curriculumId,
-          question: question._id,
+          question: questionId,
           answer: stundentAnswer,
           student: req.userId,
           isCorrect: isUserSolutionCorrect,
@@ -882,7 +883,7 @@ export const quizResult = asyncHandler(async (req, res, next) => {
   const allowedToReturn = quiz.allowedToReturn;
   if (!allowedToReturn) {
     return next(
-      new Error("Insructor didn't allow to return you reslut , yet ."),
+      new Error("Insructor didn't allow to return your reslut , yet ."),
       {
         cause: 403,
       }
@@ -903,23 +904,92 @@ export const quizResult = asyncHandler(async (req, res, next) => {
 export const quizPerformance = asyncHandler(async (req, res, next) => {
   const { curriculumId } = req.params;
   const numberOfAttempt = req.query.numberOfAttempt || 1;
+  console.log(numberOfAttempt);
   const quiz = await Quiz.findById(req.quiz);
   const allowedToReturn = quiz.allowedToReturn;
+  const student = req.userId;
   if (!allowedToReturn) {
     return next(
-      new Error("Insructor didn't allow to return you reslut , yet ."),
+      new Error("Insructor didn't allow to return your reslut , yet ."),
       {
         cause: 403,
       }
     );
   }
-  const resluts = await QuizPerformance.findOne({
+  const result = await QuizPerformance.findOne({
     curriculum: curriculumId,
     student,
     numberOfAttempt,
   }).select("numberOfAttempt studentTotalPoints questionsPerformance -_id");
-  const quizPerformance = await Promise.all(resluts.map());
+  const questionsStudentPerformance = result.questionsPerformance;
+  const questions = await Question.find({ curriculum: curriculumId });
+  const options = await Option.find({ curriculum: curriculumId }).select(
+    "_id order text imageBlobName correctAnswer question"
+  );
+  const studentTotalPoints = result.studentTotalPoints;
+  const quizFullMark = quiz.fullMark;
+
+  const studentAnswers = await Answer.find({
+    curriculum: curriculumId,
+    student,
+    numberOfAttempt,
+  }).select("answer isCorrect");
+  const quizPerformance = await Promise.all(
+    questionsStudentPerformance.map(async (questionPerformance) => {
+      const isUserSolutionCorrect = questionPerformance.isUserSolutionCorrect;
+      const questionId = questionPerformance.question;
+      const question = questions.find(
+        (item) => questionId.toString() === item._id.toString()
+      );
+      const { accountSasTokenUrl: questionImageUrl } = await generateSASUrl(
+        question.imageBlobName,
+        "r",
+        "60"
+      );
+      const questionOptions = options.filter(
+        (item) => questionId.toString() === item.question.toString()
+      );
+      let optionsPerformance = await Promise.all(
+        questionOptions.map(async (option) => {
+          const { accountSasTokenUrl: optionImageUrl } = await generateSASUrl(
+            option.imageBlobName,
+            "r",
+            "60"
+          );
+          const studentAnswer = studentAnswers.find(
+            (item) => option._id.toString() === item.answer.toString()
+          );
+          const isUserChooceThatOption = studentAnswer ? true : false;
+          const isThatOptionCorrectAnswer = option.correctAnswer;
+          const reighChooce = studentAnswer?.isCorrect;
+          const rightUnchooce = !studentAnswer && !isThatOptionCorrectAnswer;
+          const isUserAnswerCorrect =
+            reighChooce || rightUnchooce ? true : false;
+          return {
+            isUserChooceThatOption,
+            isUserAnswerCorrect,
+            isThatOptionCorrectAnswer,
+            imageUrl: optionImageUrl,
+            text: option.text,
+          };
+        })
+      );
+
+      return {
+        multiple: question.multiple,
+        isUserSolutionCorrect,
+        imageUrl: questionImageUrl,
+        text: question.text,
+        type: question.type,
+        points: question.points,
+        optionsPerformance,
+      };
+    })
+  );
   return quizPerformance
-    ? res.status(200).json({ message: "Done", allowedToReturn })
+    ? res.status(200).json({
+        message: "Done",
+        performance: { studentTotalPoints, quizFullMark, quizPerformance },
+      })
     : res.status(500).json({ message: "Something went wrong" });
 });

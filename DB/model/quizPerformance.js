@@ -33,7 +33,7 @@ const quizPerformanceSchema = new Schema(
         question: { type: Types.ObjectId, ref: "Question", reuired: true },
         isUserSolutionCorrect: {
           type: Boolean,
-          required: true,
+          default: false,
         },
       },
     ],
