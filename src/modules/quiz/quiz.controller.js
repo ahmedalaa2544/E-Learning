@@ -638,6 +638,7 @@ export const getQuiz = asyncHandler(async (req, res, next) => {
         imageBlobName: undefined,
         imageUrl: questionImageUrl,
         optionsNumber: options.length,
+        options,
       };
     })
   );
