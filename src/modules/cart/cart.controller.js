@@ -75,6 +75,14 @@ export const addCoupon = asyncHandler(async (req, res, next) => {
   if (!chcekCoupon) {
     return next(new Error("Coupon not found", { cause: 404 }));
   }
+
+  const currentTimestamp = new Date().getTime();
+
+  // Check if the coupon has expired
+  if (currentTimestamp > chcekCoupon.expireAt) {
+    return next(new Error("Coupon has Expired", { cause: 400 }));
+  }
+
   const cart = await cartModel.findOneAndUpdate(
     { user: req.user.id },
     {
@@ -98,7 +106,7 @@ export const delCoupon = asyncHandler(async (req, res, next) => {
 
 export const getCart = asyncHandler(async (req, res) => {
   //get courses
-  const { course } = await cartModel
+  const { course, coupon } = await cartModel
     .findOne({ user: req.user.id })
     .populate({ path: "coupon" })
     .populate({
@@ -147,7 +155,7 @@ export const getCart = asyncHandler(async (req, res) => {
 
     const courses = Fcourses.concat(Scourses);
 
-    return res.status(200).json({ message: "Done", courses });
+    return res.status(200).json({ message: "Done", courses, coupon });
   }
-  return res.status(200).json({ message: "Done", courses: Fcourses });
+  return res.status(200).json({ message: "Done", courses: Fcourses, coupon });
 });
