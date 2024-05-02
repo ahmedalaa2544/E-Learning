@@ -330,7 +330,6 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
   const workShop = await workshopModel.find({ instructor: req.user.id });
   const courses = course.concat(workShop);
   const salesLastMonth = await orderModel.find({
-    user: req.user.id,
     "courses.courseId": { $in: courses },
     status: "Paid",
     createdAt: { $gt: lastmonth },
