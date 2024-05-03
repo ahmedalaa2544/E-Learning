@@ -664,8 +664,7 @@ export const getQuiz = asyncHandler(async (req, res, next) => {
     ? res.status(200).json({ message: "Done", quiz })
     : res.status(500).json({ message: "Something went wrong" });
 });
-export const retrieveCourseForStudent = asyncHandler(async (req, res, next) => {
-  console.log("reach retrieve course for student");
+export const retrieveQuizForStudent = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { curriculumId } = req.params;
   console.log(curriculumId);
@@ -680,19 +679,20 @@ export const retrieveCourseForStudent = asyncHandler(async (req, res, next) => {
       cause: 403,
     });
   }
-  const fullMark = (
-    await Question.aggregate([
-      {
-        $match: { curriculum: new mongoose.Types.ObjectId(curriculumId) }, // Optional: filter condition
-      },
-      {
-        $group: {
-          _id: null, // Grouping without specific field (all documents considered as a single group)
-          fullMark: { $sum: "$points" }, // Summing up totalAmount field
-        },
-      },
-    ])
-  )[0].fullMark;
+  // const fullMark = (
+  //   await Question.aggregate([
+  //     {
+  //       $match: { curriculum: new mongoose.Types.ObjectId(curriculumId) }, // Optional: filter condition
+  //     },
+  //     {
+  //       $group: {
+  //         _id: null, // Grouping without specific field (all documents considered as a single group)
+  //         fullMark: { $sum: "$points" }, // Summing up totalAmount field
+  //       },
+  //     },
+  //   ])
+  // )[0].fullMark;
+  let fullMark = 0;
 
   const numberOfQuestions =
     quiz.numberOfQuestions === 0 ? Infinity : quiz.numberOfQuestions;
@@ -701,7 +701,7 @@ export const retrieveCourseForStudent = asyncHandler(async (req, res, next) => {
 
   let requiredQuestions = await Question.find({
     quiz: req.quiz,
-    required: false,
+    required: true,
   }).sort({
     order: 1,
   });
@@ -720,15 +720,16 @@ export const retrieveCourseForStudent = asyncHandler(async (req, res, next) => {
     ? shuffleArray(unRequiredQuestions)
     : unRequiredQuestions;
   const sliceLimit = numberOfQuestions - requiredQuestions.length;
-  console.log(numberOfQuestions);
   if (sliceLimit <= 0) {
     questions = requiredQuestions.slice(0, numberOfQuestions);
   } else {
     unRequiredQuestions = unRequiredQuestions.slice(0, sliceLimit);
     questions = [...new Set([...requiredQuestions, ...unRequiredQuestions])];
-    questions = shuffleArray(questions);
   }
-
+  questions = isShuffledQuestions ? shuffleArray(questions) : questions;
+  questions.map((question) => {
+    fullMark += question.points;
+  });
   // Retrieve options for each question and enhance the data
   questions = await Promise.all(
     questions.map(async (question) => {

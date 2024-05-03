@@ -110,7 +110,7 @@ router.get(
   isAuthenticated,
   isAuthorized(["Student"]),
   // validation(validators.createQuestionSchema),
-  quizController.retrieveCourseForStudent
+  quizController.retrieveQuizForStudent
 );
 
 router.get(

@@ -507,7 +507,32 @@ export const getCourseContent = asyncHandler(async (req, res, next) => {
   const { courseId } = req.params;
 
   // Retrieve basic course information.
-  const course = await Course.findById(courseId).select("title _id duration");
+  const course = await Course.findById(courseId).select(
+    "title _id numberOfStudents duration level rating numberOfRatings"
+  );
+  // Retrieve instructors information.
+
+  const instructors = await instructorModel
+    .find({ course: courseId })
+    .select("user");
+  console.log(instructors);
+  const instructorsInformation = await Promise.all(
+    instructors.map(async (instructor) => {
+      const instructorInformation = await User.findById(instructor.user).select(
+        "userName firstName lastName profilePic"
+      );
+      const { accountSasTokenUrl: prfilePicUrl } = await generateSASUrl(
+        instructorInformation.profilePic.blobName,
+        "r",
+        "60"
+      );
+      return {
+        ...instructorInformation._doc,
+        profilePic: undefined,
+        prfilePicUrl,
+      };
+    })
+  );
   const numberOfCurriculmInCourse = await curriculumModel.countDocuments({
     course: courseId,
   });
@@ -555,6 +580,7 @@ export const getCourseContent = asyncHandler(async (req, res, next) => {
         message: "Success",
         course: {
           ...course._doc,
+          instructors: instructorsInformation,
           numberOfChapters,
           numberOfCurriculms: numberOfCurriculmInCourse,
           chpaters: chapterResults,
@@ -568,7 +594,32 @@ export const getCourseContentForSudent = asyncHandler(
     const { courseId } = req.params;
 
     // Retrieve basic course information.
-    const course = await Course.findById(courseId).select("title _id duration");
+    const course = await Course.findById(courseId).select(
+      "title _id numberOfStudents duration level rating numberOfRatings"
+    );
+    // Retrieve instructors information.
+
+    const instructors = await instructorModel
+      .find({ course: courseId })
+      .select("user");
+    console.log(instructors);
+    const instructorsInformation = await Promise.all(
+      instructors.map(async (instructor) => {
+        const instructorInformation = await User.findById(
+          instructor.user
+        ).select("userName firstName lastName profilePic");
+        const { accountSasTokenUrl: prfilePicUrl } = await generateSASUrl(
+          instructorInformation.profilePic.blobName,
+          "r",
+          "60"
+        );
+        return {
+          ...instructorInformation._doc,
+          profilePic: undefined,
+          prfilePicUrl,
+        };
+      })
+    );
     const numberOfCurriculmInCourse = await curriculumModel.countDocuments({
       course: courseId,
     });

@@ -42,6 +42,17 @@ router.get(
   recommendationController.becauseYouPurchased
 );
 
+router.get(
+  "/popularCourses/:categoryId",
+  isAuthenticated,
+  recommendationController.popularCourses
+);
+
+router.get(
+  "/relatedCourses/:courseId",
+  isAuthenticated,
+  recommendationController.realtedCourses
+);
 // router.get(
 //     "/becauseYouSearched",
 //     isAuthenticated,

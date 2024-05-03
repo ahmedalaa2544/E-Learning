@@ -75,7 +75,7 @@ class ContentKNN {
     const predictions = await Similarities.findOne({
       course: item,
     });
-    return generateItemBasedRecommendations
+    return predictions
       ? mergeSortDescending(predictions?.similarities, "similarity").slice(
           0,
           10

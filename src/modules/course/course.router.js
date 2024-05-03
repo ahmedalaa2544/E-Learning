@@ -94,7 +94,8 @@ router.get(
   validation(validators.getCourseSchema),
   courseController.getCourseContent
 );
-// retrieves course content only
+// retrieves course content for enrolled student
+
 router.get(
   "/:courseId/contentForStudent",
   validation(validators.getCourseSchema),
