@@ -11,6 +11,8 @@ import upload, {
   deleteBlob,
   generateSASUrl,
 } from "../../utils/azureServices.js";
+import userModel from "../../../DB/model/user.model.js";
+import instructorModel from "../../../DB/model/instructor.model.js";
 
 /**
  * Retrieves and calculates personalized course recommendations for the user based on various interaction data.
@@ -249,7 +251,7 @@ export const becauseYouViewed = asyncHandler(async (req, res, next) => {
   const becauseYouViewedRecommendations = [];
   let timeDifference = 100000000;
   // Fetch all views by the user with a non-zero updatedAt timestamp
-  const clicked = await View.find({ user: req.userId, updatedAt: { $gt: 0 } });
+  const clicked = await View.find({ user: req.userId }).sort({ updatedAt: -1 });
   // Determine the most recent course viewed by the user, if any
   const lastVisit = clicked[0];
   if (lastVisit) {
@@ -266,7 +268,7 @@ export const becauseYouViewed = asyncHandler(async (req, res, next) => {
     // Calculate the time difference from the last visit to now in days
     const lastVisitTime = lastVisit.updatedAt;
     timeDifference = (new Date() - lastVisitTime) / (1000 * 60 * 60 * 24);
-
+    console.log(timeDifference);
     // Check if the last visit was within the last two days
     if (timeDifference < 2) {
       console.log(`clicked first element ${timeDifference}`);
@@ -414,10 +416,6 @@ export const becauseYouPurchased = asyncHandler(async (req, res, next) => {
     const lastPurchasedTime = lastPurchased.updatedAt;
     timeDifference = (new Date() - lastPurchasedTime) / (1000 * 60 * 60 * 24);
 
-    // Uncomment the following lines if tracking the time since purchase is necessary
-    // console.log(timeDifference);
-    // console.log(lastPurchasedTime);
-    // console.log(new Date());
     console.log(lastPurchased);
     // Check if the last purchase was within the last three days
     if (timeDifference < 3) {
@@ -451,5 +449,73 @@ export const becauseYouPurchased = asyncHandler(async (req, res, next) => {
         message: "Done",
         recommendations: timeDifference < 3 ? recommendations : undefined,
       })
+    : res.status(500).json({ message: "Something went wrong" });
+});
+
+export const popularCourses = asyncHandler(async (req, res, next) => {
+  const categoryId = req.params.categoryId;
+  console.log(categoryId);
+  let recommendations;
+  recommendations = await Course.find({
+    status: "Published",
+    category: categoryId,
+  })
+    .sort({ numberOfStudents: -1 })
+    .limit(10);
+  recommendations =
+    recommendations.length === 0
+      ? await Course.find({
+          status: "Published",
+        })
+          .sort({ numberOfStudents: -1 })
+          .limit(10)
+      : recommendations;
+  return recommendations
+    ? res.status(200).json({ message: "Done", recommendations })
+    : res.status(500).json({ message: "Something went wrong" });
+});
+
+export const realtedCourses = asyncHandler(async (req, res, next) => {
+  const courseId = req.params.courseId;
+  // Initialize a content-based KNN recommender with the current user's ID
+  const contentKNN = new ContentKNN(req.userId);
+  const courses = await contentKNN.generateItemBasedRecommendations(courseId);
+  const recommendations = await Promise.all(
+    courses.map(async (recommendation) => {
+      const course = await Course.findById(recommendation.course).select(
+        "title _id numberOfStudents duration coverImageBlobName level rating numberOfRatings"
+      );
+      // Extract the blob name associated with the course's cover image and generate a Shared Access Signature (SAS) URL with read access and a 60-minute expiry.
+      const { accountSasTokenUrl: coverImageUrl } = await generateSASUrl(
+        course.coverImageBlobName,
+        "r",
+        "60"
+      );
+      const fetchedInstructor = await instructorModel
+        .findOne({ course: courseId })
+        .select("user");
+
+      const instructor = await userModel
+        .findById(fetchedInstructor.user)
+        .select("userName firstName lastName profilePic");
+      const { accountSasTokenUrl: prfilePicUrl } = await generateSASUrl(
+        instructor?.profilePic?.blobName,
+        "r",
+        "60"
+      );
+      return {
+        ...course._doc,
+        coverImageBlobName: undefined,
+        coverImageUrl,
+        instructor: {
+          ...instructor?._doc,
+          profilePic: undefined,
+          prfilePicUrl,
+        },
+      };
+    })
+  );
+  return recommendations
+    ? res.status(200).json({ message: "Done", recommendations })
     : res.status(500).json({ message: "Something went wrong" });
 });

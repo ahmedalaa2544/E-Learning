@@ -47,9 +47,8 @@ const questionSchema = new Schema(
     multiple: { type: Boolean, default: false },
 
     optionsNumber: { Number },
-    sorted: { type: Boolean },
     points: { type: Number, default: 0 },
-    required: Boolean,
+    required: { type: Boolean, default: false, required: true },
   },
 
   { timestamps: true }

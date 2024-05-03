@@ -4,7 +4,6 @@ import * as recommendationController from "./recommendation.controller.js";
 import { validation } from "../../middleware/validation.js";
 import * as validators from "./recommendation.validation.js";
 import isAuthenticated from "../../middleware/authntication.middleware.js";
-import isAuthorized from "./recommendation.authorization.js";
 //
 router.get("/", isAuthenticated, recommendationController.getRecommendations);
 // Route to fetch personalized course recommendations for the user
@@ -42,6 +41,17 @@ router.get(
   recommendationController.becauseYouPurchased
 );
 
+router.get(
+  "/popularCourses/:categoryId",
+  isAuthenticated,
+  recommendationController.popularCourses
+);
+
+router.get(
+  "/relatedCourses/:courseId",
+  isAuthenticated,
+  recommendationController.realtedCourses
+);
 // router.get(
 //     "/becauseYouSearched",
 //     isAuthenticated,
