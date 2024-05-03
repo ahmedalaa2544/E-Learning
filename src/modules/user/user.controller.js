@@ -294,7 +294,6 @@ export const revenue = asyncHandler(async (req, res, next) => {
     createdAt: { $gt: lastmonth },
   });
 
-  console.log(salesLastMonth);
   const revenuePerDay = {};
   salesLastMonth.forEach((sale) => {
     const createdAtDate = new Date(sale.createdAt);
