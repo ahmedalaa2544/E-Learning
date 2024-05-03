@@ -15,6 +15,8 @@ import upload, {
   generateSASUrl,
 } from "../../utils/azureServices.js";
 import userModel from "../../../DB/model/user.model.js";
+import notificationModel from "../../../DB/model/notification.model.js";
+import courseModel from "../../../DB/model/course.model.js";
 
 /**
  * Creates a new quiz question for a specific curriculum, handling file uploads for question images.
@@ -1044,14 +1046,45 @@ export const allowToReturnQuiz = asyncHandler(async (req, res, next) => {
 
   const studentsToNotify = await QuizPerformance.find({
     curriculum: curriculumId,
-  }).select("student -_id");
+  }).select("student course -_id");
   if (!quiz.allowedToReturn) {
     const quizTitle = req.curriculum.title;
     const courseTitle = req.course.title;
     const message = `${instructorUserName} in course "${courseTitle}" return quiz "${quizTitle}" to you , you can get your results now .`;
+    const { coverImageUrl } = await courseModel.findById(course);
     await Promise.all(
       studentsToNotify.map((student) => {
         const sudentId = student.student;
+        const { socketId, popUpId } = userModel.findById(sudentId);
+
+        // add notification
+        let notification = {
+          image: coverImageUrl,
+          title: "Quiz Results",
+          body: message,
+          url: `https://e-learning-azure.vercel.app/courseDetails/${course}`,
+        };
+        let notify = notificationModel.findOneAndUpdate(
+          {
+            user: sudentId,
+          },
+          {
+            $push: { notifications: notification },
+          },
+          { new: true }
+        );
+
+        if (!notify) {
+          notify = notificationModel.create({
+            user: sudentId,
+            notifications: notification,
+          });
+        }
+        notification = notify.notifications.reverse()[0];
+        getIo().to(socketId).emit("notification", notification);
+        if (popUpId.endpoint) {
+          webpush.sendNotification(popUpId, JSON.stringify(notification));
+        }
       })
     );
   }

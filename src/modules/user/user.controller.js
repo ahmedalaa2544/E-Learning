@@ -16,10 +16,11 @@ import View from "../../../DB/model/view.model.js";
 import Instructor from "../../../DB/model/instructor.model.js";
 import Student from "../../../DB/model/student.model.js";
 import Progress from "../../../DB/model/progress.model.js";
+
 export const getUser = asyncHandler(async (req, res, next) => {
   const newUser = await userModel
     .findById(req.user._id)
-    .select("-password -socketId -popUpId");
+    .select("profilePic userName email age gender phone fullName");
   const cryptr = new Cryptr(process.env.CRPTO_PHONE);
   let decryptedPhone;
   newUser.phone
@@ -294,7 +295,6 @@ export const revenue = asyncHandler(async (req, res, next) => {
     createdAt: { $gt: lastmonth },
   });
 
-  console.log(salesLastMonth);
   const revenuePerDay = {};
   salesLastMonth.forEach((sale) => {
     const createdAtDate = new Date(sale.createdAt);
