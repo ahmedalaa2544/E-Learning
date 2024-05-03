@@ -21,4 +21,6 @@ router.delete(
 
 router.get("/", isAuth, couponController.getCoupons);
 
+router.get("/:workId/:coupon", isAuth, couponController.ApplyCoupon);
+
 export default router;
