@@ -668,6 +668,7 @@ export const retrieveCourseForStudent = asyncHandler(async (req, res, next) => {
   console.log("reach retrieve course for student");
   // Extract parameters from the request
   const { curriculumId } = req.params;
+  console.log(curriculumId);
   let quiz = await Quiz.findById(req.quiz);
   const maxAttempts = quiz.maxAttempts;
   const studentNumberOfAttempts = await QuizPerformance.countDocuments({
@@ -679,17 +680,52 @@ export const retrieveCourseForStudent = asyncHandler(async (req, res, next) => {
       cause: 403,
     });
   }
-  const page = req.query.page || 0;
-  const limit = quiz.maxQuestionsInPage;
-  const startIndex = +page * limit;
+  const fullMark = (
+    await Question.aggregate([
+      {
+        $match: { curriculum: new mongoose.Types.ObjectId(curriculumId) }, // Optional: filter condition
+      },
+      {
+        $group: {
+          _id: null, // Grouping without specific field (all documents considered as a single group)
+          fullMark: { $sum: "$points" }, // Summing up totalAmount field
+        },
+      },
+    ])
+  )[0].fullMark;
 
-  // Retrieve questions associated with the quiz
-  let questions = await Question.find({ quiz: req.quiz })
-    .sort({ order: 1 })
-    .skip(startIndex)
-    .limit(limit);
+  const numberOfQuestions =
+    quiz.numberOfQuestions === 0 ? Infinity : quiz.numberOfQuestions;
+  const isShuffledQuestions = quiz.shuffleQuestions;
+  let questions = [];
 
-  if (quiz.shuffleQuestions) {
+  let requiredQuestions = await Question.find({
+    quiz: req.quiz,
+    required: false,
+  }).sort({
+    order: 1,
+  });
+
+  let unRequiredQuestions = await Question.find({
+    quiz: req.quiz,
+    required: false,
+  }).sort({
+    order: 1,
+  });
+
+  requiredQuestions = isShuffledQuestions
+    ? shuffleArray(requiredQuestions)
+    : requiredQuestions;
+  unRequiredQuestions = isShuffledQuestions
+    ? shuffleArray(unRequiredQuestions)
+    : unRequiredQuestions;
+  const sliceLimit = numberOfQuestions - requiredQuestions.length;
+  console.log(numberOfQuestions);
+  if (sliceLimit <= 0) {
+    questions = requiredQuestions.slice(0, numberOfQuestions);
+  } else {
+    unRequiredQuestions = unRequiredQuestions.slice(0, sliceLimit);
+    questions = [...new Set([...requiredQuestions, ...unRequiredQuestions])];
     questions = shuffleArray(questions);
   }
 
@@ -746,6 +782,7 @@ export const retrieveCourseForStudent = asyncHandler(async (req, res, next) => {
   // Construct the quiz object with enhanced question data
   quiz = {
     ...quiz._doc,
+    fullMark,
     course: req.curriculum.course,
     chapter: req.curriculum.chapter,
     title: req.curriculum.title,

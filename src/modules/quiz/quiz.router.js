@@ -41,7 +41,14 @@ router.post(
   // validation(validators.createQuestionSchema),
   quizController.allowToReturnQuiz
 );
-
+// Update details of a specific curriculum
+router.patch(
+  "/:curriculumId",
+  isAuthenticated,
+  isAuthorized(["Instructor"]),
+  validation(validators.updateQuizSchema),
+  quizController.editQuiz
+);
 // Edit details or order of a specific question within a curriculum
 router.patch(
   "/:curriculumId/question/:questionId",

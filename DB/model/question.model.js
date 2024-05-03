@@ -48,7 +48,7 @@ const questionSchema = new Schema(
 
     optionsNumber: { Number },
     points: { type: Number, default: 0 },
-    required: Boolean,
+    required: { type: Boolean, default: false },
   },
 
   { timestamps: true }
