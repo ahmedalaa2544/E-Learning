@@ -455,12 +455,21 @@ export const becauseYouPurchased = asyncHandler(async (req, res, next) => {
 export const popularCourses = asyncHandler(async (req, res, next) => {
   const categoryId = req.params.categoryId;
   console.log(categoryId);
-  const recommendations = await Course.find({
+  let recommendations;
+  recommendations = await Course.find({
     status: "Published",
     category: categoryId,
   })
     .sort({ numberOfStudents: -1 })
     .limit(10);
+  recommendations =
+    recommendations.length === 0
+      ? await Course.find({
+          status: "Published",
+        })
+          .sort({ numberOfStudents: -1 })
+          .limit(10)
+      : recommendations;
   return recommendations
     ? res.status(200).json({ message: "Done", recommendations })
     : res.status(500).json({ message: "Something went wrong" });
