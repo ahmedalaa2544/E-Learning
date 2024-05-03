@@ -154,6 +154,7 @@ export const uploadResources = async (
  * @returns {Promise<Object>} - A promise that resolves with an object containing the updated subtitle details, including the new Blob Storage name.
  */
 export const uploadSubtitles = async (
+  req,
   files,
   userId,
   courseId,
@@ -163,50 +164,40 @@ export const uploadSubtitles = async (
 ) => {
   return new Promise(async (resolve, reject) => {
     try {
-      // Define the directory structure for storing resources
+      let blobSubtitlesName, subtitlesUrl;
+
+      // Define the directory structure for storing subtitles
       const curriculumDirectory = `Users\\${req.user.userName}_${req.userId}\\Courses\\${courseId}\\${chapterId}\\${curriculumId}`;
 
-      let resources;
-
-      // Check if additional resource files are attached to the request
-      if (files?.resources) {
-        resources = [];
-
-        // Upload each resource file to Azure Blob Storage and collect their URLs
-        for (const file of files.resources) {
-          // Extract the file extension from the resource file
-          const blobResourceExtension = file.originalname.split(".").pop();
-
-          // Define the path and name for the resource blob in Azure Storage
-          const blobFileName = `${curriculumDirectory}\\Resources\\${
-            file.originalname
-          }_${uuidv4()}.${blobResourceExtension}`;
-
-          // Upload the resource to Azure Blob Storage and get its URL
-          const resourceUrl = await upload(
-            file.path,
-            blobFileName,
-            "_",
-            blobResourceExtension,
-            false
-          );
-
-          // Add resource information to the resources array
-          resources.push({
-            title: file.originalname,
-            blobName: blobFileName,
-            type: file.mimetype,
-            size: file.size,
-          });
+      // Check if a subtitle file is present in the request
+      if (files?.subtitles) {
+        // If updating existing subtitles, delete the old Blob Storage entry
+        if (subtitleEdited) {
+          deleteBlob(subtitleEdited);
         }
+
+        // Extract the file extension from the uploaded subtitle file
+        const blobSubtitlesExtension = files.subtitles[0].originalname
+          .split(".")
+          .pop();
+
+        // Define the path and name for the subtitle blob in Azure Storage
+        blobSubtitlesName = `${curriculumDirectory}\\Subtitles\\${
+          files.subtitles[0].originalname
+        }_${uuidv4()}.${blobSubtitlesExtension}`;
+
+        // Upload the subtitle file to Azure Blob Storage and get its URL
+        subtitlesUrl = await upload(
+          files.subtitles[0].path,
+          blobSubtitlesName,
+          "_",
+          blobSubtitlesExtension,
+          false
+        );
       }
 
-      // // Resolve the Promise with the updated resource details
-      // resolve({
-      //   directory: `${curriculumDirectory}\\Resources`,
-      //   content: resources,
-      // });
-      resolve(resources);
+      // Resolve the Promise with the updated subtitle details
+      resolve(blobSubtitlesName);
     } catch (error) {
       // Reject the Promise with an error if any step encounters an issue
       reject(error);

@@ -10,7 +10,7 @@ import Progress from "../../../DB/model/progress.model.js";
 import Student from "../../../DB/model/student.model.js";
 import notificationModel from "../../../DB/model/notification.model.js";
 import { getIo } from "../../utils/server.js";
-import { getResoursces } from "../../utils/curriculum.js";
+import { getResoursces, getSubitles } from "../../utils/curriculum.js";
 
 import mongoose from "mongoose";
 import {
@@ -93,7 +93,9 @@ export const createVideo = asyncHandler(async (req, res, next) => {
 
   // Wait for the response to be sent, then perform additional actions
   onFinished(res, async (err, res) => {
-    let videoUrl, duration, blobVideoName;
+    let videoUrl,
+      duration = 0,
+      blobVideoName;
     // Upload the video and retrieve information such as URL, duration, and blob name.
     ({ videoUrl, duration, blobVideoName } = await uploadVideo(
       req.files,
@@ -555,7 +557,7 @@ export const curriculumCompleted = asyncHandler(async (req, res, next) => {
 export const editVideo = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { courseId, chapterId, curriculumId } = req.params;
-  const { title, description, subtitlesLanguange } = req.body;
+  const { title, description, subtitleslanguage, subtitlesId } = req.body;
   // Retrieve the existing curriculum document based on curriculumId
   const curriculum = await Curriculum.findById(curriculumId);
   // Check if the curriculum exists
@@ -570,7 +572,7 @@ export const editVideo = asyncHandler(async (req, res, next) => {
   }
 
   // Declare variables to store video-related information.
-  let videoUrl, duration, blobVideoName, resources, subtitles;
+  let videoUrl, duration, blobVideoName, subtitlesBlobName;
   // Check if the request involves uploading a video.
   if (req.query.upload === "video") {
     // Send an immediate response to the client
@@ -595,32 +597,23 @@ export const editVideo = asyncHandler(async (req, res, next) => {
     });
   }
 
-  // Check if the request involves uploading resources.
-  if (req.query.upload === "resources") {
-    /**
-     * Note: If new resources are being uploaded for this video, existing resources will be overwritten.
-     * This ensures that the latest set of resources replaces any previous attachments.
-     */
-    resources = await uploadResources(
-      req.files,
-      req.userId,
-      courseId,
-      chapterId,
-      curriculumId
-    );
-  }
-
   // Check if the request involves uploading subtitles.
   if (req.query.upload === "subtitles") {
     // Upload subtitles and retrieve information such as blob name.
-    ({ subtitles } = await uploadSubtitles(
+    subtitlesBlobName = await uploadSubtitles(
+      req,
       req.files,
       req.userId,
       courseId,
       chapterId,
       curriculumId,
       video.subtitles.blobName
-    ));
+    );
+    console.log(subtitlesBlobName);
+    var subtitles = {
+      blobName: subtitlesBlobName,
+      language: subtitleslanguage,
+    };
   }
 
   // Check if the request involves deleting the video.
@@ -635,47 +628,40 @@ export const editVideo = asyncHandler(async (req, res, next) => {
       url: "",
       blobName: "",
       duration: "",
-      subtitles: "",
-    });
-  }
-
-  // Check if the request involves deleting resources.
-  if (req.query.delete === "resources") {
-    // Retrieve the resources directory and delete it along with its content.
-    const resourcesDirectory = curriculum.resources.directory;
-    await deleteDirectory(resourcesDirectory);
-    // Update the curriculum document in the database to remove resource-related details.
-    await Curriculum.findByIdAndUpdate(curriculum, {
-      resources: { directory: "", content: [] },
+      subtitles: [],
     });
   }
 
   // Check if the request involves deleting subtitles.
   if (req.query.delete === "subtitles") {
-    // Retrieve the subtitles' blob name and delete it.
-    const subtitlesBlobName = video.subtitles.blobName;
-    await deleteBlob(subtitlesBlobName);
-    // Update the Video document in the database to remove subtitle-related details.
-    await Video.findByIdAndUpdate(curriculum.video, {
-      subtitles: "",
-    });
+    const video = await Video.findByIdAndUpdate(curriculum.video, {
+      $pull: { subtitles: { _id: subtitlesId } },
+    }).select("subtitles");
+    const subtitles = video.subtitles;
+    const pulledSubtitle = subtitles.find(
+      (item) => item._id.toString() === subtitlesId
+    );
+    await deleteBlob(pulledSubtitle.blobName);
   }
   // Update the video document with the edited details
   await Video.findByIdAndUpdate(curriculum.video, {
     title: title,
-    subtitles: subtitles,
+    $push: {
+      subtitles,
+    },
     description: description,
     url: videoUrl,
     blobName: blobVideoName,
     duration: duration,
   });
-  await Course.findByIdAndUpdate(courseId, {
-    $inc: { duration: duration },
-  });
+  if (req.query.upload === "video") {
+    await Course.findByIdAndUpdate(courseId, {
+      $inc: { duration: duration },
+    });
+  }
   // Update the curriculum document with the edited details
   const editedCurriculum = await Curriculum.findByIdAndUpdate(curriculumId, {
     title: title,
-    resources: resources,
   });
   // Send a response indicating the success or failure of the video editing process
   if (!res.headersSent) {
@@ -684,12 +670,21 @@ export const editVideo = asyncHandler(async (req, res, next) => {
       : res.status(500).json({ message: "Something went wrong" });
   }
 });
+/**
+ * Handles uploading resources and updating the corresponding curriculum with the new resources.
+ * This function uses the onFinished library to ensure that resource uploading happens after the response is sent.
+ *
+ * @param {Object} req - The request object from Express, containing request data including files and parameters.
+ * @param {Object} res - The response object from Express, used to send a response to the client.
+ * @param {Function} next - The next middleware function in the Express middleware chain.
+ */
 export const putResources = asyncHandler(async (req, res, next) => {
-  // Extract parameters from the request
+  // Extract courseId, chapterId, and curriculumId from request parameters to identify the location to put resources.
   const { courseId, chapterId, curriculumId } = req.params;
-  // const { title, description } = req.body;
-  // Wait for the response to be sent, then perform additional actions
+
+  // Wait for the response to be fully handled, then execute additional logic for resource handling.
   onFinished(res, async (err, res) => {
+    // Upload resources after the client receives the response, improving perceived performance.
     const resources = await uploadResources(
       req,
       req.files,
@@ -699,28 +694,52 @@ export const putResources = asyncHandler(async (req, res, next) => {
       curriculumId
     );
 
-    // Update the curriculum document with the edited details
+    // Update the curriculum by appending new resources to the existing array of resources.
     const curriculum = await Curriculum.findByIdAndUpdate(curriculumId, {
       $push: { resources: { $each: resources } },
     });
   });
-  // Send a response indicating the success or failure of the video editing process
+
+  // Check if the response headers have not been sent yet.
   if (!res.headersSent) {
+    // Send a 200 status with a success message if the headers are not yet sent.
     res.status(200).json({ message: "Done" });
   }
 });
+
+/**
+ * Handles the deletion of a specific resource from a curriculum's resource list
+ * and subsequently deletes the resource's blob from storage.
+ * This function completes resource deletion operations after the response is sent to the client,
+ * using onFinished to ensure non-blocking behavior.
+ *
+ * @param {Object} req - The request object from Express, which contains parameters identifying the resource.
+ * @param {Object} res - The response object from Express, used to send a response back to the client.
+ * @param {Function} next - The next middleware function in the Express middleware chain.
+ */
 export const deleteResource = asyncHandler(async (req, res, next) => {
-  const { courseId, chapterId, curriculumId, resourceId } = req.params;
+  // Extract curriculumId and resourceId from request parameters to identify the specific resource.
+  const { curriculumId, resourceId } = req.params;
+
+  // Set up post-response logic to delete the resource, ensuring that the client is not delayed.
   onFinished(res, async (err, res) => {
+    // Update the curriculum document by removing the specified resource.
     const curriculum = await Curriculum.findByIdAndUpdate(curriculumId, {
       $pull: { resources: { _id: resourceId } },
     }).select("resources");
+
+    // Extract the specific content of the curriculum's resources after the update.
     const content = curriculum.resources;
+    // Find the resource that was deleted to access its blobName for further deletion from storage.
     const resource = content.find((item) => item._id.toString() === resourceId);
-    const deletion = await deleteBlob(resource.blobName);
+
+    // Delete the blob associated with the resource from storage.
+    await deleteBlob(resource.blobName);
   });
-  // Send a response indicating the success or failure of the video editing process
+
+  // Check if the response headers have not been sent yet.
   if (!res.headersSent) {
+    // Send a 200 OK response indicating that the operation was successfully initiated.
     res.status(200).json({ message: "Done" });
   }
 });
@@ -752,43 +771,17 @@ export const editArticle = asyncHandler(async (req, res, next) => {
   }
   //calculate duration for article based on number of words
   const duration = calculateDuration(quillContent);
-  let resources;
-  // Check if the request involves uploading resources.
-  if (req.query.upload === "resources") {
-    /**
-     * Note: If new resources are being uploaded for this article, existing resources will be overwritten.
-     * This ensures that the latest set of resources replaces any previous attachments.
-     */
-    resources = await uploadResources(
-      req.files,
-      req.userId,
-      courseId,
-      chapterId,
-      curriculumId
-    );
-  }
-  // Check if the request involves deleting resources.
-  if (req.query.delete === "resources") {
-    // Retrieve the resources directory and delete it along with its content.
-    const resourcesDirectory = curriculum.resources.directory;
-    await deleteDirectory(resourcesDirectory);
-    // Update the curriculum document in the database to remove resource-related details.
-    await Curriculum.findByIdAndUpdate(curriculum, {
-      resources: { directory: "", content: [] },
-    });
-  }
+
   // Update the article document with the edited details
   await Article.findByIdAndUpdate(curriculum.article, {
     title: title,
     quillContent: quillContent,
     duration,
-    resources: resources,
   });
 
   // Update the curriculum document with the edited details
   const editedCurriculum = await Curriculum.findByIdAndUpdate(curriculumId, {
     title: title,
-    resources: resources,
   });
   await Course.findByIdAndUpdate(courseId, {
     $inc: { duration: duration },
@@ -883,6 +876,7 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
 
   // Retrieve the existing curriculum document based on curriculumId, populating associated video or article details
   const curriculum = await Curriculum.findById(curriculumId)
+    // .select("subtitles")
     .populate("video")
     .populate("article")
     .populate("course", "title")
@@ -893,7 +887,12 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
     return next(new Error("Curriculum not found"), { cause: 404 });
   }
 
-  const resources = await getResoursces(curriculum.resources);
+  const resources = curriculum.resources
+    ? await getResoursces(curriculum.resources)
+    : undefined;
+  const subtitles = curriculum.video.subtitles
+    ? await getSubitles(curriculum.video.subtitles)
+    : undefined;
 
   if (curriculum.type === "video") {
     const video = curriculum.video;
@@ -928,7 +927,7 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
             url: videoUrl ? videoUrl.replace(/%5C/g, "/") : undefined,
             blobName: undefined,
             resources,
-            subtitles: subtitlesUrl,
+            subtitles,
             vttBlobName: undefined,
             vttUrl: vttUrl ? vttUrl.replace(/%5C/g, "/") : undefined,
           },

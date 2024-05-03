@@ -5,7 +5,6 @@ import Question from "../../../DB/model/question.model.js";
 import Option from "../../../DB/model/option.model.js";
 import Answer from "../../../DB/model/answer.model.js";
 import QuizPerformance from "../../../DB/model/quizPerformance.js";
-
 import { mergeSort, shuffleArray, findMax } from "../../utils/dataSructures.js";
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
@@ -616,7 +615,6 @@ export const getQuiz = asyncHandler(async (req, res, next) => {
       let options = await Option.find({ question: question._id }).sort({
         order: 1,
       });
-      // console.log(questionImageUrl.replace(/%5C/g, "/"));
       options = await Promise.all(
         options.map(async (option) => {
           const { accountSasTokenUrl: optionImageUrl } = await generateSASUrl(
@@ -666,61 +664,66 @@ export const getQuiz = asyncHandler(async (req, res, next) => {
     ? res.status(200).json({ message: "Done", quiz })
     : res.status(500).json({ message: "Something went wrong" });
 });
+/**
+ * Handles the retrieval of a quiz for a student, including verification of attempt limits,
+ * shuffling questions if required, and fetching related options. It also ensures that the quiz
+ * conforms to the specified constraints like maximum attempts and question requirements.
+ *
+ * @param {Object} req - The request object from Express, containing necessary data like quiz ID and user ID.
+ * @param {Object} res - The response object from Express, used for sending back the quiz data or an error.
+ * @param {Function} next - The next middleware function in the Express stack, used for error handling.
+ */
 export const retrieveQuizForStudent = asyncHandler(async (req, res, next) => {
-  // Extract parameters from the request
+  // Extract curriculumId from the request parameters to identify the relevant quiz
   const { curriculumId } = req.params;
-  console.log(curriculumId);
+
+  // Log the curriculumId for debugging purposes
+
+  // Retrieve the quiz document based on the ID provided in the request
   let quiz = await Quiz.findById(req.quiz);
   const maxAttempts = quiz.maxAttempts;
+
+  // Count how many times the student has already attempted this quiz
   const studentNumberOfAttempts = await QuizPerformance.countDocuments({
     curriculum: curriculumId,
     student: req.userId,
   });
+
+  // Check if the student has exceeded the maximum number of allowed attempts
   if (maxAttempts <= studentNumberOfAttempts && !maxAttempts === 0) {
     return next(new Error("You have exhausted all your attempts"), {
       cause: 403,
     });
   }
-  // const fullMark = (
-  //   await Question.aggregate([
-  //     {
-  //       $match: { curriculum: new mongoose.Types.ObjectId(curriculumId) }, // Optional: filter condition
-  //     },
-  //     {
-  //       $group: {
-  //         _id: null, // Grouping without specific field (all documents considered as a single group)
-  //         fullMark: { $sum: "$points" }, // Summing up totalAmount field
-  //       },
-  //     },
-  //   ])
-  // )[0].fullMark;
+
+  // Initialize variable to track the total points possible in the quiz
   let fullMark = 0;
 
+  // Determine the number of questions to include in the quiz
   const numberOfQuestions =
     quiz.numberOfQuestions === 0 ? Infinity : quiz.numberOfQuestions;
   const isShuffledQuestions = quiz.shuffleQuestions;
   let questions = [];
 
+  // Fetch required and unrequired questions based on their necessity flag
   let requiredQuestions = await Question.find({
     quiz: req.quiz,
     required: true,
-  }).sort({
-    order: 1,
-  });
-
+  }).sort({ order: 1 });
   let unRequiredQuestions = await Question.find({
     quiz: req.quiz,
     required: false,
-  }).sort({
-    order: 1,
-  });
+  }).sort({ order: 1 });
 
+  // Optionally shuffle the questions if specified by the quiz settings
   requiredQuestions = isShuffledQuestions
     ? shuffleArray(requiredQuestions)
     : requiredQuestions;
   unRequiredQuestions = isShuffledQuestions
     ? shuffleArray(unRequiredQuestions)
     : unRequiredQuestions;
+
+  // Determine the mix of required and unrequired questions based on the total needed
   const sliceLimit = numberOfQuestions - requiredQuestions.length;
   if (sliceLimit <= 0) {
     questions = requiredQuestions.slice(0, numberOfQuestions);
@@ -728,24 +731,35 @@ export const retrieveQuizForStudent = asyncHandler(async (req, res, next) => {
     unRequiredQuestions = unRequiredQuestions.slice(0, sliceLimit);
     questions = [...new Set([...requiredQuestions, ...unRequiredQuestions])];
   }
+
+  // Optionally shuffle the final list of questions
   questions = isShuffledQuestions ? shuffleArray(questions) : questions;
+
+  // Calculate the full mark possible by summing up points from all questions
   questions.map((question) => {
     fullMark += question.points;
   });
-  // Retrieve options for each question and enhance the data
+
+  // Enhance questions by adding images and shuffling options if needed
   questions = await Promise.all(
     questions.map(async (question) => {
+      // Generate secure access URL for question images
       const { accountSasTokenUrl: questionImageUrl } = await generateSASUrl(
         question.imageBlobName,
         "r",
         "60"
       );
+      // Fetch options for each question
       let options = await Option.find({ question: question._id }).sort({
         order: 1,
       });
+
+      // Shuffle options if the quiz settings specify it
       if (quiz.shuffleAnswers) {
         options = shuffleArray(options);
       }
+
+      // Enhance each option by generating image URLs and excluding unnecessary fields
       options = await Promise.all(
         options.map(async (option) => {
           const { accountSasTokenUrl: optionImageUrl } = await generateSASUrl(
@@ -766,7 +780,8 @@ export const retrieveQuizForStudent = asyncHandler(async (req, res, next) => {
           };
         })
       );
-      // Enhance question data with additional information
+
+      // Return enhanced question data
       return {
         ...question._doc,
         course: undefined,
@@ -782,7 +797,7 @@ export const retrieveQuizForStudent = asyncHandler(async (req, res, next) => {
     })
   );
 
-  // Construct the quiz object with enhanced question data
+  // Reconstruct the quiz object to include the enhanced questions and additional quiz data
   quiz = {
     ...quiz._doc,
     fullMark,
@@ -791,60 +806,79 @@ export const retrieveQuizForStudent = asyncHandler(async (req, res, next) => {
     title: req.curriculum.title,
     questionsNumber: questions.length,
     questions,
-    // questions: mergeSort(questions, "order"),
   };
 
-  // Return the quiz details in the response
+  // Send the complete quiz data to the student, or an error if something went wrong
   return quiz
     ? res.status(200).json({ message: "Done", quiz })
     : res.status(500).json({ message: "Something went wrong" });
 });
 
+/**
+ * Submits a completed quiz, evaluates the answers, calculates the score, and updates the user's quiz performance.
+ *
+ * @param {Object} req - Express.js request object containing request parameters and body.
+ * @param {Object} res - Express.js response object used for sending responses to the client.
+ * @param {Function} next - Middleware function to handle errors or move to the next middleware.
+ */
 export const submitQuiz = asyncHandler(async (req, res, next) => {
-  // Extract parameters from the request
+  // Extract curriculumId from the request parameters and quiz data from the request body
   const { curriculumId } = req.params;
   const { quiz } = req.body;
+
+  // Retrieve quiz document from the database to check submission rules and attempt limits
   const quizDoc = await Quiz.findById(req.quiz);
   const allowedToReturn = quizDoc.allowedToReturn;
   const maxAttempts = quizDoc.maxAttempts;
+
+  // Count how many times the student has already attempted this quiz
   const studentNumberOfAttempts = await QuizPerformance.countDocuments({
     curriculum: curriculumId,
     student: req.userId,
   });
+
+  // Check if the student has exceeded the maximum number of allowed attempts
   if (maxAttempts <= studentNumberOfAttempts && !maxAttempts === 0) {
     return next(new Error("You have exhausted all your attempts"), {
       cause: 403,
     });
   }
+
+  // Determine the attempt number for this submission
   const numberOfAttempt = studentNumberOfAttempts + 1;
   let studentTotalPoints = 0;
   let quizFullMark = 0;
   const questionsPerformance = [];
-  // quiz = [{ questionId, answers: [ _id ,  _id ] },{ _id, answers: [_id ]}];
+
+  // Iterate over each question in the submitted quiz to evaluate answers
   await Promise.all(
     quiz.map(async (question) => {
       const questionId = question.questionId;
       const questionDoc = await Question.findById(questionId);
       const questionPoints = questionDoc.points;
-      console.log(questionPoints);
-      console.log("questionPoints", questionPoints);
+      // Update total points possible for the quiz
       quizFullMark += questionPoints;
       const multiple = questionDoc.multiple;
+
       if (multiple) {
-        const stundentAnswers = question.answers;
+        // Handle multiple choice questions
+        const studentAnswers = question.answers;
         const correctAnswers = await Option.find({
           question: questionId,
           correctAnswer: true,
         });
         let isUserSolutionCorrect =
-          correctAnswers.length === stundentAnswers.length;
+          correctAnswers.length === studentAnswers.length;
+
+        // Verify each submitted answer against the correct answers
         await Promise.all(
-          stundentAnswers.map(async (answer) => {
+          studentAnswers.map(async (answer) => {
             const isUserAnswerCorrect = correctAnswers.some(
               (item) => answer === item._id.toString()
             );
             if (!isUserAnswerCorrect) isUserSolutionCorrect = false;
 
+            // Record each answer in the database
             await Answer.create({
               course: req.course,
               chapter: req.chapter,
@@ -858,6 +892,7 @@ export const submitQuiz = asyncHandler(async (req, res, next) => {
             });
           })
         );
+        // Update points if the solution is correct
         if (isUserSolutionCorrect) {
           studentTotalPoints += questionPoints;
         }
@@ -866,25 +901,26 @@ export const submitQuiz = asyncHandler(async (req, res, next) => {
           isUserSolutionCorrect,
         });
       } else {
-        const stundentAnswer = question.answers[0];
+        // Handle single choice questions
+        const studentAnswer = question.answers[0];
         const correctAnswerDoc = await Option.findOne({
           question: questionId,
           correctAnswer: true,
         }).select("_id");
         const correctAnswer = correctAnswerDoc._id.toString();
-        let isUserSolutionCorrect = correctAnswer === stundentAnswer;
-        console.log("correctAnswer : " + correctAnswer);
-        console.log("stundentAnswer : " + stundentAnswer);
+        let isUserSolutionCorrect = correctAnswer === studentAnswer;
 
+        // Update points if the solution is correct
         if (isUserSolutionCorrect) {
           studentTotalPoints += questionPoints;
         }
+        // Record the answer in the database
         await Answer.create({
           course: req.course,
           chapter: req.chapter,
           curriculum: curriculumId,
           question: questionId,
-          answer: stundentAnswer,
+          answer: studentAnswer,
           student: req.userId,
           isCorrect: isUserSolutionCorrect,
           multiple,
@@ -897,7 +933,11 @@ export const submitQuiz = asyncHandler(async (req, res, next) => {
       }
     })
   );
+
+  // Update the full mark for the quiz document
   await Quiz.findByIdAndUpdate(req.quiz, { fullMark: quizFullMark });
+
+  // Create a quiz performance document to record the attempt
   const quizPerformance = await QuizPerformance.create({
     course: req.course,
     chapter: req.chapter,
@@ -908,73 +948,110 @@ export const submitQuiz = asyncHandler(async (req, res, next) => {
     studentTotalPoints,
     numberOfAttempt,
   });
-  // const
+
+  // Send the response with the quiz performance or an error message
   return quizPerformance
     ? res.status(200).json({ message: "Done", allowedToReturn })
     : res.status(500).json({ message: "Something went wrong" });
 });
 
+/**
+ * Retrieves and returns the results of all quiz attempts by a student for a specific curriculum,
+ * including the best score achieved.
+ *
+ * @param {Object} req - Express.js request object that contains the client's request data.
+ * @param {Object} res - Express.js response object used to send responses back to the client.
+ * @param {Function} next - Middleware dispatch function used to forward any errors to the next middleware.
+ */
 export const quizResult = asyncHandler(async (req, res, next) => {
-  console.log("reach quiz result");
-  console.log(req.userId);
+  // Extract curriculum ID from the request parameters and user ID from the request object
   const { curriculumId } = req.params;
   const student = req.userId;
+
+  // Retrieve the quiz document by ID stored in request object to get quiz-specific information
   const quiz = await Quiz.findById(req.quiz);
-  const fullMark = quiz.fullMark;
-  const allowedToReturn = quiz.allowedToReturn;
+  const fullMark = quiz.fullMark; // Maximum score achievable on the quiz
+  const allowedToReturn = quiz.allowedToReturn; // Boolean indicating if results can be returned to the student
+
+  // Check if the quiz results are allowed to be returned to the student
   if (!allowedToReturn) {
+    // If not allowed, send a 403 forbidden response with an error message
     return next(
-      new Error("Insructor didn't allow to return your reslut , yet ."),
+      new Error("Instructor didn't allow to return your result, yet."),
       {
         cause: 403,
       }
     );
   }
-  const resluts = await QuizPerformance.find({
+
+  // Retrieve all quiz performances for this curriculum and student
+  const results = await QuizPerformance.find({
     curriculum: curriculumId,
     student,
-  }).select("numberOfAttempt studentTotalPoints -_id");
-  const maxResult = findMax(resluts, "studentTotalPoints");
-  return resluts
+  }).select("numberOfAttempt studentTotalPoints -_id"); // Selects only the number of attempts and total points, excluding the document ID
+
+  // Find the maximum result based on student total points
+  const maxResult = findMax(results, "studentTotalPoints");
+
+  // Check if results were successfully retrieved and respond accordingly
+  return results
     ? res
         .status(200)
-        .json({ message: "Done", result: { fullMark, maxResult, resluts } })
-    : res.status(500).json({ message: "Something went wrong" });
+        .json({ message: "Done", result: { fullMark, maxResult, results } }) // Return the quiz results, including the highest score
+    : res.status(500).json({ message: "Something went wrong" }); // Handle cases where results retrieval may have failed
 });
 
+/**
+ * Retrieves and returns detailed quiz performance for a specific attempt by a student.
+ * This includes the total points scored, correctness of each answer, and detailed question and option performance.
+ *
+ * @param {Object} req - Express.js request object that contains the client's request data.
+ * @param {Object} res - Express.js response object used to send responses back to the client.
+ * @param {Function} next - Middleware dispatch function used to forward any errors to the next middleware.
+ */
 export const quizPerformance = asyncHandler(async (req, res, next) => {
+  // Extracts curriculum ID from the request parameters
   const { curriculumId } = req.params;
+
+  // Retrieve the attempt number from the query string or default to 1 if not provided
   const numberOfAttempt = req.query.numberOfAttempt || 1;
-  console.log(numberOfAttempt);
+
+  // Retrieve the quiz details using the ID stored in the request object
   const quiz = await Quiz.findById(req.quiz);
-  const allowedToReturn = quiz.allowedToReturn;
-  const student = req.userId;
+  const allowedToReturn = quiz.allowedToReturn; // Determines if results can be shown to the student
+
+  // Check if the instructor has allowed results to be returned, otherwise send an error
   if (!allowedToReturn) {
     return next(
-      new Error("Insructor didn't allow to return your reslut , yet ."),
-      {
-        cause: 403,
-      }
+      new Error("Instructor didn't allow to return your result, yet."),
+      { cause: 403 }
     );
   }
+
+  // Fetch the performance data for the specific curriculum, student, and attempt number
   const result = await QuizPerformance.findOne({
     curriculum: curriculumId,
-    student,
+    student: req.userId,
     numberOfAttempt,
   }).select("numberOfAttempt studentTotalPoints questionsPerformance -_id");
-  const questionsStudentPerformance = result.questionsPerformance;
-  const questions = await Question.find({ curriculum: curriculumId });
+
+  const questionsStudentPerformance = result.questionsPerformance; // Detailed performance per question
+  const questions = await Question.find({ curriculum: curriculumId }); // Fetch all questions for the curriculum
   const options = await Option.find({ curriculum: curriculumId }).select(
     "_id order text imageBlobName correctAnswer question"
-  );
-  const studentTotalPoints = result.studentTotalPoints;
-  const quizFullMark = quiz.fullMark;
+  ); // Fetch all options related to those questions
 
+  const studentTotalPoints = result.studentTotalPoints; // Total points scored by the student in this attempt
+  const quizFullMark = quiz.fullMark; // Maximum points available for the quiz
+
+  // Fetch all answers given by the student in this attempt
   const studentAnswers = await Answer.find({
     curriculum: curriculumId,
-    student,
+    student: req.userId,
     numberOfAttempt,
   }).select("answer isCorrect");
+
+  // Map through each question's performance to enrich it with additional data such as image URLs and option correctness
   const quizPerformance = await Promise.all(
     questionsStudentPerformance.map(async (questionPerformance) => {
       const isUserSolutionCorrect = questionPerformance.isUserSolutionCorrect;
@@ -987,6 +1064,8 @@ export const quizPerformance = asyncHandler(async (req, res, next) => {
         "r",
         "60"
       );
+
+      // Filter the options relevant to the current question and augment them with performance and image data
       const questionOptions = options.filter(
         (item) => questionId.toString() === item.question.toString()
       );
@@ -1000,14 +1079,14 @@ export const quizPerformance = asyncHandler(async (req, res, next) => {
           const studentAnswer = studentAnswers.find(
             (item) => option._id.toString() === item.answer.toString()
           );
-          const isUserChooceThatOption = studentAnswer ? true : false;
+          const isUserChoseThatOption = !!studentAnswer;
           const isThatOptionCorrectAnswer = option.correctAnswer;
-          const reighChooce = studentAnswer?.isCorrect;
-          const rightUnchooce = !studentAnswer && !isThatOptionCorrectAnswer;
-          const isUserAnswerCorrect =
-            reighChooce || rightUnchooce ? true : false;
+          const rightChoose = studentAnswer?.isCorrect;
+          const rightUnchoose = !studentAnswer && !isThatOptionCorrectAnswer;
+          const isUserAnswerCorrect = rightChoose || rightUnchoose;
+
           return {
-            isUserChooceThatOption,
+            isUserChoseThatOption,
             isUserAnswerCorrect,
             isThatOptionCorrectAnswer,
             imageUrl: optionImageUrl,
@@ -1027,6 +1106,8 @@ export const quizPerformance = asyncHandler(async (req, res, next) => {
       };
     })
   );
+
+  // If performance data was successfully generated, return it in the response; otherwise, handle an error scenario
   return quizPerformance
     ? res.status(200).json({
         message: "Done",
@@ -1034,63 +1115,89 @@ export const quizPerformance = asyncHandler(async (req, res, next) => {
       })
     : res.status(500).json({ message: "Something went wrong" });
 });
+
+/**
+ * Allows the instructor to enable returning quiz results to students for a specific curriculum.
+ * It updates the quiz document to set the allowedToReturn flag to true and notifies the students
+ * who have attempted the quiz.
+ *
+ * @param {Object} req - Express.js request object containing request parameters and data.
+ * @param {Object} res - Express.js response object used for sending responses to the client.
+ * @param {Function} next - Middleware dispatch function to handle errors or pass control to the next middleware.
+ */
 export const allowToReturnQuiz = asyncHandler(async (req, res, next) => {
+  // Extract curriculum ID from the request parameters
   const { curriculumId } = req.params;
-  const isntructor = await userModel
+
+  // Retrieve instructor information to identify who is allowing the quiz results to be returned
+  const instructor = await userModel
     .findById(req.userId)
     .select("userName -_id");
-  const instructorUserName = isntructor.userName;
+  const instructorUserName = instructor.userName;
+
+  // Update the quiz document to allow returning results
   const quiz = await Quiz.findByIdAndUpdate(req.quiz, {
     allowedToReturn: true,
   }).select("_id allowedToReturn");
 
+  // Find all students who have attempted the quiz and need to be notified
   const studentsToNotify = await QuizPerformance.find({
     curriculum: curriculumId,
   }).select("student course -_id");
+
+  // If the quiz was not already allowed to return results, notify students
   if (!quiz.allowedToReturn) {
-    const quizTitle = req.curriculum.title;
-    const courseTitle = req.course.title;
-    const message = `${instructorUserName} in course "${courseTitle}" return quiz "${quizTitle}" to you , you can get your results now .`;
+    const quizTitle = req.curriculum.title; // Title of the quiz's curriculum
+    const courseTitle = req.course.title; // Title of the course associated with the curriculum
+
+    // Construct notification message for students
+    const message = `${instructorUserName} in course "${courseTitle}" has returned the quiz "${quizTitle}" to you. You can now view your results.`;
+
+    // Find the cover image URL for the course
     const { coverImageUrl } = await courseModel.findById(course);
+
+    // Notify each student who attempted the quiz
     await Promise.all(
       studentsToNotify.map((student) => {
-        const sudentId = student.student;
-        const { socketId, popUpId } = userModel.findById(sudentId);
+        const studentId = student.student;
+        const { socketId, popUpId } = userModel.findById(studentId);
 
-        // add notification
-        let notification = {
+        // Construct notification object
+        const notification = {
           image: coverImageUrl,
           title: "Quiz Results",
           body: message,
           url: `https://e-learning-azure.vercel.app/courseDetails/${course}`,
         };
+
+        // Update or create a notification for the student
         let notify = notificationModel.findOneAndUpdate(
-          {
-            user: sudentId,
-          },
-          {
-            $push: { notifications: notification },
-          },
+          { user: studentId },
+          { $push: { notifications: notification } },
           { new: true }
         );
 
         if (!notify) {
           notify = notificationModel.create({
-            user: sudentId,
+            user: studentId,
             notifications: notification,
           });
         }
+
+        // Retrieve the latest notification and emit it to the student's socket
         notification = notify.notifications.reverse()[0];
         getIo().to(socketId).emit("notification", notification);
+
+        // Send web push notification if student has a registered endpoint
         if (popUpId.endpoint) {
           webpush.sendNotification(popUpId, JSON.stringify(notification));
         }
       })
     );
   }
+
+  // Return success message if students were notified successfully
   return studentsToNotify
-    ? res.status(200).json({
-        message: "Done",
-      })
+    ? res.status(200).json({ message: "Done" })
     : res.status(500).json({ message: "Something went wrong" });
 });

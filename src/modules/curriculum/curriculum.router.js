@@ -37,21 +37,22 @@ router.post(
   curriculumController.createQuiz
 );
 
+//mark or unmark curriculum as completed
+router.post(
+  "/:curriculumId/completed",
+  isAuthenticated,
+  isAuthorized(["Student"]),
+  validation(validators.curriculumCompletedSchema),
+  curriculumController.curriculumCompleted
+);
+
 // save an videoProgress in curriculum order
 router.patch(
   "/:curriculumId/videoProgress",
   isAuthenticated,
   isAuthorized(["Student"]),
-  // validation(validators.editCurriculumSchema),
+  validation(validators.videoProgressSchema),
   curriculumController.videoProgress
-);
-
-router.post(
-  "/:curriculumId/completed",
-  isAuthenticated,
-  isAuthorized(["Student"]),
-  // validation(validators.editCurriculumSchema),
-  curriculumController.curriculumCompleted
 );
 
 // Edit an existing curriculum order
@@ -71,7 +72,6 @@ router.patch(
   validation(validators.editVideoSchema),
   fileUpload(customValidation.file.concat(customValidation.video)).fields([
     { name: "video", maxCount: 1 },
-    { name: "resources", maxCount: 10 },
     { name: "subtitles", maxCount: 1 },
   ]),
   curriculumController.editVideo
@@ -89,17 +89,6 @@ router.patch(
   curriculumController.putResources
 );
 
-// upload resources to curriculum
-router.delete(
-  "/:curriculumId/resources/:resourceId",
-  isAuthenticated,
-  isAuthorized(["Instructor"]),
-  validation(validators.editVideoSchema),
-  fileUpload(customValidation.file).fields([
-    { name: "resources", maxCount: 10 },
-  ]),
-  curriculumController.deleteResource
-);
 // Edit an existing article in the curriculum
 router.patch(
   "/:curriculumId/article",
@@ -112,19 +101,30 @@ router.patch(
   curriculumController.editArticle
 );
 
+// delete resource from curriculum
+router.delete(
+  "/:curriculumId/resources/:resourceId",
+  isAuthenticated,
+  isAuthorized(["Instructor"]),
+  validation(validators.editVideoSchema),
+  fileUpload(customValidation.file).fields([
+    { name: "resources", maxCount: 10 },
+  ]),
+  curriculumController.deleteResource
+);
 // Delete an existing curriculum from the curriculum
 router.delete(
   "/:curriculumId",
   isAuthenticated,
   isAuthorized(["Instructor"]),
-  validation(validators.deleteCurriculumSchema),
+  validation(validators.basicSchema),
   curriculumController.deleteCurriculum
 );
 // Get curriculum video or article
 router.get(
   "/:curriculumId",
+  isAuthenticated,
   isAuthorized(["Instructor", "Student"]),
-
   validation(validators.getCurriculumSchema),
   curriculumController.getCurriculum
 );

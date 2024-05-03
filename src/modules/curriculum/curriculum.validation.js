@@ -54,11 +54,28 @@ export const editArticleSchema = joi
     quillContent: joi.string().allow(""),
   })
   .unknown(true);
-export const deleteCurriculumSchema = joi
+export const basicSchema = joi
   .object({
     courseId: joi.string().custom(isValidObjectId).required(),
     chapterId: joi.string().custom(isValidObjectId).required(),
     curriculumId: joi.string().custom(isValidObjectId).required(),
+  })
+  .required();
+
+export const videoProgressSchema = joi
+  .object({
+    courseId: joi.string().custom(isValidObjectId).required(),
+    chapterId: joi.string().custom(isValidObjectId).required(),
+    curriculumId: joi.string().custom(isValidObjectId).required(),
+    lastWatchedSecond: joi.number().required(),
+  })
+  .required();
+export const curriculumCompletedSchema = joi
+  .object({
+    courseId: joi.string().custom(isValidObjectId).required(),
+    chapterId: joi.string().custom(isValidObjectId).required(),
+    curriculumId: joi.string().custom(isValidObjectId).required(),
+    completed: joi.boolean().required(),
   })
   .required();
 

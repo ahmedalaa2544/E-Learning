@@ -13,7 +13,7 @@ router.post(
   isAuthenticated,
   isAuthorized(["Instructor"]),
   fileUpload(customValidation.image)?.single("image"),
-  validation(validators.createQuestionSchema),
+  validation(validators.basicSchema),
   quizController.createQuestion
 );
 
@@ -27,18 +27,21 @@ router.post(
   quizController.createOption
 );
 
+//submit quiz
 router.post(
   "/:curriculumId/submitQuiz",
   isAuthenticated,
   isAuthorized(["Student"]),
-  // validation(validators.createQuestionSchema),
+  validation(validators.submitQuizSchema),
   quizController.submitQuiz
 );
+
+//allow to reeturn quiz results to students
 router.post(
   "/:curriculumId/allowToReturnQuiz",
   isAuthenticated,
   isAuthorized(["Instructor"]),
-  // validation(validators.createQuestionSchema),
+  validation(validators.basicSchema),
   quizController.allowToReturnQuiz
 );
 // Update details of a specific curriculum
@@ -74,7 +77,7 @@ router.delete(
   "/:curriculumId",
   isAuthenticated,
   isAuthorized(["Instructor"]),
-  validation(validators.createQuestionSchema),
+  validation(validators.basicSchema),
   quizController.deleteQuiz
 );
 
@@ -101,31 +104,34 @@ router.get(
   "/:curriculumId",
   isAuthenticated,
   isAuthorized(["Instructor"]),
-  validation(validators.createQuestionSchema),
+  validation(validators.basicSchema),
   quizController.getQuiz
 );
 
+// retrieve quiz to show it to student
 router.get(
   "/:curriculumId/quizForStudent",
   isAuthenticated,
   isAuthorized(["Student"]),
-  // validation(validators.createQuestionSchema),
+  validation(validators.basicSchema),
   quizController.retrieveQuizForStudent
 );
 
+// return student final results for different attempts of quiz
 router.get(
   "/:curriculumId/quizResult",
   isAuthenticated,
   isAuthorized(["Student"]),
-  // validation(validators.createQuestionSchema),
+  validation(validators.basicSchema),
   quizController.quizResult
 );
 
+// return student detailed quiz performance for specific attempt
 router.get(
   "/:curriculumId/quizPerformance",
   isAuthenticated,
   isAuthorized(["Student"]),
-  // validation(validators.createQuestionSchema),
+  validation(validators.basicSchema),
   quizController.quizPerformance
 );
 

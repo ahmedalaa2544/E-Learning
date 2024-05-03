@@ -19,7 +19,6 @@ import upload, {
   deleteDirectory,
   deleteBlob,
   generateSASUrl,
-  uploadHls,
 } from "../../utils/azureServices.js";
 import instructorModel from "../../../DB/model/instructor.model.js";
 import fetch from "node-fetch";
@@ -588,48 +587,66 @@ export const getCourseContent = asyncHandler(async (req, res, next) => {
       })
     : res.status(500).json({ message: "Something went wrong" });
 });
+/**
+ * Retrieves detailed course content specifically structured for students,
+ * including information on instructors, curriculum progress, and chapter details.
+ *
+ * @param {Object} req - The request object from Express.js containing client data.
+ * @param {Object} res - The response object from Express.js used to send back data to the client.
+ * @param {Function} next - The next middleware function in the Express middleware chain.
+ */
 export const getCourseContentForSudent = asyncHandler(
   async (req, res, next) => {
-    // Extract courseId from the request parameters.
+    // Extract courseId from the request URL parameters.
     const { courseId } = req.params;
 
-    // Retrieve basic course information.
+    // Fetch basic course information excluding unnecessary details.
     const course = await Course.findById(courseId).select(
       "title _id numberOfStudents duration level rating numberOfRatings"
     );
-    // Retrieve instructors information.
 
+    // Query the database for instructors related to the course.
     const instructors = await instructorModel
       .find({ course: courseId })
       .select("user");
-    console.log(instructors);
+
+    // Retrieve additional information for each instructor, including their media URLs.
     const instructorsInformation = await Promise.all(
       instructors.map(async (instructor) => {
         const instructorInformation = await User.findById(
           instructor.user
         ).select("userName firstName lastName profilePic");
-        const { accountSasTokenUrl: prfilePicUrl } = await generateSASUrl(
+
+        // Generate a SAS URL for the instructor's profile picture for secure access.
+        const { accountSasTokenUrl: profilePicUrl } = await generateSASUrl(
           instructorInformation.profilePic.blobName,
           "r",
           "60"
         );
+
+        // Prepare and return detailed instructor information, excluding the original profilePic field.
         return {
           ...instructorInformation._doc,
           profilePic: undefined,
-          prfilePicUrl,
+          profilePicUrl,
         };
       })
     );
+
+    // Count the number of curriculum items associated with the course.
     const numberOfCurriculmInCourse = await curriculumModel.countDocuments({
       course: courseId,
     });
-    // Retrieve chapters belonging to the course, sorted by order.
+
+    // Fetch and sort chapters related to the course by their order.
     const chapters = await Chapter.find({ course: courseId })
       .select("title _id duration")
       .sort({ order: 1 });
+
+    // Count the number of chapters retrieved.
     const numberOfChapters = chapters.length;
 
-    // Retrieve curriculum associated with each chapter.
+    // Fetch and organize curriculum details for each chapter.
     const chapterPromises = chapters.map(async (chapter) => {
       let curriculum = await curriculumModel
         .find({ chapter: chapter._id })
@@ -639,6 +656,7 @@ export const getCourseContentForSudent = asyncHandler(
         .populate({ path: "article", select: "duration" })
         .sort({ order: 1 });
 
+      // Determine completion status and progress for each curriculum item.
       const curriculumPromises = curriculum.map(async (curriculum) => {
         const progress = await Progress.findOne({
           curriculum: curriculum._id,
@@ -656,7 +674,8 @@ export const getCourseContentForSudent = asyncHandler(
           lastWatchedSecond,
         };
       });
-      // Wait for all chapter promises to resolve.
+
+      // Resolve all curriculum details and compute the count of items in the chapter.
       const curriculumResults = await Promise.all(curriculumPromises);
       const numberOfCurriculmInChapter = await curriculumModel.countDocuments({
         chapter: chapter._id,
@@ -668,10 +687,8 @@ export const getCourseContentForSudent = asyncHandler(
       };
     });
 
-    // Wait for all chapter promises to resolve.
+    // Resolve all chapter details, compile course content and return the response.
     const chapterResults = await Promise.all(chapterPromises);
-
-    // Respond with the course content if successful, otherwise send an error.
     return chapterResults
       ? res.status(200).json({
           message: "Success",
@@ -679,7 +696,7 @@ export const getCourseContentForSudent = asyncHandler(
             ...course._doc,
             numberOfChapters,
             numberOfCurriculms: numberOfCurriculmInCourse,
-            chpaters: chapterResults,
+            chapters: chapterResults,
           },
         })
       : res.status(500).json({ message: "Something went wrong" });
