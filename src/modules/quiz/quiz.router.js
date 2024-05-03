@@ -34,13 +34,12 @@ router.post(
   // validation(validators.createQuestionSchema),
   quizController.submitQuiz
 );
-// Update details of a specific curriculum
-router.patch(
-  "/:curriculumId",
+router.post(
+  "/:curriculumId/allowToReturnQuiz",
   isAuthenticated,
   isAuthorized(["Instructor"]),
-  validation(validators.updateQuizSchema),
-  quizController.editQuiz
+  // validation(validators.createQuestionSchema),
+  quizController.allowToReturnQuiz
 );
 
 // Edit details or order of a specific question within a curriculum

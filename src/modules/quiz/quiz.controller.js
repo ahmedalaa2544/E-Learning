@@ -14,6 +14,7 @@ import upload, {
   deleteBlob,
   generateSASUrl,
 } from "../../utils/azureServices.js";
+import userModel from "../../../DB/model/user.model.js";
 
 /**
  * Creates a new quiz question for a specific curriculum, handling file uploads for question images.
@@ -990,6 +991,35 @@ export const quizPerformance = asyncHandler(async (req, res, next) => {
     ? res.status(200).json({
         message: "Done",
         performance: { studentTotalPoints, quizFullMark, quizPerformance },
+      })
+    : res.status(500).json({ message: "Something went wrong" });
+});
+export const allowToReturnQuiz = asyncHandler(async (req, res, next) => {
+  const { curriculumId } = req.params;
+  const isntructor = await userModel
+    .findById(req.userId)
+    .select("userName -_id");
+  const instructorUserName = isntructor.userName;
+  const quiz = await Quiz.findByIdAndUpdate(req.quiz, {
+    allowedToReturn: true,
+  }).select("_id allowedToReturn");
+
+  const studentsToNotify = await QuizPerformance.find({
+    curriculum: curriculumId,
+  }).select("student -_id");
+  if (!quiz.allowedToReturn) {
+    const quizTitle = req.curriculum.title;
+    const courseTitle = req.course.title;
+    const message = `${instructorUserName} in course "${courseTitle}" return quiz "${quizTitle}" to you , you can get your results now .`;
+    await Promise.all(
+      studentsToNotify.map((student) => {
+        const sudentId = student.student;
+      })
+    );
+  }
+  return studentsToNotify
+    ? res.status(200).json({
+        message: "Done",
       })
     : res.status(500).json({ message: "Something went wrong" });
 });
