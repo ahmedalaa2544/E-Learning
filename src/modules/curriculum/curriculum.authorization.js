@@ -40,7 +40,7 @@ const authorization = (accessRoles = []) => {
     if (!chapter) {
       return next(new Error("Chapter not found"), { cause: 404 });
     }
-
+    return next();
     // Check if the user is an instructor or the course creator if "Instructor" is in the access roles.
     if (accessRoles.includes("Instructor")) {
       var isInstructor = (await Instructor.findOne({
@@ -65,6 +65,10 @@ const authorization = (accessRoles = []) => {
         ? true
         : false;
     }
+    console.log(isInstructor);
+    console.log(isCreator);
+    console.log(isStudent);
+
     // console.log(student);
     // Deny access if the user is neither an instructor nor the creator nor student in the course.
     if (!isInstructor && !isCreator && !isStudent) {

@@ -17,11 +17,14 @@ const videoSchema = new Schema(
       ref: "Curriculum",
       reuired: true,
     },
-    subtitles: {
-      blobName: {
-        type: String,
+    subtitles: [
+      {
+        blobName: {
+          type: String,
+        },
+        language: { type: String },
       },
-    },
+    ],
     description: {
       type: String,
       set: (value) => (value === "" ? null : value),

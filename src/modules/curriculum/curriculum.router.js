@@ -77,6 +77,29 @@ router.patch(
   curriculumController.editVideo
 );
 
+// upload resources to curriculum
+router.patch(
+  "/:curriculumId/resources",
+  isAuthenticated,
+  isAuthorized(["Instructor"]),
+  validation(validators.editVideoSchema),
+  fileUpload(customValidation.file).fields([
+    { name: "resources", maxCount: 10 },
+  ]),
+  curriculumController.putResources
+);
+
+// upload resources to curriculum
+router.delete(
+  "/:curriculumId/resources/:resourceId",
+  isAuthenticated,
+  isAuthorized(["Instructor"]),
+  validation(validators.editVideoSchema),
+  fileUpload(customValidation.file).fields([
+    { name: "resources", maxCount: 10 },
+  ]),
+  curriculumController.deleteResource
+);
 // Edit an existing article in the curriculum
 router.patch(
   "/:curriculumId/article",

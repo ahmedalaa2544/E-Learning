@@ -8,6 +8,8 @@ export const customValidation = {
     "application/vnd.rar",
     "application/zip",
     "application/x-subrip",
+    "application/json",
+    "text/csv",
   ],
   video: ["video/mp4", "video/x-matroska", "video/x-m4v"],
   voice: ["audio/mpeg", "audio/wav", "audio/mp3", "audio/x-ms-wma"],
@@ -15,6 +17,7 @@ export const customValidation = {
 export const fileUpload = (filterArray) => {
   const fileFilter = (req, file, cb) => {
     if (!filterArray.includes(file.mimetype)) {
+      console.log(file.mimetype);
       return cb(new Error("inVaild Format"), false);
     }
     return cb(null, true);

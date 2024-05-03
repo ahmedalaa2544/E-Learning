@@ -50,20 +50,23 @@ const curriculumSchema = new Schema(
       type: String,
       required: true,
     },
-    resources: {
-      directory: { type: String },
-      content: [
-        {
-          name: {
-            type: String,
-            max: 60,
-          },
-          blobName: {
-            type: String,
-          },
+    resources: [
+      {
+        title: {
+          type: String,
+          max: 60,
         },
-      ],
-    },
+        blobName: {
+          type: String,
+        },
+        type: {
+          type: String,
+        },
+        size: {
+          type: Number,
+        },
+      },
+    ],
   },
 
   { timestamps: true }

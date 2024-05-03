@@ -10,6 +10,7 @@ import Progress from "../../../DB/model/progress.model.js";
 import Student from "../../../DB/model/student.model.js";
 import notificationModel from "../../../DB/model/notification.model.js";
 import { getIo } from "../../utils/server.js";
+import { getResoursces } from "../../utils/curriculum.js";
 
 import mongoose from "mongoose";
 import {
@@ -363,8 +364,6 @@ export const videoProgress = asyncHandler(async (req, res, next) => {
     student,
     completed: true,
   });
-  console.log(numberOfCompletedCurriculums);
-  console.log(numberOfCurriculumsInCourse);
   // Check if video is completed.
   if (
     lastWatchedSecond > curriculum.video.duration - 5 &&
@@ -373,7 +372,6 @@ export const videoProgress = asyncHandler(async (req, res, next) => {
     completed = true;
     accomplishementPercentage =
       ((numberOfCompletedCurriculums + 1) / numberOfCurriculumsInCourse) * 100;
-    console.log("ddd " + accomplishementPercentage);
   }
 
   // Update or create progress record.
@@ -475,8 +473,6 @@ export const curriculumCompleted = asyncHandler(async (req, res, next) => {
     student,
     completed: true,
   });
-  console.log(numberOfCompletedCurriculums);
-  console.log(numberOfCurriculumsInCourse);
 
   // Update or create progress record to mark the curriculum as completed.
   if (progress) {
@@ -539,7 +535,6 @@ export const curriculumCompleted = asyncHandler(async (req, res, next) => {
       webpush.sendNotification(req.user.popUpId, JSON.stringify(notification));
     }
   }
-  console.log(`accomplishementPercentage ${accomplishementPercentage}`);
   await Student.findOneAndUpdate(
     { user: student },
     { accomplishementPercentage, graduated }
@@ -560,7 +555,7 @@ export const curriculumCompleted = asyncHandler(async (req, res, next) => {
 export const editVideo = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { courseId, chapterId, curriculumId } = req.params;
-  const { title, description } = req.body;
+  const { title, description, subtitlesLanguange } = req.body;
   // Retrieve the existing curriculum document based on curriculumId
   const curriculum = await Curriculum.findById(curriculumId);
   // Check if the curriculum exists
@@ -687,6 +682,46 @@ export const editVideo = asyncHandler(async (req, res, next) => {
     return editedCurriculum
       ? res.status(200).json({ message: "Done" })
       : res.status(500).json({ message: "Something went wrong" });
+  }
+});
+export const putResources = asyncHandler(async (req, res, next) => {
+  // Extract parameters from the request
+  const { courseId, chapterId, curriculumId } = req.params;
+  // const { title, description } = req.body;
+  // Wait for the response to be sent, then perform additional actions
+  onFinished(res, async (err, res) => {
+    const resources = await uploadResources(
+      req,
+      req.files,
+      req.userId,
+      courseId,
+      chapterId,
+      curriculumId
+    );
+
+    // Update the curriculum document with the edited details
+    const curriculum = await Curriculum.findByIdAndUpdate(curriculumId, {
+      $push: { resources: { $each: resources } },
+    });
+  });
+  // Send a response indicating the success or failure of the video editing process
+  if (!res.headersSent) {
+    res.status(200).json({ message: "Done" });
+  }
+});
+export const deleteResource = asyncHandler(async (req, res, next) => {
+  const { courseId, chapterId, curriculumId, resourceId } = req.params;
+  onFinished(res, async (err, res) => {
+    const curriculum = await Curriculum.findByIdAndUpdate(curriculumId, {
+      $pull: { resources: { _id: resourceId } },
+    }).select("resources");
+    const content = curriculum.resources;
+    const resource = content.find((item) => item._id.toString() === resourceId);
+    const deletion = await deleteBlob(resource.blobName);
+  });
+  // Send a response indicating the success or failure of the video editing process
+  if (!res.headersSent) {
+    res.status(200).json({ message: "Done" });
   }
 });
 
@@ -858,16 +893,8 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
     return next(new Error("Curriculum not found"), { cause: 404 });
   }
 
-  let resources = [];
-  // Generate SAS URLs for each resource associated with the video
-  for (const resource of curriculum.resources.content) {
-    const { accountSasTokenUrl: resourceUrl } = await generateSASUrl(
-      resource.blobName,
-      "r",
-      "60"
-    );
-    resources.push({ name: resource.name, url: resourceUrl });
-  }
+  const resources = await getResoursces(curriculum.resources);
+
   if (curriculum.type === "video") {
     const video = curriculum.video;
 
@@ -900,7 +927,7 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
             title: curriculum.title,
             url: videoUrl ? videoUrl.replace(/%5C/g, "/") : undefined,
             blobName: undefined,
-            resources: resources,
+            resources,
             subtitles: subtitlesUrl,
             vttBlobName: undefined,
             vttUrl: vttUrl ? vttUrl.replace(/%5C/g, "/") : undefined,
