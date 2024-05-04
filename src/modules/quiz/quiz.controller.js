@@ -16,6 +16,8 @@ import upload, {
 import userModel from "../../../DB/model/user.model.js";
 import notificationModel from "../../../DB/model/notification.model.js";
 import courseModel from "../../../DB/model/course.model.js";
+import { getIo } from "../../utils/server.js";
+import webpush from "web-push";
 
 /**
  * Creates a new quiz question for a specific curriculum, handling file uploads for question images.
@@ -1143,35 +1145,33 @@ export const allowToReturnQuiz = asyncHandler(async (req, res, next) => {
   // Find all students who have attempted the quiz and need to be notified
   const studentsToNotify = await QuizPerformance.find({
     curriculum: curriculumId,
+    numberOfAttempt: 1,
   }).select("student course -_id");
 
   // If the quiz was not already allowed to return results, notify students
-  if (!quiz.allowedToReturn) {
+  if (true || !quiz.allowedToReturn) {
     const quizTitle = req.curriculum.title; // Title of the quiz's curriculum
     const courseTitle = req.course.title; // Title of the course associated with the curriculum
 
     // Construct notification message for students
     const message = `${instructorUserName} in course "${courseTitle}" has returned the quiz "${quizTitle}" to you. You can now view your results.`;
+    // Construct notification object
+    const coverImageUrl = req.course.coverImageUrl;
 
-    // Find the cover image URL for the course
-    const { coverImageUrl } = await courseModel.findById(course);
-
+    const notification = {
+      image: coverImageUrl,
+      title: "Quiz Results",
+      body: message,
+      url: `https://e-learning-azure.vercel.app/courseDetails/${req.course._id}`,
+    };
     // Notify each student who attempted the quiz
     await Promise.all(
-      studentsToNotify.map((student) => {
-        const studentId = student.student;
-        const { socketId, popUpId } = userModel.findById(studentId);
-
-        // Construct notification object
-        const notification = {
-          image: coverImageUrl,
-          title: "Quiz Results",
-          body: message,
-          url: `https://e-learning-azure.vercel.app/courseDetails/${course}`,
-        };
+      studentsToNotify.map(async (student) => {
+        const studentId = student.student.toString();
+        const { socketId, popUpId } = await userModel.findById(studentId);
 
         // Update or create a notification for the student
-        let notify = notificationModel.findOneAndUpdate(
+        let notify = await notificationModel.findOneAndUpdate(
           { user: studentId },
           { $push: { notifications: notification } },
           { new: true }
@@ -1184,8 +1184,6 @@ export const allowToReturnQuiz = asyncHandler(async (req, res, next) => {
           });
         }
 
-        // Retrieve the latest notification and emit it to the student's socket
-        notification = notify.notifications.reverse()[0];
         getIo().to(socketId).emit("notification", notification);
 
         // Send web push notification if student has a registered endpoint

@@ -23,15 +23,18 @@ const authorization = (accessRoles = []) => {
       .populate("course", "title")
       .populate("chapter", "title");
     req.curriculum = curriculum;
-    req.course = curriculum.course;
-    req.chapter = curriculum.chapter;
+    req.course = curriculum.course._id;
+    req.chapter = curriculum.chapter._id;
     req.quiz = curriculum.quiz;
+    console.log(" curriculum.course._id " + curriculum.course._id);
     if (!curriculum || curriculum.type != "quiz") {
       // If the course is not found, send a 404 error response
       return next(new Error("Quiz not found"), { cause: 404 });
     }
     // Find the corresponding curriculum based on courseId
-    const course = await Course.findById(curriculum.course);
+    const course = await Course.findById(req.course);
+    // console.log(course);
+    req.course = course;
     if (!course) {
       // If the course is not found, send a 404 error response
       return next(new Error("Course not found"), { cause: 404 });
@@ -46,6 +49,8 @@ const authorization = (accessRoles = []) => {
         : false;
       var isCreator = course.createdBy.toString() === req.userId;
     }
+    console.log(isCreator);
+    console.log(isInstructor);
 
     // Check if the user is a student if "Student" is in the access roles.
     if (accessRoles.includes("Student")) {
