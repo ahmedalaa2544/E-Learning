@@ -179,7 +179,7 @@ export const generateVttAndUpload = async (
     ffmpeg(inputVideoPath)
       .outputOptions([
         "-vf",
-        "fps=1/2", // Generates one thumbnail every 10 seconds
+        "fps=1/10", // Generates one thumbnail every 10 seconds
         "-s",
         "320x180", // Sets the size of the thumbnail
       ])

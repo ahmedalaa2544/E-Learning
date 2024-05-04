@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import upload, { deleteBlob } from "../../utils/azureServices.js";
 import { getVideoDurationInSeconds } from "get-video-duration";
+import temp from "temp";
 
 /**
  * Handles video file uploads, retrieves updated video details, and provides the new Blob Storage name.
@@ -47,7 +48,6 @@ export const uploadVideo = async (
         blobVideoName = `${curriculumDirectory}\\Video\\${
           files.video[0].originalname
         }_${uuidv4()}.${blobVideoExtension}`;
-        console.log("generateHLS from upload video " + blobVideoName);
 
         // Upload the video to Azure Blob Storage and get the video URL
         videoUrl = await upload(
@@ -59,6 +59,7 @@ export const uploadVideo = async (
           (generateHLS = generateHLS),
           (generateVtt = generateVtt)
         );
+        temp.cleanup();
       }
       // Resolve the Promise with the updated video details
       resolve({

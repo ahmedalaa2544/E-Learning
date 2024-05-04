@@ -42,8 +42,12 @@ export const createVideo = asyncHandler(async (req, res, next) => {
 
   // Generate a unique curriculumId using MongoDB ObjectId
   const curriculumId = new mongoose.Types.ObjectId();
-  const generateHLS = JSON.parse(req.query.generateHLS);
-  const generateVtt = JSON.parse(req.query.generateVtt);
+  const generateHLS = JSON.parse(
+    req.query.generateHLS ? req.query.generateHLS : false
+  );
+  const generateVtt = JSON.parse(
+    req.query.generateVtt ? req.query.generateVtt : false
+  );
   // Retrieve existing curriculums for the chapter
   let curriculums = await Curriculum.find({ chapter: chapterId });
   // Calculate the order value for the next curriculum by adding 1 to the number of existing curriculums.

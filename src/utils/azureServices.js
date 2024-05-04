@@ -153,7 +153,7 @@ const upload = async (
         // initialize outputFileName with that value will be used id there is no compress
         let outputFileName = inputFilePath;
         // const tempDirPath = "F:hls";
-        let fileTempUrl, thumbnailsURL;
+        let videoUrl, thumbnailsURL;
         try {
           // if flag compress true compress will happen for certain types
           if (compress) {
@@ -169,7 +169,6 @@ const upload = async (
             // );
           }
           if (generateVtt) {
-            console.log("generateVtt");
             const inputVideoPath = outputFileName;
             thumbnailsURL = await generateVttAndUpload(
               blobName,
@@ -182,14 +181,13 @@ const upload = async (
           // await generateSRTAndUpload(blobName, tempDirPath, outputFileName);
           if (generateHLS) {
             const inputVideoPath = outputFileName;
-            fileTempUrl = await generateHLSManifestAndUpload(
+            videoUrl = await generateHLSManifestAndUpload(
               blobName,
               tempDirPath,
               inputVideoPath,
               sampleRate,
               padding
             );
-            console.log("fileTempUrl   : ", fileTempUrl);
           } else {
             // Generate a Shared Access Signature (SAS) URL for secure blob access
             const { accountSasTokenUrl, fileUrl } = await generateSASUrl(
@@ -197,7 +195,7 @@ const upload = async (
               "racwd",
               100
             );
-            fileTempUrl = accountSasTokenUrl;
+            videoUrl = accountSasTokenUrl;
             // Create a BlockBlobClient using the SAS URL
             const blockBlobClient = new BlockBlobClient(accountSasTokenUrl);
             // Read the compressed file and upload its data to Azure Blob Storage
@@ -214,11 +212,10 @@ const upload = async (
               }
             });
           }
-          // Cleanup: Remove the temporary directory when the upload is complete
-          temp.cleanup();
+          // // Cleanup: Remove the temporary directory when the upload is complete
 
           // Return the fileUrl after successful upload
-          resolve(fileTempUrl);
+          resolve(videoUrl);
         } catch (error) {
           // Cleanup in case of an error
           temp.cleanup();
@@ -229,27 +226,6 @@ const upload = async (
   });
 };
 
-async function createVTTFile(directory, interval) {
-  const files = fs
-    .readdirSync(directory)
-    .filter((file) => file.startsWith("thumb") && file.endsWith(".jpg"));
-  let vttContent = "WEBVTT\n\n";
-
-  files.forEach((file, index) => {
-    const startTime = index * interval;
-    const endTime = (index + 1) * interval;
-    const startTimestamp = new Date(startTime * 1000)
-      .toISOString()
-      .substr(11, 8);
-    const endTimestamp = new Date(endTime * 1000).toISOString().substr(11, 8);
-
-    vttContent += `${startTimestamp} --> ${endTimestamp}\n`;
-    vttContent += `${file}#xywh=0,0,320,180\n\n`;
-  });
-
-  fs.writeFileSync(path.join(directory, "thumbnails.vtt"), vttContent);
-  console.log("VTT file created.");
-}
 /**
  * Delete a Blob from Azure Blob Storage using the provided Blob name.
  *
