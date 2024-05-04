@@ -447,9 +447,6 @@ export const order = asyncHandler(async (req, res, next) => {
     if (order.status == "Paid") {
       spent += order.price;
     }
-    if (order.status == "Refunded") {
-      spent -= order.price;
-    }
   });
 
   // response
