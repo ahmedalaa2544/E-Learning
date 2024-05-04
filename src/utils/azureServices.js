@@ -153,7 +153,7 @@ const upload = async (
         // initialize outputFileName with that value will be used id there is no compress
         let outputFileName = inputFilePath;
         // const tempDirPath = "F:hls";
-        let fileTempUrl;
+        let fileTempUrl, thumbnailsURL;
         try {
           // if flag compress true compress will happen for certain types
           if (compress) {
@@ -168,9 +168,19 @@ const upload = async (
             //   type
             // );
           }
-          console.log("generateHLS" + generateHLS);
+          if (generateVtt) {
+            console.log("generateVtt");
+            const inputVideoPath = outputFileName;
+            thumbnailsURL = await generateVttAndUpload(
+              blobName,
+              tempDirPath,
+              inputVideoPath,
+              padding,
+              thumbnailInterval
+            );
+          } //
           // await generateSRTAndUpload(blobName, tempDirPath, outputFileName);
-          if (JSON.parse(generateHLS)) {
+          if (generateHLS) {
             const inputVideoPath = outputFileName;
             fileTempUrl = await generateHLSManifestAndUpload(
               blobName,
@@ -197,21 +207,12 @@ const upload = async (
               }
               try {
                 await blockBlobClient.uploadData(data);
+
                 // Call next function here if uploadData succeeds
               } catch (uploadError) {
                 reject(uploadError);
               }
             });
-          }
-          if (JSON.parse(generateVtt)) {
-            const inputVideoPath = outputFileName;
-            var thumbnailsURL = await generateVttAndUpload(
-              blobName,
-              tempDirPath,
-              inputVideoPath,
-              padding,
-              thumbnailInterval
-            );
           }
           // Cleanup: Remove the temporary directory when the upload is complete
           temp.cleanup();
@@ -223,10 +224,6 @@ const upload = async (
           temp.cleanup();
           reject(error);
         }
-      } else {
-        // Cleanup in case of an error
-        temp.cleanup();
-        reject(new Error("Error creating temporary directory"));
       }
     });
   });

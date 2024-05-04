@@ -11,6 +11,7 @@ export const getResoursces = (curriculumResources) => {
         );
 
         return {
+          _id: resource._id,
           title: resource.title,
           type: resource.type,
           size: resource.size,
@@ -32,6 +33,7 @@ export const getSubitles = (curriculumSubtitles) => {
           "60"
         );
         return {
+          _id: subtitles._id,
           language: subtitles.language,
           url,
         };

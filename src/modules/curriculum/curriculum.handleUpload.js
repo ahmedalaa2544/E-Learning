@@ -14,6 +14,7 @@ import { getVideoDurationInSeconds } from "get-video-duration";
  * @returns {Promise<Object>} - A promise that resolves with an object containing the updated video details, new Blob Storage name, and additional resources.
  */
 export const uploadVideo = async (
+  req,
   files,
   userId,
   courseId,
@@ -26,9 +27,8 @@ export const uploadVideo = async (
   return new Promise(async (resolve, reject) => {
     try {
       let videoUrl, duration, blobVideoName;
-
       // Define the directory structure for storing videos and resources
-      const curriculumDirectory = `Users\\${userId}\\Courses\\${courseId}\\${chapterId}\\${curriculumId}`;
+      const curriculumDirectory = `Users\\${req.user.userName}_${req.user._id}\\Courses\\${courseId}\\Chapters\\${chapterId}\\Curriculums\\${curriculumId}`;
 
       // Check if a video file is present in the request
       if (files?.video) {
@@ -47,6 +47,7 @@ export const uploadVideo = async (
         blobVideoName = `${curriculumDirectory}\\Video\\${
           files.video[0].originalname
         }_${uuidv4()}.${blobVideoExtension}`;
+        console.log("generateHLS from upload video " + blobVideoName);
 
         // Upload the video to Azure Blob Storage and get the video URL
         videoUrl = await upload(
@@ -54,8 +55,9 @@ export const uploadVideo = async (
           blobVideoName,
           "video",
           blobVideoExtension,
-          generateHLS,
-          generateVtt
+          false,
+          (generateHLS = generateHLS),
+          (generateVtt = generateVtt)
         );
       }
       // Resolve the Promise with the updated video details

@@ -42,9 +42,8 @@ export const createVideo = asyncHandler(async (req, res, next) => {
 
   // Generate a unique curriculumId using MongoDB ObjectId
   const curriculumId = new mongoose.Types.ObjectId();
-  const generateHLS = req.query.generateHLS;
-  const generateVtt = req.query.generateVtt;
-
+  const generateHLS = JSON.parse(req.query.generateHLS);
+  const generateVtt = JSON.parse(req.query.generateVtt);
   // Retrieve existing curriculums for the chapter
   let curriculums = await Curriculum.find({ chapter: chapterId });
   // Calculate the order value for the next curriculum by adding 1 to the number of existing curriculums.
@@ -98,6 +97,7 @@ export const createVideo = asyncHandler(async (req, res, next) => {
       blobVideoName;
     // Upload the video and retrieve information such as URL, duration, and blob name.
     ({ videoUrl, duration, blobVideoName } = await uploadVideo(
+      req,
       req.files,
       req.userId,
       courseId,
@@ -107,11 +107,13 @@ export const createVideo = asyncHandler(async (req, res, next) => {
       generateHLS,
       generateVtt
     ));
+    const blobCurriuculmName = blobVideoName;
     if (generateHLS) {
-      blobVideoName = blobVideoName + "\\HLS" + "\\manifest.m3u8";
+      blobVideoName = blobCurriuculmName + "\\HLS" + "\\manifest.m3u8";
     }
     if (generateVtt) {
-      var vttBlobName = blobVideoName + "\\thumbnails" + "\\thumbnails.vtt";
+      var vttBlobName =
+        blobCurriuculmName + "\\thumbnails" + "\\thumbnails.vtt";
     }
     await Course.findByIdAndUpdate(courseId, {
       $inc: { duration: duration },
@@ -609,7 +611,6 @@ export const editVideo = asyncHandler(async (req, res, next) => {
       curriculumId,
       video.subtitles.blobName
     );
-    console.log(subtitlesBlobName);
     var subtitles = {
       blobName: subtitlesBlobName,
       language: subtitleslanguage,
@@ -681,7 +682,19 @@ export const editVideo = asyncHandler(async (req, res, next) => {
 export const putResources = asyncHandler(async (req, res, next) => {
   // Extract courseId, chapterId, and curriculumId from request parameters to identify the location to put resources.
   const { courseId, chapterId, curriculumId } = req.params;
-
+  const resourcesId = [];
+  const tempResources = [];
+  for (let i = 0; i < req.files.length; i++) {
+    const resourceId = new mongoose.Types.ObjectId();
+    resourcesId.push(resourceId);
+    const resource = {
+      _id: resourceId,
+      title: req.files[i].originalname,
+      size: req.files[i].size,
+      type: req.files[i].mimetype,
+    };
+  }
+  const returnedResources = [];
   // Wait for the response to be fully handled, then execute additional logic for resource handling.
   onFinished(res, async (err, res) => {
     // Upload resources after the client receives the response, improving perceived performance.
@@ -695,9 +708,13 @@ export const putResources = asyncHandler(async (req, res, next) => {
     );
 
     // Update the curriculum by appending new resources to the existing array of resources.
-    const curriculum = await Curriculum.findByIdAndUpdate(curriculumId, {
-      $push: { resources: { $each: resources } },
-    });
+    const curriculum = await Curriculum.findByIdAndUpdate(
+      curriculumId,
+      {
+        $push: { resources: { $each: resources } },
+      },
+      { new: true }
+    );
   });
 
   // Check if the response headers have not been sent yet.
@@ -890,7 +907,7 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
   const resources = curriculum.resources
     ? await getResoursces(curriculum.resources)
     : undefined;
-  const subtitles = curriculum.video.subtitles
+  const subtitles = curriculum.video?.subtitles
     ? await getSubitles(curriculum.video.subtitles)
     : undefined;
 
@@ -909,11 +926,7 @@ export const getCurriculum = asyncHandler(async (req, res, next) => {
       "r",
       "60"
     );
-    const { accountSasTokenUrl: subtitlesUrl } = await generateSASUrl(
-      video.subtitles.blobName,
-      "r",
-      "60"
-    );
+
     // Send a response containing video details
     return video
       ? res.status(200).json({

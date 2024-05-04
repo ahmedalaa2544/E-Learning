@@ -73,10 +73,11 @@ export const generateHLSManifestAndUpload = async (
   // Step 1: Generate HLS Manifest
   return new Promise(async (resolve, reject) => {
     const directory = blobName + "\\HLS";
+    console.log(`tempDirPath : ${tempDirPath}`);
 
     const outputManifestPath = `${tempDirPath}\\manifest.m3u8`;
     const outputSegmentPath = `${tempDirPath}\\segment%d.ts`;
-    let manifestURL;
+    let url;
     let segmentCount;
     ffmpeg(inputVideoPath)
       .outputOptions([
@@ -102,7 +103,7 @@ export const generateHLSManifestAndUpload = async (
           100
         );
         console.log(fileUrl);
-        manifestURL = accountSasTokenUrl;
+        url = accountSasTokenUrl;
         // Create a BlockBlobClient using the SAS URL
         const blockBlobClient = new BlockBlobClient(accountSasTokenUrl);
 
@@ -152,7 +153,7 @@ export const generateHLSManifestAndUpload = async (
         }
         console.log(segmentCount);
 
-        resolve(manifestURL);
+        resolve(url);
       })
       .on("error", (err) => {
         reject(err);
@@ -169,9 +170,10 @@ export const generateVttAndUpload = async (
   thumbnailInterval
 ) => {
   return new Promise(async (resolve, reject) => {
+    console.log(`tempDirPath : ${tempDirPath}`);
     const directory = blobName + "\\thumbnails";
     const outputThumbnailstPath = `${tempDirPath}\\thumbnails.vtt`;
-    const outputThumbnailsSegmentPath = `${tempDirPath}/thumb%0${padding}d.jpg`;
+    const outputThumbnailsSegmentPath = `${tempDirPath}\\thumb%0${padding}d.jpg`;
     let manifestURL;
     let segmentCount;
     ffmpeg(inputVideoPath)
