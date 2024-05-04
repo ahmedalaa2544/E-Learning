@@ -5,7 +5,6 @@ import cartModel from "../../../DB/model/cart.model.js";
 import { asyncHandler } from "../../utils/asyncHandling.js";
 import Stripe from "stripe";
 import userModel from "../../../DB/model/user.model.js";
-import couponModel from "../../../DB/model/coupon.model.js";
 import workshopModel from "../../../DB/model/workshop.model.js";
 import { getIo } from "../../utils/server.js";
 import chatModel from "../../../DB/model/chat.model.js";
@@ -19,29 +18,12 @@ export const createOrder = asyncHandler(async (req, res, next) => {
   if (cart.course.length < 1) {
     return next(new Error("Cart is empty", { cause: 404 }));
   }
-  let checkCoupon;
-  // Check Coupon
-  if (cart.coupon) {
-    checkCoupon = await couponModel.findOne({
-      _id: cart.coupon,
-      expireAt: { $gt: Date.now() },
-    });
-    if (checkCoupon.name == undefined) {
-      return next(new Error("inVaild Coupon", { cause: 404 }));
-    }
-  }
+
   let orderCourses = [];
   let orderPrice = 0;
 
   //check courses
   for (let i = 0; i < cart.course.length; i++) {
-    if (checkCoupon) {
-      if (checkCoupon.courseId.toString() != cart.course[i].courseId) {
-        return next(
-          new Error(`coupon not vaild to this ${cart.course[i].name} course`)
-        );
-      }
-    }
     const course = courseModel.findById(cart.course[i].courseId);
     if (!course) {
       return next(
@@ -74,13 +56,6 @@ export const createOrder = asyncHandler(async (req, res, next) => {
 
   //Payment
   const stripe = new Stripe(process.env.STRIPE_KEY);
-  let existCoupon;
-  if (checkCoupon?.name !== undefined) {
-    existCoupon = await stripe.coupons.create({
-      percent_off: checkCoupon.discount,
-      duration: "once",
-    });
-  }
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
@@ -101,7 +76,6 @@ export const createOrder = asyncHandler(async (req, res, next) => {
         quantity: 1,
       };
     }),
-    discounts: existCoupon ? [{ coupon: existCoupon.id }] : [],
   });
 
   return res.status(200).json({ message: "Done", result: session.url, order });

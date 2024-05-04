@@ -59,18 +59,3 @@ export const getCoupons = asyncHandler(async (req, res, next) => {
 
   return res.status(200).json({ message: "Done", coupon });
 });
-
-export const ApplyCoupon = asyncHandler(async (req, res, next) => {
-  const { workId } = req.params;
-  const coupon = await couponModel.findOne({ name: req.params.coupon });
-  if (coupon?.courseId != workId) {
-    return next(new Error("Coupon Not Vaild To This Course", { cause: 400 }));
-  }
-  const currentTimestamp = new Date().getTime();
-  // Check if the coupon has expired
-  if (currentTimestamp > coupon.expireAt) {
-    return next(new Error("Coupon has Expired", { cause: 400 }));
-  }
-  const discount = coupon.discount;
-  return res.status(200).json({ message: "Done", discount });
-});
