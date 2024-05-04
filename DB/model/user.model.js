@@ -78,6 +78,7 @@ const userSchmea = new Schema(
     forgetCode: String,
     activationCode: String,
     clicked: { type: Number, default: 0 },
+    RefundedBalence: { type: Number, default: 0 },
     totalPaidOut: { type: Number, default: 0 },
     currentBalance: { type: Number, default: 0 },
     totalRevenue: { type: Number, default: 0 },
