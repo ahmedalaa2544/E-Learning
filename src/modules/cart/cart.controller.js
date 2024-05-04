@@ -5,17 +5,24 @@ import courseModel from "../../../DB/model/course.model.js";
 import workshopModel from "../../../DB/model/workshop.model.js";
 import couponModel from "../../../DB/model/coupon.model.js";
 
-export const addToCart = asyncHandler(async (req, res, next) => {
-  // check existence course
-  const course = await courseModel.findById(req.params.courseId);
-  const workshop = await workshopModel.findById(req.params.courseId);
-  if (!(course || workshop)) {
-    return next(new Error("Course not found", { cause: 404 }));
+export const AddToCart = asyncHandler(async (req, res, next) => {
+  const { workId } = req.params;
+  const { coupon } = req.query;
+  let course;
+  if (req.query.type == "course") {
+    course = await courseModel.findById(workId);
   }
 
+  if (req.query.type == "workshop") {
+    course = await workshopModel.findById(workId);
+  }
+
+  if (!course) {
+    return next(new Error("Course not found", { cause: 404 }));
+  }
   // check if user bought this course before
   const user = await userModel.findById(req.user.id);
-  if (user.coursesBought.includes(req.params.courseId)) {
+  if (user.coursesBought.includes(workId)) {
     return next(
       new Error("U already Bought this course before", { cause: 400 })
     );
@@ -24,11 +31,25 @@ export const addToCart = asyncHandler(async (req, res, next) => {
   // check course in cart
   const checkCourseInCart = await cartModel.findOne({
     user: req.user.id,
-    "course.courseId": req.params.courseId,
+    "course.courseId": workId,
   });
 
   if (checkCourseInCart) {
     return next(new Error("Course already exists in Ur Cart", { cause: 404 }));
+  }
+
+  let couponPrice;
+  if (coupon) {
+    const coupon = await couponModel.findOne({ name: req.query.coupon });
+    if (coupon?.courseId != workId) {
+      return next(new Error("Coupon Not Vaild To This Course", { cause: 400 }));
+    }
+    const currentTimestamp = new Date().getTime();
+    // Check if the coupon has expired
+    if (currentTimestamp > coupon.expireAt) {
+      return next(new Error("Coupon has Expired", { cause: 400 }));
+    }
+    couponPrice = course.price - (coupon.discount * course.price) / 100;
   }
 
   // add course to cart
@@ -37,14 +58,15 @@ export const addToCart = asyncHandler(async (req, res, next) => {
     {
       $push: {
         course: {
-          courseId: req.params.courseId,
-          price: course ? course.price : workshop.price,
-          name: course ? course.title : workshop.title,
+          courseId: workId,
+          price: coupon ? couponPrice : course.price,
+          name: course.title,
         },
       },
     },
     { new: true }
   );
+
   // response
   return res.status(201).json({ message: "Done", cart });
 });
@@ -70,54 +92,17 @@ export const removeFromCart = asyncHandler(async (req, res, next) => {
   return res.status(200).json({ message: "Done" });
 });
 
-export const addCoupon = asyncHandler(async (req, res, next) => {
-  const chcekCoupon = await couponModel.findOne({ name: req.params.name });
-  if (!chcekCoupon) {
-    return next(new Error("Coupon not found", { cause: 404 }));
-  }
-
-  const currentTimestamp = new Date().getTime();
-
-  // Check if the coupon has expired
-  if (currentTimestamp > chcekCoupon.expireAt) {
-    return next(new Error("Coupon has Expired", { cause: 400 }));
-  }
-
-  const cart = await cartModel.findOneAndUpdate(
-    { user: req.user.id },
-    {
-      coupon: chcekCoupon._id,
-    },
-    { new: true }
-  );
-  // response
-  return res.status(200).json({ message: "Done", cart });
-});
-
-export const delCoupon = asyncHandler(async (req, res, next) => {
-  const cart = await cartModel.findOneAndUpdate(
-    { user: req.user.id },
-    { $unset: { coupon: "" } },
-    { new: true }
-  );
-  // response
-  return res.status(200).json({ message: "Done", cart });
-});
-
 export const getCart = asyncHandler(async (req, res) => {
   //get courses
-  const { course, coupon } = await cartModel
-    .findOne({ user: req.user.id })
-    .populate({ path: "coupon" })
-    .populate({
-      path: "course.courseId",
-      model: "Course",
-      populate: {
-        path: "createdBy",
-        select: "userName",
-      },
-      select: "coverImageUrl",
-    });
+  const { course } = await cartModel.findOne({ user: req.user.id }).populate({
+    path: "course.courseId",
+    model: "Course",
+    populate: {
+      path: "createdBy",
+      select: "userName",
+    },
+    select: "coverImageUrl",
+  });
 
   const Fcourses = course
     .filter((item) => item.courseId) // Filter out items where courseId is null or undefined
@@ -130,18 +115,15 @@ export const getCart = asyncHandler(async (req, res) => {
     }));
 
   if (course.length !== Fcourses.length) {
-    const workshop = await cartModel
-      .findOne({ user: req.user.id })
-      .populate({ path: "coupon" })
-      .populate({
-        path: "course.courseId",
-        model: "Workshop",
-        populate: {
-          path: "instructor",
-          select: "userName",
-        },
-        select: "coverImageUrl",
-      });
+    const workshop = await cartModel.findOne({ user: req.user.id }).populate({
+      path: "course.courseId",
+      model: "Workshop",
+      populate: {
+        path: "instructor",
+        select: "userName",
+      },
+      select: "coverImageUrl",
+    });
 
     const Scourses = workshop.course
       .filter((item) => item.courseId) // Filter out items where courseId is null or undefined
@@ -155,7 +137,7 @@ export const getCart = asyncHandler(async (req, res) => {
 
     const courses = Fcourses.concat(Scourses);
 
-    return res.status(200).json({ message: "Done", courses, coupon });
+    return res.status(200).json({ message: "Done", courses });
   }
-  return res.status(200).json({ message: "Done", courses: Fcourses, coupon });
+  return res.status(200).json({ message: "Done", courses: Fcourses });
 });
