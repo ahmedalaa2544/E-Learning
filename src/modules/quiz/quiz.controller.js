@@ -1149,7 +1149,7 @@ export const allowToReturnQuiz = asyncHandler(async (req, res, next) => {
   }).select("student course -_id");
 
   // If the quiz was not already allowed to return results, notify students
-  if (true || !quiz.allowedToReturn) {
+  if (!quiz.allowedToReturn) {
     const quizTitle = req.curriculum.title; // Title of the quiz's curriculum
     const courseTitle = req.course.title; // Title of the course associated with the curriculum
 

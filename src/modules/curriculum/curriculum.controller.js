@@ -10,8 +10,8 @@ import Progress from "../../../DB/model/progress.model.js";
 import Student from "../../../DB/model/student.model.js";
 import notificationModel from "../../../DB/model/notification.model.js";
 import { getIo } from "../../utils/server.js";
+import webpush from "web-push";
 import { getResoursces, getSubitles } from "../../utils/curriculum.js";
-
 import mongoose from "mongoose";
 import {
   uploadVideo,
