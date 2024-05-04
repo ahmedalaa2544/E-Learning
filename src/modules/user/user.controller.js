@@ -441,9 +441,69 @@ export const order = asyncHandler(async (req, res, next) => {
     user: req.user.id,
     status: { $in: ["Paid", "Refunded"] },
   });
+  let currentBalance = req.user.RefundedBalence;
+  let spent = 0;
+  orders.forEach((order) => {
+    if (order.status == "Paid") {
+      spent += order.price;
+    }
+    if (order.status == "Refunded") {
+      spent -= order.price;
+    }
+  });
 
   // response
-  return res.status(200).json({ message: "Done", orders });
+  return res
+    .status(200)
+    .json({ message: "Done", orders, spent, currentBalance });
+});
+
+export const refundOrder = asyncHandler(async (req, res, next) => {
+  const { orderId } = req.params;
+  const user = await userModel.findById(req.user.id);
+  const order = await orderModel.findById(orderId);
+
+  const now = new Date();
+  const lessThan3DaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  if (order.createdAt < lessThan3DaysAgo) {
+    return next(
+      new Error(
+        "Refund request denied, Purchases older than 3 days are ineligible"
+      )
+    );
+  }
+  let courses = [];
+
+  order.courses.forEach((c) => {
+    if (!user.coursesBought.includes(c.courseId)) {
+      user.RefundedBalence -= order.price;
+      return next(new Error(`You refund This ${c.name} Course Before!`));
+    }
+    courses.push(c.courseId);
+  });
+
+  courses.forEach(async (c) => {
+    const checkCourse = await courseModel.findByIdAndUpdate(
+      { _id: c },
+      { $inc: { numberOfStudents: -1 } }
+    );
+    if (!checkCourse) {
+      await workshopModel.findByIdAndUpdate(
+        { _id: c },
+        { $inc: { numberOfStudents: -1 } }
+      );
+    }
+  });
+
+  order.status = "Refunded";
+  order.save();
+  user.RefundedBalence += order.price;
+  user.coursesBought = user.coursesBought.filter(
+    (course) => !courses.find((c) => c.toString() === course.toString())
+  );
+  await user.save();
+
+  return res.status(200).json({ message: "Done" });
 });
 
 export const refund = asyncHandler(async (req, res, next) => {
@@ -459,11 +519,11 @@ export const refund = asyncHandler(async (req, res, next) => {
     return next(new Error("You Did Not Buy This Course", { cause: 404 }));
   }
   const now = new Date();
-  const lessThan30DaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  const lessThan3DaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
   const order = await orderModel.findOne({
     user: req.user.id,
     status: "Paid",
-    createdAt: { $gt: lessThan30DaysAgo },
+    createdAt: { $gt: lessThan3DaysAgo },
     "courses.courseId": courseId,
   });
   if (order) {
@@ -483,6 +543,8 @@ export const refund = asyncHandler(async (req, res, next) => {
       ],
       price: course ? course.price : workShop.price,
     });
+    req.user.RefundedBalence += order.price;
+
     course
       ? await courseModel.updateOne(
           { _id: courseId },

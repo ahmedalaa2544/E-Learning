@@ -44,6 +44,8 @@ router.get("/revenue", isAuth, userController.revenue);
 
 router.get("/analysis", isAuth, userController.detailsRevenue);
 
+router.patch("/refund-order/:orderId", isAuth, userController.refundOrder);
+
 router.get("/order", isAuth, userController.order);
 
 router.patch(
