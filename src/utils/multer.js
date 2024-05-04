@@ -22,8 +22,7 @@ export const fileUpload = (filterArray) => {
       file.fieldname == "subtitles" && file.mimetype != "application/x-subrip";
     const allowAnyResources = file.fieldname == "resources";
     if (
-      !allowAnyResources ||
-      invalidSubtitlesFormat ||
+      (!allowAnyResources && invalidSubtitlesFormat) ||
       !filterArray.includes(file.mimetype)
     ) {
       return cb(new Error("inVaild Format"), false);
