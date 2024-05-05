@@ -11,6 +11,7 @@ import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import {
   compressionFile,
+  v9Compression,
   generateHLSManifestAndUpload,
   generateVttAndUpload,
   generateSRTAndUpload,
@@ -159,14 +160,14 @@ const upload = async (
           if (compress) {
             // Generate a temporary file path using a unique identifier and the specified file extension
             const fileTempPath = `${tempDirPath}\\${uuidv4()}.${fileExtension}`;
-
-            // //
             // // Compress the input file and get the output file name
             // outputFileName = await compressionFile(
             //   inputFilePath,
             //   fileTempPath,
             //   type
             // );
+            // outputFileName = await v9Compression(inputFilePath, fileTempPath);
+            console.log(outputFileName);
           }
           if (generateVtt) {
             const inputVideoPath = outputFileName;

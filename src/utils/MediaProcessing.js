@@ -63,6 +63,49 @@ export const compressionFile = (inputFileName, outputFileName, type) => {
     }
   });
 };
+
+export const v9Compression = (inputFileName, outputFileName) => {
+  return new Promise(async (resolve, reject) => {
+    // Check if the compression type is "video"
+    console.log("reach v9 compressiion");
+    ffmpeg(inputFileName)
+      .videoCodec("libvpx-vp9") // Set VP9 codec
+      .outputOptions("-deadline best") // Set encoding speed
+      .outputOptions("-quality good") // Set encoding quality
+      // .output(outputFileName) // Set output file path
+      .on("end", () => {
+        // Resolve the Promise with the path of the compressed file when the compression is complete
+        resolve(outputFileName);
+      })
+      .on("error", (err) => {
+        // Reject the Promise with an error if the compression process encounters an error
+        console.error(`Error: ${err}`);
+        reject(err);
+      })
+      .save(outputFileName); // Save the compressed file to the specified output path
+    // If the compression type is "image"
+  });
+};
+
+export const aV1Compression = (inputFileName, outputFileName) => {
+  return new Promise(async (resolve, reject) => {
+    // Check if the compression type is "video"
+    console.log("reach v9 compressiion");
+    ffmpeg(inputFileName)
+      .videoCodec("libaom-av1") // Set AV1 codec
+      .on("end", () => {
+        // Resolve the Promise with the path of the compressed file when the compression is complete
+        resolve(outputFileName);
+      })
+      .on("error", (err) => {
+        // Reject the Promise with an error if the compression process encounters an error
+        console.error(`Error: ${err}`);
+        reject(err);
+      })
+      .save(outputFileName); // Save the compressed file to the specified output path
+    // If the compression type is "image"
+  });
+};
 export const generateHLSManifestAndUpload = async (
   blobName,
   tempDirPath,

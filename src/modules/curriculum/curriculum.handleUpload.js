@@ -55,7 +55,7 @@ export const uploadVideo = async (
           blobVideoName,
           "video",
           blobVideoExtension,
-          false,
+          true,
           (generateHLS = generateHLS),
           (generateVtt = generateVtt)
         );
