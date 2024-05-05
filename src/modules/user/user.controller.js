@@ -287,7 +287,7 @@ export const revenue = asyncHandler(async (req, res, next) => {
   });
 
   const user = await userModel.findById(req.user.id);
-  user.currentBalance = totalRevenue - user.totalPaidOut * 1.3;
+  user.currentBalance = totalRevenue - (user.totalPaidOut * 10) / 7;
   user.totalNumberOfStudents = totalNumberOfStudents;
   user.totalRevenue = totalRevenue;
   user.save();
@@ -581,7 +581,7 @@ export const withdraw = asyncHandler(async (req, res, next) => {
   if (user.currentBalance < 200) {
     return next(new Error("Minimum 200EGP To Withdraw"));
   }
-  user.totalPaidOut += user.currentBalance - user.currentBalance * 0.3;
+  user.totalPaidOut += user.currentBalance * 0.7;
   user.currentBalance = 0;
   user.save();
   return res.status(200).json({ message: "Done" });
