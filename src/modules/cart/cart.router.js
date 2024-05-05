@@ -5,12 +5,7 @@ import * as validators from "./cart.validation.js";
 import * as cartController from "./cart.controller.js";
 import isAuth from "../../middleware/authntication.middleware.js";
 
-router.patch(
-  "/add/:courseId",
-  isAuth,
-  validation(validators.courseId),
-  cartController.addToCart
-);
+router.patch("/:workId", isAuth, cartController.AddToCart);
 
 router.patch(
   "/remove/:courseId",
@@ -18,15 +13,6 @@ router.patch(
   validation(validators.courseId),
   cartController.removeFromCart
 );
-
-router.put(
-  "/coupon/:name",
-  isAuth,
-  validation(validators.couponSchema),
-  cartController.addCoupon
-);
-
-router.delete("/coupon", isAuth, cartController.delCoupon);
 
 router.get("/", isAuth, cartController.getCart);
 

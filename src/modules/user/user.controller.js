@@ -266,6 +266,18 @@ export const revenue = asyncHandler(async (req, res, next) => {
     revenue: item.revenue,
   }));
 
+  const sOrders = await orderModel.find({
+    "courses.courseId": { $in: Fcourses },
+    status: "Paid",
+  });
+  const fOrders = await orderModel.find({
+    "courses.courseId": { $in: Fcourses },
+    status: "Refunded",
+  });
+
+  let successRate = Math.round(
+    (sOrders.length / (sOrders.length + fOrders.length)) * 100
+  );
   let totalNumberOfStudents = 0;
   let totalRevenue = 0;
 
@@ -275,22 +287,19 @@ export const revenue = asyncHandler(async (req, res, next) => {
   });
 
   const user = await userModel.findById(req.user.id);
-  user.currentBalance = totalRevenue - user.totalPaidOut;
+  user.currentBalance = totalRevenue - (user.totalPaidOut * 10) / 7;
   user.totalNumberOfStudents = totalNumberOfStudents;
   user.totalRevenue = totalRevenue;
   user.save();
 
-  const currentBalance = user.currentBalance;
+  const currentBalance = user.currentBalance < 0 ? 0 : user.currentBalance;
   const totalPaidOut = user.totalPaidOut;
 
   //chart revenue per day
   const now = new Date();
   const lastmonth = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const cc = await courseModel.find({ createdBy: req.user.id });
-  const workShop = await workshopModel.find({ instructor: req.user.id });
-  const ccs = cc.concat(workShop);
   const salesLastMonth = await orderModel.find({
-    "courses.courseId": { $in: ccs },
+    "courses.courseId": { $in: Fcourses },
     status: "Paid",
     createdAt: { $gt: lastmonth },
   });
@@ -320,6 +329,7 @@ export const revenue = asyncHandler(async (req, res, next) => {
     currentBalance,
     totalPaidOut,
     revenuePerDay,
+    successRate,
   });
 });
 
@@ -571,7 +581,7 @@ export const withdraw = asyncHandler(async (req, res, next) => {
   if (user.currentBalance < 200) {
     return next(new Error("Minimum 200EGP To Withdraw"));
   }
-  user.totalPaidOut += user.currentBalance;
+  user.totalPaidOut += user.currentBalance * 0.7;
   user.currentBalance = 0;
   user.save();
   return res.status(200).json({ message: "Done" });
