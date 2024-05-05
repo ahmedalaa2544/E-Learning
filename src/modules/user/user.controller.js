@@ -287,12 +287,12 @@ export const revenue = asyncHandler(async (req, res, next) => {
   });
 
   const user = await userModel.findById(req.user.id);
-  // user.currentBalance = totalRevenue - user.totalPaidOut;
+  user.currentBalance = totalRevenue - user.totalPaidOut * 1.3;
   user.totalNumberOfStudents = totalNumberOfStudents;
   user.totalRevenue = totalRevenue;
   user.save();
 
-  const currentBalance = user.currentBalance;
+  const currentBalance = user.currentBalance < 0 ? 0 : user.currentBalance;
   const totalPaidOut = user.totalPaidOut;
 
   //chart revenue per day
