@@ -31,16 +31,6 @@ const authorization = (accessRoles = []) => {
       return next(new Error("Course not found"), { cause: 404 });
     }
 
-    // Retrieve the chapter from the database.
-    const chapter = await Chapter.findById(chapterId);
-    // Attach the chapter to the request object for potential use in downstream middleware.
-    req.chapter = chapter;
-
-    // If the chapter does not exist, trigger a 404 Not Found error.
-    if (!chapter) {
-      return next(new Error("Chapter not found"), { cause: 404 });
-    }
-
     // Check if the user is an instructor or the course creator if "Instructor" is in the access roles.
     if (accessRoles.includes("Instructor")) {
       var isInstructor = (await Instructor.findOne({
