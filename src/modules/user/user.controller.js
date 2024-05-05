@@ -287,7 +287,7 @@ export const revenue = asyncHandler(async (req, res, next) => {
   });
 
   const user = await userModel.findById(req.user.id);
-  user.currentBalance = totalRevenue - user.totalPaidOut;
+  // user.currentBalance = totalRevenue - user.totalPaidOut;
   user.totalNumberOfStudents = totalNumberOfStudents;
   user.totalRevenue = totalRevenue;
   user.save();
