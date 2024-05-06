@@ -82,6 +82,7 @@ const userSchmea = new Schema(
     totalPaidOut: { type: Number, default: 0 },
     currentBalance: { type: Number, default: 0 },
     totalRevenue: { type: Number, default: 0 },
+    transactions: [{ amount: Number, date: String }],
     totalNumberOfStudents: { type: Number, default: 0 },
     totalNumberOfCourses: { type: Number, default: 0 },
     unreadNotifyCount: Number,
