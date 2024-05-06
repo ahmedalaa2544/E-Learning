@@ -330,6 +330,9 @@ export const revenue = asyncHandler(async (req, res, next) => {
     totalPaidOut,
     revenuePerDay,
     successRate,
+    transactions: req.user.transactions
+      ? req.user.transactions.reverse().slice(0, 5)
+      : [],
   });
 });
 
@@ -581,7 +584,12 @@ export const withdraw = asyncHandler(async (req, res, next) => {
   if (user.currentBalance < 200) {
     return next(new Error("Minimum 200EGP To Withdraw"));
   }
-  user.totalPaidOut += user.currentBalance * 0.7;
+  const transaction = user.currentBalance * 0.7;
+  user.transactions.push({
+    amount: transaction,
+    date: Date.now(),
+  });
+  user.totalPaidOut += transaction;
   user.currentBalance = 0;
   user.save();
   return res.status(200).json({ message: "Done" });
