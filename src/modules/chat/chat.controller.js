@@ -36,6 +36,7 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
     const blobMediaExtension = req.file.originalname.split(".").pop();
     // Define the path for the promotion media in the user's course directory.
     const blobMediaName = `Users\\${req.user.userName}\\ChatMedia\\${dateOfPublish}.${blobMediaExtension}`;
+    const url = `https://elearningtest123.blob.core.windows.net/upload/Users/${req.user.userName}/ChatMedia/${dateOfPublish}.${blobMediaExtension}`;
     // Upload media and obtain its URL.
     let typeOfMedia = req.file.mimetype.split("/")[0];
     const mediaUrl = await upload(
@@ -50,7 +51,7 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
       from: req.user.id,
       to: chatId,
       media: {
-        url: mediaUrl,
+        url: url,
         size: req.file.size,
         name: req.file.originalname,
         typeOfMedia,
@@ -63,7 +64,7 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
         from: req.user.id,
         to: chatId,
         media: {
-          url: mediaUrl,
+          url: url,
           size: req.file.size,
           name: req.file.originalname,
           typeOfMedia,
