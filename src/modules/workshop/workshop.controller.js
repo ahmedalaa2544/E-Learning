@@ -57,6 +57,7 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
   // check workshop existence
   const workshop = await workshopModel.findById(workshopId);
   if (!workshop) return next(new Error("Workshop Not found!", { cause: 404 }));
+  let chat = await chatModel.findOne({ name: workshop.title, type: "group" });
 
   // only logged instructor can access workshop
   if (!workshop.instructor.equals(req.user._id))
@@ -69,6 +70,9 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
   // update title if attached
   if (title) {
     workshop.title = title;
+    if (chat) {
+      chat.name = title;
+    }
   }
 
   // update subtitle if attached
@@ -183,14 +187,14 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
       blobImageExtension
     );
 
-    // save changes in DB
-    await chatModel.findOneAndUpdate(
-      { name: workshop.title, type: "group" },
-      { pic: promotionImageUrl }
-    );
     workshop.promotionImage.blobName = blobImageName;
     workshop.promotionImage.url = promotionImageUrl;
+    if (chat) {
+      chat.pic = promotionImageUrl;
+    }
   }
+
+  await chat.save();
 
   // update promotionVideo if attached
   if (req.files?.promotionVideo) {
