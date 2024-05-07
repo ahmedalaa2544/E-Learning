@@ -55,7 +55,6 @@ const authorization = (accessRoles = []) => {
         ? true
         : false;
     }
-    // console.log(student);
     // Deny access if the user is neither an instructor nor the creator nor student in the course.
     if (!isInstructor && !isCreator && !isStudent) {
       return next(new Error("You do not have access"), { cause: 403 });

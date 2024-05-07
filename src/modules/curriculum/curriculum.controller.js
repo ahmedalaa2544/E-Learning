@@ -36,7 +36,10 @@ export const createVideo = asyncHandler(async (req, res, next) => {
   // Extract parameters from the request
   const { courseId, chapterId } = req.params;
   const { title, description } = req.body;
-
+  console.log(req.files.video);
+  if (!req.files.video) {
+    return next(new Error("You should attach video to upload"), { cause: 403 });
+  }
   // Generate a unique videoId using MongoDB ObjectId
   const videoId = new mongoose.Types.ObjectId();
 

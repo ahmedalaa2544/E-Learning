@@ -48,7 +48,7 @@ export const uploadVideo = async (
         blobVideoName = `${curriculumDirectory}\\Video\\${
           files.video[0].originalname
         }_${uuidv4()}.${blobVideoExtension}`;
-
+        console.log(`from handle upload ${files.video[0].path}`);
         // Upload the video to Azure Blob Storage and get the video URL
         videoUrl = await upload(
           files.video[0].path,

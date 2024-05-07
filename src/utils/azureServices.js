@@ -10,8 +10,6 @@ import temp from "temp";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import {
-  compressionFile,
-  v9Compression,
   generateHLSManifestAndUpload,
   generateVttAndUpload,
   generateSRTAndUpload,
@@ -20,7 +18,7 @@ import ffmpeg from "fluent-ffmpeg";
 import ffmpegStatic from "ffmpeg-static";
 ffmpeg.setFfmpegPath(ffmpegStatic);
 import path from "path";
-
+import * as compresoor from "./compression.js";
 /**
  * Creates a new container in Azure Blob Storage or retrieves an existing one.
  *
@@ -160,14 +158,20 @@ const upload = async (
           if (compress) {
             // Generate a temporary file path using a unique identifier and the specified file extension
             const fileTempPath = `${tempDirPath}\\${uuidv4()}.${fileExtension}`;
-            // // Compress the input file and get the output file name
-            // outputFileName = await compressionFile(
-            //   inputFilePath,
-            //   fileTempPath,
-            //   type
-            // );
-            // outputFileName = await v9Compression(inputFilePath, fileTempPath);
-            console.log(outputFileName);
+            // Compress the input file and get the output file name
+            if (type === "video") {
+              const compressor = new compresoor.h_264_AACCompression(
+                inputFilePath,
+                fileTempPath
+              );
+              outputFileName = await compressor.compress();
+            } else if (type === "image") {
+              const compressor = new compresoor.imageCompression(
+                inputFilePath,
+                fileTempPath
+              );
+              outputFileName = await compressor.compress();
+            }
           }
           if (generateVtt) {
             const inputVideoPath = outputFileName;
