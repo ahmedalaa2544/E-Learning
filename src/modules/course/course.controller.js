@@ -102,6 +102,7 @@ export const editCourse = asyncHandler(async (req, res, next) => {
   //
   // Check if the request includes a query parameter for uploading a cover image.
   if (req.query.upload === "coverImage") {
+    console.log("reach upload cover image");
     // Check if a cover image file is provided in the request.
     if (req.files?.coverImage) {
       // Extract the extension for the cover image.

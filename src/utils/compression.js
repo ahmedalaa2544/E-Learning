@@ -142,11 +142,11 @@ export class imageCompression extends compressionStrategy {
   compress() {
     return new Promise(async (resolve, reject) => {
       const width = 640; // Set the target width for the compressed image
-      ffmpeg(inputFileName)
-        .output(outputFileName) // Specify the output path for the compressed image
+      ffmpeg(this.inputFileName)
+        .output(this.outputFileName) // Specify the output path for the compressed image
         .size(`${width}x?`) // Set the width while maintaining the original aspect ratio
         .on("end", () => {
-          resolve(outputFileName);
+          resolve(this.outputFileName);
         })
         .on("error", (err) => {
           // Reject the Promise with an error if the compression process encounters an error

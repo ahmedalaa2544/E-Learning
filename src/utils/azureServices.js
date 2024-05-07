@@ -160,11 +160,11 @@ const upload = async (
             const fileTempPath = `${tempDirPath}\\${uuidv4()}.${fileExtension}`;
             // Compress the input file and get the output file name
             if (type === "video") {
-              const compressor = new compresoor.h_264_AACCompression(
-                inputFilePath,
-                fileTempPath
-              );
-              outputFileName = await compressor.compress();
+              // const compressor = new compresoor.h_264_AACCompression(
+              //   inputFilePath,
+              //   fileTempPath
+              // );
+              // outputFileName = await compressor.compress();
             } else if (type === "image") {
               const compressor = new compresoor.imageCompression(
                 inputFilePath,
