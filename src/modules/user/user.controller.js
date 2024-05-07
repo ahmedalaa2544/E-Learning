@@ -12,6 +12,7 @@ import { ConfirmTemp } from "../../utils/htmlTemps.js";
 import crypto from "crypto";
 import sendEmail from "../../utils/sentEmail.js";
 import notificationModel from "../../../DB/model/notification.model.js";
+import cartModel from "../../../DB/model/cart.model.js";
 import View from "../../../DB/model/view.model.js";
 import Instructor from "../../../DB/model/instructor.model.js";
 import Student from "../../../DB/model/student.model.js";
@@ -39,7 +40,12 @@ export const getUser = asyncHandler(async (req, res, next) => {
     });
     newUser.unreadNotifyCount = count;
   }
-  return res.status(200).json({ message: "Done", newUser });
+  const wishlistCount = req.user.wishlist.length;
+  const { course } = await cartModel.findOne({ user: req.user.id });
+  const cartCount = course.length;
+  return res
+    .status(200)
+    .json({ message: "Done", newUser, wishlistCount, cartCount });
 });
 
 export const updateProfile = asyncHandler(async (req, res, next) => {
