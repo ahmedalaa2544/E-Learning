@@ -456,10 +456,13 @@ export const detailsRevenue = asyncHandler(async (req, res, next) => {
 });
 
 export const order = asyncHandler(async (req, res, next) => {
-  const orders = await orderModel.find({
-    user: req.user.id,
-    status: { $in: ["Paid", "Refunded"] },
-  });
+  let orders = await orderModel
+    .find({
+      user: req.user.id,
+      status: { $in: ["Paid", "Refunded"] },
+    })
+    .sort({ updatedAt: -1 });
+
   let currentBalance = req.user.RefundedBalence;
   let spent = 0;
   orders.forEach((order) => {
@@ -467,6 +470,8 @@ export const order = asyncHandler(async (req, res, next) => {
       spent += order.price;
     }
   });
+
+  orders = orders.slice(0, 15);
 
   // response
   return res
