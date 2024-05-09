@@ -190,7 +190,7 @@ export const updateWorkshop = asyncHandler(async (req, res, next) => {
     workshop.promotionImage.blobName = blobImageName;
     workshop.promotionImage.url = promotionImageUrl;
     if (chat) {
-      chat.pic = promotionImageUrl;
+      chat.set("pic", promotionImageUrl);
     }
   }
 
