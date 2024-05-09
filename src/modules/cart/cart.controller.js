@@ -137,7 +137,18 @@ export const getCart = asyncHandler(async (req, res) => {
 
     const courses = Fcourses.concat(Scourses);
 
-    return res.status(200).json({ message: "Done", courses });
+    let totalPrice = 0;
+    courses.forEach((a) => {
+      totalPrice += a.price;
+    });
+
+    return res.status(200).json({ message: "Done", courses, totalPrice });
   }
-  return res.status(200).json({ message: "Done", courses: Fcourses });
+  let totalPrice = 0;
+  Fcourses.forEach((a) => {
+    totalPrice += a.price;
+  });
+  return res
+    .status(200)
+    .json({ message: "Done", courses: Fcourses, totalPrice });
 });
