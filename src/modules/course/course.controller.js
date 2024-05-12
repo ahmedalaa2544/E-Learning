@@ -29,6 +29,7 @@ import webpush from "web-push";
 import searchModel from "../../../DB/model/search.keys.js";
 import userModel from "../../../DB/model/user.model.js";
 import curriculumModel from "../../../DB/model/curriculum.model.js";
+import redis from "ioredis";
 
 /**
  * Create a new course with the provided title.
@@ -39,6 +40,8 @@ import curriculumModel from "../../../DB/model/curriculum.model.js";
  * @returns {Object} - JSON response indicating success or failure.
  */
 export const createCourse = asyncHandler(async (req, res, next) => {
+  const client = await redis.createClient(process.env.REDIS_URL);
+  const color = await client.get("color");
   // Extract title from the request body.
   const { title } = req.body;
 
@@ -64,7 +67,9 @@ export const createCourse = asyncHandler(async (req, res, next) => {
 
   // Return a JSON response based on the success or failure of the operation.
   return createdCourse
-    ? res.status(200).json({ message: "Done", course: createdCourse._doc })
+    ? res
+        .status(200)
+        .json({ message: "Done", course: createdCourse._doc, color })
     : res.status(500).json({ message: "Something went wrong" });
 });
 
