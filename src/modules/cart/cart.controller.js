@@ -1,10 +1,9 @@
 import cartModel from "../../../DB/model/cart.model.js";
-import userModel from "../../../DB/model/user.model.js";
-import { asyncHandler } from "../../utils/asyncHandling.js";
-import courseModel from "../../../DB/model/course.model.js";
-import workshopModel from "../../../DB/model/workshop.model.js";
 import couponModel from "../../../DB/model/coupon.model.js";
-
+import courseModel from "../../../DB/model/course.model.js";
+import userModel from "../../../DB/model/user.model.js";
+import workshopModel from "../../../DB/model/workshop.model.js";
+import { asyncHandler } from "../../utils/asyncHandling.js";
 export const AddToCart = asyncHandler(async (req, res, next) => {
   const { workId } = req.params;
   const { coupon } = req.query;
@@ -137,7 +136,18 @@ export const getCart = asyncHandler(async (req, res) => {
 
     const courses = Fcourses.concat(Scourses);
 
-    return res.status(200).json({ message: "Done", courses });
+    let totalPrice = 0;
+    courses.forEach((a) => {
+      totalPrice += a.price;
+    });
+
+    return res.status(200).json({ message: "Done", courses, totalPrice });
   }
-  return res.status(200).json({ message: "Done", courses: Fcourses });
+  let totalPrice = 0;
+  Fcourses.forEach((a) => {
+    totalPrice += a.price;
+  });
+  return res
+    .status(200)
+    .json({ message: "Done", courses: Fcourses, totalPrice });
 });
