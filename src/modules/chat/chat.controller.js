@@ -1,10 +1,10 @@
+import webpush from "web-push";
 import chatModel from "../../../DB/model/chat.model.js";
 import notificationModel from "../../../DB/model/notification.model.js";
 import userModel from "../../../DB/model/user.model.js";
 import { asyncHandler } from "../../utils/asyncHandling.js";
 import upload from "../../utils/azureServices.js";
 import { getIo } from "../../utils/server.js";
-import webpush from "web-push";
 
 export const sendMsg = asyncHandler(async (req, res, next) => {
   const { message } = req.body;
@@ -73,6 +73,38 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
       });
     chat.messages.status = "delivered";
     await chat.save();
+
+    // add notification
+    let notification = {
+      image: req.user.profilePic.url,
+      title: "New Message",
+      body: `${req.user.userName} sent you a ${typeOfMedia}`,
+      url: `https://e-learning-azure.vercel.app/instructor/messages/${chatId}`,
+    };
+    let notify = await notificationModel.findOneAndUpdate(
+      {
+        user: { $in: destId },
+      },
+      {
+        $push: { notifications: notification },
+      },
+      { new: true }
+    );
+
+    if (!notify) {
+      notify = await notificationModel.create({
+        user: destId[0],
+        notifications: notification,
+      });
+    }
+    notification = notify.notifications.reverse()[0];
+    getIo().to(socketIds).emit("notification", notification);
+    if (destIds[0].popUpId.endpoint) {
+      webpush.sendNotification(
+        destIds[0].popUpId,
+        JSON.stringify(notification)
+      );
+    }
     return res.status(200).json({ message: "Done" });
   }
 
