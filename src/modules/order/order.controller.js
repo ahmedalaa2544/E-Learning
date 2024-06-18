@@ -139,7 +139,10 @@ export const orderWebhook = asyncHandler(async (request, response) => {
       let checkCourse = c ? c : w;
 
       let notification = {
-        image: checkCourse.coverImageUrl || checkCourse.promotionImage.url,
+        image:
+          checkCourse.coverImageUrl ||
+          checkCourse.promotionImage.url ||
+          undefined,
         title: "New Student",
         body: `${user.userName} Enroll Your Course, ${checkCourse.title}`,
         url: `https://e-learning-azure.vercel.app/courseDetails/${order.courses[i].courseId}`,
