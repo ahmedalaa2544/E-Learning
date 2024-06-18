@@ -1,15 +1,15 @@
+import Stripe from "stripe";
+import webpush from "web-push";
+import cartModel from "../../../DB/model/cart.model.js";
+import chatModel from "../../../DB/model/chat.model.js";
+import courseModel from "../../../DB/model/course.model.js";
+import notificationModel from "../../../DB/model/notification.model.js";
 import orderModel from "../../../DB/model/order.model.js";
 import studentModel from "../../../DB/model/student.model.js";
-import courseModel from "../../../DB/model/course.model.js";
-import cartModel from "../../../DB/model/cart.model.js";
-import { asyncHandler } from "../../utils/asyncHandling.js";
-import Stripe from "stripe";
 import userModel from "../../../DB/model/user.model.js";
 import workshopModel from "../../../DB/model/workshop.model.js";
+import { asyncHandler } from "../../utils/asyncHandling.js";
 import { getIo } from "../../utils/server.js";
-import chatModel from "../../../DB/model/chat.model.js";
-import notificationModel from "../../../DB/model/notification.model.js";
-import webpush from "web-push";
 
 //
 export const createOrder = asyncHandler(async (req, res, next) => {
@@ -78,7 +78,7 @@ export const createOrder = asyncHandler(async (req, res, next) => {
     }),
   });
 
-  return res.status(200).json({ message: "Done", result: session.url, order });
+  return res.status(200).json({ message: "Done", result: session.url });
 });
 
 //webhook
