@@ -1,16 +1,17 @@
 import { asyncHandler } from "../../utils/asyncHandling.js";
 import roomModel from "../../../DB/model/room.model.js";
 import workshopModel from "../../../DB/model/workshop.model.js";
+import randomstring from "randomstring";
 import {
   AccessToken,
   RoomServiceClient,
   EgressClient,
   EncodedFileOutput,
   EncodedFileType,
+  AzureBlobUpload,
 } from "livekit-server-sdk";
+// import { AzureBlobUpload } from "livekit-server-sdk/dist/proto/livekit_egress.js";
 
-// import AzureBlobUpload from "livekit-server-sdk";
-import randomstring from "randomstring";
 
 export const createRoom = asyncHandler(async (req, res, next) => {
   // data
@@ -252,7 +253,7 @@ export const recordRoom = asyncHandler(async (req, res, next) => {
 
   const fileOutput = new EncodedFileOutput({
     fileType: EncodedFileType.MP4,
-    filepath: "livekit-demo/room-composite-test.mp4",
+    filepath: `Records\\${roomId}\\room-composite-test.mp4`,
     output: {
       case: "azure",
       value: new AzureBlobUpload({
@@ -267,12 +268,12 @@ export const recordRoom = asyncHandler(async (req, res, next) => {
     room.roomName,
     {
       file: fileOutput,
-    },
-    {
-      layout: "speaker",
-      // uncomment to use your own templates
-      // customBaseUrl: 'https://my-template-url.com',
     }
+    // {
+    // layout: "speaker",
+    // uncomment to use your own templates
+    // customBaseUrl: 'https://my-template-url.com',
+    // }
   );
 
   // send response
