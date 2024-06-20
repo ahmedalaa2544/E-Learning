@@ -1,12 +1,12 @@
 import { Router } from "express";
-const router = Router();
-import * as courseController from "./course.controller.js";
-import { validation } from "../../middleware/validation.js";
-import * as validators from "./course.validation.js";
 import isAuthenticated from "../../middleware/authntication.middleware.js";
-import isAuthorized from "./course.authorization.js";
+import { validation } from "../../middleware/validation.js";
+import { customValidation, fileUpload } from "../../utils/multer.js";
 import chapterRouter from "../chapter/chapter.router.js";
-import { fileUpload, customValidation } from "../../utils/multer.js";
+import isAuthorized from "./course.authorization.js";
+import * as courseController from "./course.controller.js";
+import * as validators from "./course.validation.js";
+const router = Router();
 /**
  * Router for managing chapters within a specific course.
  * Mounted at: /courses/:courseId/chapter
@@ -171,5 +171,7 @@ router.patch(
   validation(validators.deleteCourseSchema),
   courseController.submitCourse
 );
+
+router.get("/show-course/:courseId", courseController.showCourse);
 
 export default router;
