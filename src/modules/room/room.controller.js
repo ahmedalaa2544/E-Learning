@@ -227,7 +227,7 @@ export const deleteRoom = asyncHandler(async (req, res, next) => {
   if (!room) return next(new Error("Room not found!", { cause: 404 }));
 
   // only workshop instructor can delete room
-  const workshop = await workshopModel.findById(room.workshopId);
+  // const workshop = await workshopModel.findById(room.workshopId);
   // if (workshop && !workshop.instructor.equals(req.user._id))
   //   return next(
   //     new Error("Only workshop instructor can delete room", { cause: 405 })
@@ -244,18 +244,38 @@ export const deleteRoom = asyncHandler(async (req, res, next) => {
   await roomService.deleteRoom(room.roomName);
 
   // delelte room from workshop
-  if (workshop) {
-    await workshopModel.findByIdAndUpdate(workshop._id, {
-      $pull: { rooms: roomId },
-    });
-  }
+  // if (workshop) {
+  //   await workshopModel.findByIdAndUpdate(workshop._id, {
+  //     $pull: { rooms: roomId },
+  //   });
+  // }
 
   // delete room from DB
-  await roomModel.findByIdAndDelete(roomId);
+  // await roomModel.findByIdAndDelete(roomId);
 
   return res.status(200).json({
     success: true,
     message: `Room ${room.roomName} Deleted Successfully!`,
+  });
+});
+
+export const stopRecord = asyncHandler(async (req, res, next) => {
+  // recieve data
+  const { recordId } = req.params;
+
+  const egressClient = new EgressClient(
+    process.env.LIVEKIT_WEBSOCKET_URL,
+    process.env.LIVEKIT_API_KEY,
+    process.env.LIVEKIT_SECRET_KEY
+  );
+
+  console.log(recordId);
+  const info = await egressClient.stopEgress(recordId); 
+
+  return res.status(200).json({
+    success: true,
+    message: `Room Stoped Successfully!`,
+    info,
   });
 });
 
@@ -313,13 +333,14 @@ export const recordRoom = asyncHandler(async (req, res, next) => {
     room.roomName,
     {
       file: fileOutput,
+    },
+    {
+      layout: "single-speaker",
+      // uncomment to use your own templates
+      // customBaseUrl: 'https://my-template-url.com',
     }
-    // {
-    // layout: "speaker",
-    // uncomment to use your own templates
-    // customBaseUrl: 'https://my-template-url.com',
-    // }
   );
+  // const info = await egressClient.startRecording(room?.roomName, fileOutput);
 
   // send response
   return res
