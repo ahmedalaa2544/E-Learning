@@ -1,28 +1,34 @@
-import Article from "../../../DB/model/article.model.js";
+import mongoose from "mongoose";
+import webpush from "web-push";
+import {
+  default as Article,
+  default as articleModel,
+} from "../../../DB/model/article.model.js";
 import Chapter from "../../../DB/model/chapter.model.js";
 import commentModel from "../../../DB/model/comment.model.js";
-import Course from "../../../DB/model/course.model.js";
-import Curriculum from "../../../DB/model/curriculum.model.js";
+import {
+  default as Course,
+  default as courseModel,
+} from "../../../DB/model/course.model.js";
+import {
+  default as Curriculum,
+  default as curriculumModel,
+} from "../../../DB/model/curriculum.model.js";
+import instructorModel from "../../../DB/model/instructor.model.js";
+import notificationModel from "../../../DB/model/notification.model.js";
 import Option from "../../../DB/model/option.model.js";
 import Progress from "../../../DB/model/progress.model.js";
 import Question from "../../../DB/model/question.model.js";
 import Quiz from "../../../DB/model/quiz.model.js";
 import ratingModel from "../../../DB/model/rating.model.js";
-import User from "../../../DB/model/user.model.js";
+import searchModel from "../../../DB/model/search.keys.js";
+import {
+  default as User,
+  default as userModel,
+} from "../../../DB/model/user.model.js";
 import Video from "../../../DB/model/video.model.js";
 import View from "../../../DB/model/view.model.js";
 import { asyncHandler } from "../../utils/asyncHandling.js";
-
-import redis from "ioredis";
-import mongoose from "mongoose";
-import webpush from "web-push";
-import articleModel from "../../../DB/model/article.model.js";
-import courseModel from "../../../DB/model/course.model.js";
-import curriculumModel from "../../../DB/model/curriculum.model.js";
-import instructorModel from "../../../DB/model/instructor.model.js";
-import notificationModel from "../../../DB/model/notification.model.js";
-import searchModel from "../../../DB/model/search.keys.js";
-import userModel from "../../../DB/model/user.model.js";
 import upload, {
   deleteBlob,
   deleteDirectory,
@@ -39,8 +45,8 @@ import { getIo } from "../../utils/server.js";
  * @returns {Object} - JSON response indicating success or failure.
  */
 export const createCourse = asyncHandler(async (req, res, next) => {
-  const client = await redis.createClient(process.env.REDIS_URL);
-  const color = await client.get("color");
+  // const client = await redis.createClient(process.env.REDIS_URL);
+  // const color = await client.get("color");
   // Extract title from the request body.
   const { title } = req.body;
 
@@ -66,9 +72,7 @@ export const createCourse = asyncHandler(async (req, res, next) => {
 
   // Return a JSON response based on the success or failure of the operation.
   return createdCourse
-    ? res
-        .status(200)
-        .json({ message: "Done", course: createdCourse._doc, color })
+    ? res.status(200).json({ message: "Done", course: createdCourse._doc })
     : res.status(500).json({ message: "Something went wrong" });
 });
 
