@@ -1,15 +1,21 @@
-import { asyncHandler } from "../../utils/asyncHandling.js";
-import roomModel from "../../../DB/model/room.model.js";
-import workshopModel from "../../../DB/model/workshop.model.js";
-import randomstring from "randomstring";
 import {
   AccessToken,
-  RoomServiceClient,
+  AzureBlobUpload,
   EgressClient,
   EncodedFileOutput,
   EncodedFileType,
-  AzureBlobUpload,
+  RoomServiceClient,
 } from "livekit-server-sdk";
+import randomstring from "randomstring";
+import webpush from "web-push";
+import notificationModel from "../../../DB/model/notification.model.js";
+import roomModel from "../../../DB/model/room.model.js";
+import userModel from "../../../DB/model/user.model.js";
+import workshopModel from "../../../DB/model/workshop.model.js";
+import { asyncHandler } from "../../utils/asyncHandling.js";
+import { getIo } from "../../utils/server.js";
+
+// import { AzureBlobUpload } from "livekit-server-sdk/dist/proto/livekit_egress.js";
 
 export const createRoom = asyncHandler(async (req, res, next) => {
   // data
@@ -17,7 +23,7 @@ export const createRoom = asyncHandler(async (req, res, next) => {
 
   // check workshop existence
   if (workshopId) {
-    const workshop = await workshopModel.findById(workshopId);
+    var workshop = await workshopModel.findById(workshopId);
     if (!workshop)
       return next(new Error("Workshop Not found!", { cause: 404 }));
 
@@ -78,6 +84,47 @@ export const createRoom = asyncHandler(async (req, res, next) => {
     await workshopModel.findByIdAndUpdate(workshopId, {
       $push: { rooms: room._id },
     });
+  }
+
+  ////////////////////////////////////////////////////
+  const students = await userModel.find({
+    coursesBought: { $in: [workshopId] },
+  });
+
+  // add notification
+
+  for (let i = 0; i < students.length; i++) {
+    let notification = {
+      image: workshop.promotionImage.url,
+      title: "New Session",
+      body: `${students[i].userName}, New Session for ${workshop.title} has started!`,
+      url: `https://e-learning-azure.vercel.app/instructor/workshops/${workshopId}/live/${room._id}`,
+    };
+
+    let notify = await notificationModel.findOneAndUpdate(
+      {
+        user: { $in: students[i].id },
+      },
+      {
+        $push: { notifications: notification },
+      },
+      { new: true }
+    );
+
+    if (!notify) {
+      notify = await notificationModel.create({
+        user: students[i].id,
+        notifications: notification,
+      });
+    }
+    notification = notify.notifications.reverse()[0];
+    getIo().to(students[i].socketId).emit("notification", notification);
+    if (students[i].popUpId.endpoint) {
+      webpush.sendNotification(
+        students[i].popUpId,
+        JSON.stringify(notification)
+      );
+    }
   }
 
   // send response

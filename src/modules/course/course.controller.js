@@ -1,35 +1,40 @@
-import { asyncHandler } from "../../utils/asyncHandling.js";
-import Course from "../../../DB/model/course.model.js";
-import Chapter from "../../../DB/model/chapter.model.js";
-import Curriculum from "../../../DB/model/curriculum.model.js";
-import Video from "../../../DB/model/video.model.js";
-import Article from "../../../DB/model/article.model.js";
-import Quiz from "../../../DB/model/quiz.model.js";
-import Question from "../../../DB/model/question.model.js";
-import Option from "../../../DB/model/option.model.js";
-import ratingModel from "../../../DB/model/rating.model.js";
-import commentModel from "../../../DB/model/comment.model.js";
-import User from "../../../DB/model/user.model.js";
-import View from "../../../DB/model/view.model.js";
-import Progress from "../../../DB/model/progress.model.js";
-
-import Similarities from "../../../DB/model/similarities.model.js";
 import mongoose from "mongoose";
+import webpush from "web-push";
+import {
+  default as Article,
+  default as articleModel,
+} from "../../../DB/model/article.model.js";
+import Chapter from "../../../DB/model/chapter.model.js";
+import commentModel from "../../../DB/model/comment.model.js";
+import {
+  default as Course,
+  default as courseModel,
+} from "../../../DB/model/course.model.js";
+import {
+  default as Curriculum,
+  default as curriculumModel,
+} from "../../../DB/model/curriculum.model.js";
+import instructorModel from "../../../DB/model/instructor.model.js";
+import notificationModel from "../../../DB/model/notification.model.js";
+import Option from "../../../DB/model/option.model.js";
+import Progress from "../../../DB/model/progress.model.js";
+import Question from "../../../DB/model/question.model.js";
+import Quiz from "../../../DB/model/quiz.model.js";
+import ratingModel from "../../../DB/model/rating.model.js";
+import searchModel from "../../../DB/model/search.keys.js";
+import {
+  default as User,
+  default as userModel,
+} from "../../../DB/model/user.model.js";
+import Video from "../../../DB/model/video.model.js";
+import View from "../../../DB/model/view.model.js";
+import { asyncHandler } from "../../utils/asyncHandling.js";
 import upload, {
-  deleteDirectory,
   deleteBlob,
+  deleteDirectory,
   generateSASUrl,
 } from "../../utils/azureServices.js";
-import instructorModel from "../../../DB/model/instructor.model.js";
-import fetch from "node-fetch";
-import courseModel from "../../../DB/model/course.model.js";
-import notificationModel from "../../../DB/model/notification.model.js";
 import { getIo } from "../../utils/server.js";
-import webpush from "web-push";
-import searchModel from "../../../DB/model/search.keys.js";
-import userModel from "../../../DB/model/user.model.js";
-import curriculumModel from "../../../DB/model/curriculum.model.js";
-import redis from "ioredis";
 
 /**
  * Create a new course with the provided title.
@@ -40,8 +45,8 @@ import redis from "ioredis";
  * @returns {Object} - JSON response indicating success or failure.
  */
 export const createCourse = asyncHandler(async (req, res, next) => {
-  const client = await redis.createClient(process.env.REDIS_URL);
-  const color = await client.get("color");
+  // const client = await redis.createClient(process.env.REDIS_URL);
+  // const color = await client.get("color");
   // Extract title from the request body.
   const { title } = req.body;
 
@@ -67,9 +72,7 @@ export const createCourse = asyncHandler(async (req, res, next) => {
 
   // Return a JSON response based on the success or failure of the operation.
   return createdCourse
-    ? res
-        .status(200)
-        .json({ message: "Done", course: createdCourse._doc, color })
+    ? res.status(200).json({ message: "Done", course: createdCourse._doc })
     : res.status(500).json({ message: "Something went wrong" });
 });
 
@@ -1087,4 +1090,17 @@ export const getAll = asyncHandler(async (req, res, next) => {
   }
   const courses = await courseModel.find({ status: "Published" });
   return res.status(200).json({ courses });
+});
+
+export const showCourse = asyncHandler(async (req, res, next) => {
+  const { courseId } = req.params;
+  // const course = await courseModel.findById(courseId);
+  // const chapters = await chapterModel.find({ course: courseId });
+  // const curriculum = await curriculumModel.find({ course: courseId });
+  const article = await articleModel
+    .find({ course: courseId })
+    .populate("course")
+    .populate("chapter")
+    .populate("curriculum");
+  return res.status(200).json({ article });
 });

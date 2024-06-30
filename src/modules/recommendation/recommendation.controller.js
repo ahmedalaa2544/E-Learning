@@ -1,18 +1,17 @@
-import { asyncHandler } from "../../utils/asyncHandling.js";
-import Course from "../../../DB/model/course.model.js";
-import View from "../../../DB/model/view.model.js";
-import Student from "../../../DB/model/student.model.js";
+import {
+  default as Course,
+  default as courseModel,
+} from "../../../DB/model/course.model.js";
+import instructorModel from "../../../DB/model/instructor.model.js";
 import Rating from "../../../DB/model/rating.model.js";
+import Student from "../../../DB/model/student.model.js";
+import userModel from "../../../DB/model/user.model.js";
+import View from "../../../DB/model/view.model.js";
+import workshopModel from "../../../DB/model/workshop.model.js";
+import { asyncHandler } from "../../utils/asyncHandling.js";
+import { generateSASUrl } from "../../utils/azureServices.js";
 import ContentKNN from "../../utils/contentKNN.js";
 import EstimateRate from "../../utils/estimateRate.js";
-import mongoose from "mongoose";
-import upload, {
-  deleteDirectory,
-  deleteBlob,
-  generateSASUrl,
-} from "../../utils/azureServices.js";
-import userModel from "../../../DB/model/user.model.js";
-import instructorModel from "../../../DB/model/instructor.model.js";
 
 /**
  * Retrieves and calculates personalized course recommendations for the user based on various interaction data.
@@ -209,11 +208,26 @@ export const recommendedForYou = asyncHandler(async (req, res, next) => {
     });
   });
 
+  let recommend = recommendedForYouRecommendations.filter(
+    (item) => item.course !== undefined
+  );
+
+  if (recommend.length < 3) {
+    const courses = await courseModel.find().limit(3);
+    courses.forEach((course) => {
+      recommend.push({
+        course,
+        coverImageBlobName: undefined, // Placeholder for future implementation
+        promotionalVideoBlobName: undefined, // Placeholder for future implementation
+      });
+    });
+  }
+
   // Send the compiled list of recommendations to the user or handle errors
   if (recommendedForYouRecommendations.length > 0) {
     res.status(200).json({
       message: "Done",
-      recommendations: recommendedForYouRecommendations,
+      recommendations: recommend,
     });
   } else {
     res.status(500).json({ message: "Something went wrong" });
@@ -518,4 +532,50 @@ export const realtedCourses = asyncHandler(async (req, res, next) => {
   return recommendations
     ? res.status(200).json({ message: "Done", recommendations })
     : res.status(500).json({ message: "Something went wrong" });
+});
+
+export const bestSell = asyncHandler(async (req, res, next) => {
+  if (req.query.view == "course") {
+    const courses = await Course.find({ status: "Published" })
+      .sort({
+        numberOfStudents: -1,
+      })
+      .limit(10);
+    return res.status(200).json({ message: "Done", courses });
+  } else if (req.query.view == "workshop") {
+    const workshops = await workshopModel
+      .find({ status: "Published" })
+      .sort({
+        numberOfStudents: -1,
+      })
+      .limit(10);
+    return res.status(200).json({ message: "Done", workshops });
+  }
+  return res.status(400).json({ message: "Invalid view" });
+});
+
+export const recentStarted = asyncHandler(async (req, res, next) => {
+  const currentDate = new Date();
+
+  const workshops = await workshopModel.aggregate([
+    {
+      $addFields: {
+        startDayAsDate: { $dateFromString: { dateString: "$startDay" } },
+      },
+    },
+    {
+      $match: {
+        status: "Published",
+        startDayAsDate: { $gt: currentDate },
+      },
+    },
+    {
+      $sort: { startDayAsDate: 1 },
+    },
+    {
+      $limit: 10,
+    },
+  ]);
+
+  return res.status(200).json({ message: "Done", workshops });
 });

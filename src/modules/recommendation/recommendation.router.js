@@ -1,9 +1,7 @@
 import { Router } from "express";
-const router = Router();
-import * as recommendationController from "./recommendation.controller.js";
-import { validation } from "../../middleware/validation.js";
-import * as validators from "./recommendation.validation.js";
 import isAuthenticated from "../../middleware/authntication.middleware.js";
+import * as recommendationController from "./recommendation.controller.js";
+const router = Router();
 //
 router.get("/", isAuthenticated, recommendationController.getRecommendations);
 // Route to fetch personalized course recommendations for the user
@@ -57,4 +55,8 @@ router.get(
 //     isAuthenticated,
 //     recommendationController.becauseYouSearched
 //   );
+
+router.get("/best-sell", recommendationController.bestSell);
+
+router.get("/coming-workshops", recommendationController.recentStarted);
 export default router;
