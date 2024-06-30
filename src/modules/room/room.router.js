@@ -48,12 +48,12 @@ router.delete(
 );
 
 // Record Room
-router.post(
-  "/record/:roomId",
-  isAuth,
-  validation(roomValidation.roomIdSchema), 
-  roomController.recordRoom
-);
+// router.post(
+//   "/record/:roomId",
+//   isAuth,
+//   validation(roomValidation.roomIdSchema), 
+//   roomController.recordRoom
+// );
 
 // Record Room
 router.put(
