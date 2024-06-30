@@ -7,6 +7,7 @@ import Rating from "../../../DB/model/rating.model.js";
 import Student from "../../../DB/model/student.model.js";
 import userModel from "../../../DB/model/user.model.js";
 import View from "../../../DB/model/view.model.js";
+import workshopModel from "../../../DB/model/workshop.model.js";
 import { asyncHandler } from "../../utils/asyncHandling.js";
 import { generateSASUrl } from "../../utils/azureServices.js";
 import ContentKNN from "../../utils/contentKNN.js";
@@ -531,4 +532,50 @@ export const realtedCourses = asyncHandler(async (req, res, next) => {
   return recommendations
     ? res.status(200).json({ message: "Done", recommendations })
     : res.status(500).json({ message: "Something went wrong" });
+});
+
+export const bestSell = asyncHandler(async (req, res, next) => {
+  if (req.query.view == "course") {
+    const courses = await Course.find({ status: "Published" })
+      .sort({
+        numberOfStudents: -1,
+      })
+      .limit(10);
+    return res.status(200).json({ message: "Done", courses });
+  } else if (req.query.view == "workshop") {
+    const workshops = await workshopModel
+      .find({ status: "Published" })
+      .sort({
+        numberOfStudents: -1,
+      })
+      .limit(10);
+    return res.status(200).json({ message: "Done", workshops });
+  }
+  return res.status(400).json({ message: "Invalid view" });
+});
+
+export const recentStarted = asyncHandler(async (req, res, next) => {
+  const currentDate = new Date();
+
+  const workshops = await workshopModel.aggregate([
+    {
+      $addFields: {
+        startDayAsDate: { $dateFromString: { dateString: "$startDay" } },
+      },
+    },
+    {
+      $match: {
+        status: "Published",
+        startDayAsDate: { $gt: currentDate },
+      },
+    },
+    {
+      $sort: { startDayAsDate: 1 },
+    },
+    {
+      $limit: 10,
+    },
+  ]);
+
+  return res.status(200).json({ message: "Done", workshops });
 });
