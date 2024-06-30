@@ -51,8 +51,16 @@ router.delete(
 router.post(
   "/record/:roomId",
   isAuth,
-  validation(roomValidation.roomIdSchema),
+  validation(roomValidation.roomIdSchema), 
   roomController.recordRoom
 );
 
+// Record Room
+router.put(
+  "/stopRecord/:recordId",
+  // isAuth,
+  // validation(roomValidation.roomIdSchema),
+  roomController.stopRecord
+);
+ 
 export default router;
