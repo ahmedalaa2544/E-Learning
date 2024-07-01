@@ -1,10 +1,10 @@
-import { asyncHandler } from "../../utils/asyncHandling.js";
-import workshopModel from "../../../DB/model/workshop.model.js";
 import categoryModel from "../../../DB/model/category.model.js";
-import subCategoryModel from "../../../DB/model/subCategory.model.js";
-import upload, { deleteBlob } from "../../utils/azureServices.js";
-import roomModel from "../../../DB/model/room.model.js";
 import chatModel from "../../../DB/model/chat.model.js";
+import roomModel from "../../../DB/model/room.model.js";
+import subCategoryModel from "../../../DB/model/subCategory.model.js";
+import workshopModel from "../../../DB/model/workshop.model.js";
+import { asyncHandler } from "../../utils/asyncHandling.js";
+import upload, { deleteBlob } from "../../utils/azureServices.js";
 
 export const createWorkshop = asyncHandler(async (req, res, next) => {
   // data
@@ -342,6 +342,12 @@ export const getAllWorkshops = asyncHandler(async (req, res, next) => {
 
   if (categoryId) {
     const category = await categoryModel.findById(categoryId);
+
+    const workshops = await workshopModel
+      .find({ categoryId })
+      .skip((page - 1) * limit)
+      .limit(limit);
+    return res.status(200).json({ success: true, results: workshops });
 
     if (!category) {
       return next(new Error("Category Not found!", { cause: 404 }));
