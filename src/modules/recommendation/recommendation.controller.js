@@ -158,7 +158,10 @@ export const getRecommendations = asyncHandler(async (req, res, next) => {
 
 export const recommendedForYou = asyncHandler(async (req, res, next) => {
   // Retrieve all courses that are currently marked as 'Published'
-  const courses = await Course.find({ status: "Published" });
+  const courses = await Course.find({ status: "Published" }).populate({
+    path: "createdBy",
+    select: { userName: 1 },
+  });
 
   // Fetch all ratings submitted by the current user
   const ratings = await Rating.find({ user: req.userId });
@@ -213,7 +216,13 @@ export const recommendedForYou = asyncHandler(async (req, res, next) => {
   );
 
   if (recommend.length < 3) {
-    const courses = await courseModel.find().limit(3);
+    const courses = await courseModel
+      .find()
+      .populate({
+        path: "createdBy",
+        select: { userName: 1 },
+      })
+      .limit(3);
     courses.forEach((course) => {
       recommend.push({
         course,
@@ -557,7 +566,7 @@ export const bestSell = asyncHandler(async (req, res, next) => {
 export const recentStarted = asyncHandler(async (req, res, next) => {
   const currentDate = new Date();
 
-  const workshops = await workshopModel.aggregate([
+  let workshops = await workshopModel.aggregate([
     {
       $addFields: {
         startDayAsDate: { $dateFromString: { dateString: "$startDay" } },
@@ -575,10 +584,12 @@ export const recentStarted = asyncHandler(async (req, res, next) => {
     {
       $limit: 10,
     },
-  ]).populate({
-      path: 'instructor',
-      select: {'userName':1},
-  })
+  ]);
+
+  workshops = await workshopModel.populate(workshops, {
+    path: "instructor",
+    select: { userName: 1 },
+  });
 
   return res.status(200).json({ message: "Done", workshops });
 });
