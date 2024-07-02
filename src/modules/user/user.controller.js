@@ -1,22 +1,24 @@
-import userModel from "../../../DB/model/user.model.js";
-import courseModel from "../../../DB/model/course.model.js";
-import instructorModel from "../../../DB/model/instructor.model.js";
-import { asyncHandler } from "../../utils/asyncHandling.js";
-import Cryptr from "cryptr";
-import tokenModel from "../../../DB/model/token.model.js";
-import upload, { deleteBlob } from "../../utils/azureServices.js";
-import workshopModel from "../../../DB/model/workshop.model.js";
-import orderModel from "../../../DB/model/order.model.js";
 import bcryptjs from "bcryptjs";
-import { ConfirmTemp } from "../../utils/htmlTemps.js";
 import crypto from "crypto";
-import sendEmail from "../../utils/sentEmail.js";
-import notificationModel from "../../../DB/model/notification.model.js";
+import Cryptr from "cryptr";
 import cartModel from "../../../DB/model/cart.model.js";
-import View from "../../../DB/model/view.model.js";
-import Instructor from "../../../DB/model/instructor.model.js";
-import Student from "../../../DB/model/student.model.js";
+import courseModel from "../../../DB/model/course.model.js";
+import {
+  default as Instructor,
+  default as instructorModel,
+} from "../../../DB/model/instructor.model.js";
+import notificationModel from "../../../DB/model/notification.model.js";
+import orderModel from "../../../DB/model/order.model.js";
 import Progress from "../../../DB/model/progress.model.js";
+import Student from "../../../DB/model/student.model.js";
+import tokenModel from "../../../DB/model/token.model.js";
+import userModel from "../../../DB/model/user.model.js";
+import View from "../../../DB/model/view.model.js";
+import workshopModel from "../../../DB/model/workshop.model.js";
+import { asyncHandler } from "../../utils/asyncHandling.js";
+import upload, { deleteBlob } from "../../utils/azureServices.js";
+import { ConfirmTemp } from "../../utils/htmlTemps.js";
+import sendEmail from "../../utils/sentEmail.js";
 
 export const getUser = asyncHandler(async (req, res, next) => {
   const newUser = await userModel
@@ -133,7 +135,12 @@ export const addAndRmWishlist = asyncHandler(async (req, res, next) => {
   // recieve data
   const { courseId } = req.params;
   const course = await courseModel.findById(courseId);
-  if (!course) return next(new Error("Course not found", { cause: 404 }));
+  if (!course) {
+    const workshop = await workshopModel.findById(courseId);
+    if (!workshop) {
+      return next(new Error("Course not found", { cause: 404 }));
+    }
+  }
   // chcek course exists
   if (req.user.wishlist.includes(courseId)) {
     // remove
@@ -164,9 +171,18 @@ export const rmWishlist = asyncHandler(async (req, res, next) => {
 });
 
 export const getWishlist = asyncHandler(async (req, res, next) => {
-  const { wishlist } = await userModel
+  var { wishlist } = await userModel
     .findById(req.user.id)
-    .populate([{ path: "wishlist" }]);
+    .populate([{ path: "wishlist", model: "Course" }]);
+
+  let course = wishlist;
+
+  var { wishlist } = await userModel
+    .findById(req.user.id)
+    .populate([{ path: "wishlist", model: "Workshop" }]);
+
+  wishlist = wishlist.concat(course);
+
   return res.status(200).json({ message: "Done", wishlist });
 });
 
