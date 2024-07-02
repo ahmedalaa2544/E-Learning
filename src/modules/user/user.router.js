@@ -1,10 +1,10 @@
 import { Router } from "express";
-const router = Router();
-import * as userController from "./user.controller.js";
-import { validation } from "../../middleware/validation.js";
-import * as validators from "./user.validation.js";
 import isAuth from "../../middleware/authntication.middleware.js";
+import { validation } from "../../middleware/validation.js";
 import { customValidation, fileUpload } from "../../utils/multer.js";
+import * as userController from "./user.controller.js";
+import * as validators from "./user.validation.js";
+const router = Router();
 
 router.get("/profile", isAuth, userController.getUser);
 

@@ -174,4 +174,6 @@ router.patch(
 
 router.get("/show-course/:courseId", courseController.showCourse);
 
+router.get("/:type/:curriculumId", courseController.showCurriculum);
+
 export default router;
