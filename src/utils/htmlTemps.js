@@ -30,7 +30,7 @@ export const ConfirmTemp = (link) => `<!DOCTYPE html>
     >
       <div>
         <img
-          src="https://elearningtest123.blob.core.windows.net/upload/photo1714479762.jpeg"
+          src="https://elearningtest123.blob.core.windows.net/upload/Mail.png"
           alt="mail icon"
           style="max-width: 100%; height: auto"
         />
@@ -134,7 +134,7 @@ export const resetPassTemp = (code) => `<!DOCTYPE html>
 </head>
 <body>
     <div class="container">
-        <img src="https://lh3.googleusercontent.com/u/1/drive-viewer/AK7aPaBGA_VflTJx5K4MQ7dysyZxiVGXL30T0ayacEq2fQ7vazkn8f7-kB2u9ySZeLvHBXofKjy4Lz65aTdPeo_cpCEhlbiVPg=w1360-h599" alt="mail icon">
+        <img src="https://elearningtest123.blob.core.windows.net/upload/Mail.png" alt="mail icon">
         <h1>Forgot Password</h1>
         <p>We received a request to reset your password. Please use the following code to reset your password:</p>
         <div class="code">${code}</div>
