@@ -18,7 +18,10 @@ import instructorModel from "../../../DB/model/instructor.model.js";
 import notificationModel from "../../../DB/model/notification.model.js";
 import Option from "../../../DB/model/option.model.js";
 import Progress from "../../../DB/model/progress.model.js";
-import Question from "../../../DB/model/question.model.js";
+import {
+  default as Question,
+  default as questionModel,
+} from "../../../DB/model/question.model.js";
 import Quiz from "../../../DB/model/quiz.model.js";
 import ratingModel from "../../../DB/model/rating.model.js";
 import searchModel from "../../../DB/model/search.keys.js";
@@ -1103,4 +1106,29 @@ export const showCourse = asyncHandler(async (req, res, next) => {
     .populate("chapter")
     .populate("curriculum");
   return res.status(200).json({ article });
+});
+
+export const showCurriculum = asyncHandler(async (req, res, next) => {
+  const { curriculumId, type } = req.params;
+
+  if (type == "quiz") {
+    var curriculum = await Quiz.findById(curriculumId);
+    if (!curriculum) return next(new Error("Quiz not found"), { cause: 404 });
+
+    const questions = await questionModel.find({ quiz: curriculumId });
+    curriculum = {
+      curriculum, // Convert Mongoose document to plain object
+      questions,
+    };
+  }
+  if (type == "video") {
+    var curriculum = await Video.findById(curriculumId);
+    if (!curriculum) return next(new Error("Video not found"), { cause: 404 });
+  }
+  if (type == "article") {
+    var curriculum = await articleModel.findById(curriculumId);
+    if (!curriculum)
+      return next(new Error("Article not found"), { cause: 404 });
+  }
+  return res.status(200).json({ curriculum });
 });
