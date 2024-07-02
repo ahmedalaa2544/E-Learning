@@ -1,4 +1,4 @@
-import mongoose, { Schema, Types, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 const userSchmea = new Schema(
   {
@@ -60,7 +60,7 @@ const userSchmea = new Schema(
       type: [{ type: Types.ObjectId, ref: ["Workshop", "Course"] }],
     },
     wishlist: {
-      type: [{ type: Types.ObjectId, ref: "Course" }],
+      type: [{ type: Types.ObjectId, ref: ["Workshop", "Course"] }],
     },
     phone: String,
     isOnline: {

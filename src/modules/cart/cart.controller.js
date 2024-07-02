@@ -121,7 +121,7 @@ export const getCart = asyncHandler(async (req, res) => {
         path: "instructor",
         select: "userName",
       },
-      select: "coverImageUrl",
+      select: "promotionImage",
     });
 
     const Scourses = workshop.course
@@ -129,7 +129,7 @@ export const getCart = asyncHandler(async (req, res) => {
       .map((item) => ({
         courseId: item.courseId._id,
         createdBy: item.courseId.instructor,
-        coverImageUrl: item.courseId.coverImageUrl || "",
+        coverImageUrl: item.courseId.promotionImage.url || "",
         price: item.price,
         name: item.name,
       }));
