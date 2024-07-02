@@ -575,7 +575,10 @@ export const recentStarted = asyncHandler(async (req, res, next) => {
     {
       $limit: 10,
     },
-  ]);
+  ]).populate({
+      path: 'instructor',
+      select: {'userName':1},
+  })
 
   return res.status(200).json({ message: "Done", workshops });
 });
