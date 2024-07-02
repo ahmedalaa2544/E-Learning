@@ -7,7 +7,7 @@ router.get("/", isAuthenticated, recommendationController.getRecommendations);
 // Route to fetch personalized course recommendations for the user
 router.get(
   "/recommendedForYou",
-  isAuthenticated,
+  //isAuthenticated,
   recommendationController.recommendedForYou
 );
 
