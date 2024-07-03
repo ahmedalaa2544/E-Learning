@@ -214,14 +214,19 @@ export const recommendedForYou = asyncHandler(async (req, res, next) => {
   let recommend = recommendedForYouRecommendations.filter(
     (item) => item.course !== undefined
   );
-
+  let titles = [];
+  titles = recommend.map((a) => {
+    return a.course.title;
+  });
+  const randomSkip = Math.floor(Math.random() * 5);
   if (recommend.length < 3) {
     const courses = await courseModel
-      .find()
+      .find({ title: { $nin: titles }, status: "Published" })
       .populate({
         path: "createdBy",
         select: { userName: 1 },
       })
+      .skip(randomSkip)
       .limit(3);
     courses.forEach((course) => {
       recommend.push({
