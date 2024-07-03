@@ -595,8 +595,13 @@ export const recentStarted = asyncHandler(async (req, res, next) => {
 });
 
 export const recommendedForYouUnauth = asyncHandler(async (req, res, next) => {
-  console.log("runing");
-  const courses = await courseModel.aggregate([{ $sample: { size: 10 } }]);
-  console.log(courses);
-  return res.status(200).json({ message: "Done", courses });
+  let c = await courseModel.aggregate([{ $sample: { size: 10 } }]);
+
+  let courses = [];
+  for (let i = 0; i < c.length; i++) {
+    courses.push({
+      course: c[i],
+    });
+  }
+  return res.status(200).json({ message: "Done", recommendations: courses });
 });
