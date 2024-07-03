@@ -50,7 +50,7 @@ router.get(
 // Get Specific Workshop
 router.get(
   "/:workshopId",
-  // isAuth,
+  isAuth,
   validation(workshopValidation.getSpecificWorkshopSchema),
   workshopController.getSpecificWorkshop
 );
@@ -58,7 +58,14 @@ router.get(
 // Get All Workshops
 router.get(
   "/",
-  // isAuth,
+  (req, res, next) => {
+    if (!req.headers.token) {
+      workshopController.getAllWorkshops(req, res, next);
+    } else {
+      next();
+    }
+  },
+  isAuth,
   validation(workshopValidation.getAllWorkshopsSchema),
   workshopController.getAllWorkshops
 );
