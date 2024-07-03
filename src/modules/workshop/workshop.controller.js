@@ -280,6 +280,8 @@ export const uploadImageOrVideo = asyncHandler(async (req, res, next) => {
     // Define the path for the promotion image in the user's course directory.
     const blobImageName = `Users\\${req.user.userName}_${req.user._id}\\Workshops\\${workshop.title}_${workshopId}\\promotion_image.${blobImageExtension}`;
 
+    const url = `https://elearningtest123.blob.core.windows.net/upload/Users/${req.user.userName}_${req.user._id}/Workshops/${workshop.title}_${workshopId}/promotion_image.${blobImageName}`;
+
     // Upload the promotion image and obtain its URL.
     const promotionImageUrl = await upload(
       req.files.promotionImage[0].path,
@@ -290,7 +292,7 @@ export const uploadImageOrVideo = asyncHandler(async (req, res, next) => {
 
     // save changes in DB
     workshop.promotionImage.blobName = blobImageName;
-    workshop.promotionImage.url = promotionImageUrl;
+    workshop.promotionImage.url = url;
     await workshop.save();
   }
 
@@ -310,6 +312,8 @@ export const uploadImageOrVideo = asyncHandler(async (req, res, next) => {
     // Define the path for the promotion video in the user's course directory.
     const blobVideoName = `Users\\${req.user.userName}_${req.user._id}\\Workshops\\${workshop.title}_${workshopId}\\promotion_video.${blobVideoExtension}`;
 
+    const url = `https://elearningtest123.blob.core.windows.net/upload/Users/${req.user.userName}_${req.user._id}/Workshops/${workshop.title}_${workshopId}/promotion_video.${blobVideoName}`;
+
     // Upload the promotion video and obtain its URL.
     const promotionVideoUrl = await upload(
       req.files.promotionVideo[0].path,
@@ -320,7 +324,7 @@ export const uploadImageOrVideo = asyncHandler(async (req, res, next) => {
 
     // save changes in DB
     workshop.promotionVideo.blobName = blobVideoName;
-    workshop.promotionVideo.url = promotionVideoUrl;
+    workshop.promotionVideo.url = url;
     await workshop.save();
   }
 
