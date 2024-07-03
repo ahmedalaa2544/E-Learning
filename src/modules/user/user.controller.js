@@ -173,15 +173,26 @@ export const rmWishlist = asyncHandler(async (req, res, next) => {
 export const getWishlist = asyncHandler(async (req, res, next) => {
   var { wishlist } = await userModel
     .findById(req.user.id)
-    .populate([{ path: "wishlist", model: "Course" }]);
-
-  let course = wishlist;
-
-  var { wishlist } = await userModel
-    .findById(req.user.id)
     .populate([{ path: "wishlist", model: "Workshop" }]);
 
-  wishlist = wishlist.concat(course);
+  let workshop = [];
+  wishlist.forEach((a) => {
+    workshop.push({
+      title: a.title,
+      price: a.price,
+      coverImageUrl: a.promotionImage.url,
+    });
+  });
+
+  var { wishlist } = await userModel.findById(req.user.id).populate([
+    {
+      path: "wishlist",
+      model: "Course",
+      select: "title price coverImageUrl",
+    },
+  ]);
+
+  wishlist = wishlist.concat(workshop);
 
   return res.status(200).json({ message: "Done", wishlist });
 });
