@@ -2,11 +2,19 @@ import { Router } from "express";
 import isAuthenticated from "../../middleware/authntication.middleware.js";
 import * as recommendationController from "./recommendation.controller.js";
 const router = Router();
+
 //
 router.get("/", isAuthenticated, recommendationController.getRecommendations);
 // Route to fetch personalized course recommendations for the user
 router.get(
   "/recommendedForYou",
+  (req, res, next) => {
+    if (!req.headers.token) {
+      recommendationController.recommendedForYouUnauth(req, res, next);
+    } else {
+      next();
+    }
+  },
   isAuthenticated,
   recommendationController.recommendedForYou
 );

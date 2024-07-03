@@ -1,11 +1,11 @@
 import { Router } from "express";
-const router = Router();
+import isAuth from "../../middleware/authntication.middleware.js";
+import { validation } from "../../middleware/validation.js";
 import * as workshopController from "./workshop.controller.js";
 import * as workshopValidation from "./workshop.validation.js";
-import { validation } from "../../middleware/validation.js";
-import isAuth from "../../middleware/authntication.middleware.js";
+const router = Router();
 
-import { fileUpload, customValidation } from "../../utils/multer.js";
+import { customValidation, fileUpload } from "../../utils/multer.js";
 
 // Create Workshop
 router.post(
@@ -50,7 +50,7 @@ router.get(
 // Get Specific Workshop
 router.get(
   "/:workshopId",
-  isAuth,
+  // isAuth,
   validation(workshopValidation.getSpecificWorkshopSchema),
   workshopController.getSpecificWorkshop
 );
@@ -58,7 +58,7 @@ router.get(
 // Get All Workshops
 router.get(
   "/",
-  isAuth,
+  // isAuth,
   validation(workshopValidation.getAllWorkshopsSchema),
   workshopController.getAllWorkshops
 );
