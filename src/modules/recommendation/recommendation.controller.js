@@ -593,3 +593,10 @@ export const recentStarted = asyncHandler(async (req, res, next) => {
 
   return res.status(200).json({ message: "Done", workshops });
 });
+
+export const recommendedForYouUnauth = asyncHandler(async (req, res, next) => {
+  console.log("runing");
+  const courses = await courseModel.aggregate([{ $sample: { size: 10 } }]);
+  console.log(courses);
+  return res.status(200).json({ message: "Done", courses });
+});
