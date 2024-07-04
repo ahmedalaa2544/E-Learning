@@ -124,6 +124,8 @@ export const editCourse = asyncHandler(async (req, res, next) => {
       // Define the path for the cover image in the user's course directory.
       blobImageName = `Users\\${req.user.userName}_${req.user._id}\\Courses\\${courseId}\\Course_Cover_Image.${blobImageExtension}`;
 
+      const url = `https://elearningtest123.blob.core.windows.net/upload/Users/${req.user.userName}_${req.user._id}/Courses/${courseId}/Course_Cover_Image.${blobImageExtension}`;
+
       // Upload the cover image and obtain its URL.
       coverImageUrl = await upload(
         req.files.coverImage[0].path,
@@ -241,7 +243,7 @@ export const editCourse = asyncHandler(async (req, res, next) => {
       description: description,
       language: language,
       level: level,
-      coverImageUrl: coverImageUrl,
+      coverImageUrl: url,
       coverImageBlobName: blobImageName,
       promotionalVideoUrl: promotionalVideoUrl,
       promotionalVideoBlobName: blobVideoName,
@@ -486,7 +488,7 @@ export const getCourse = asyncHandler(async (req, res, next) => {
         message: "Success",
         course: {
           ...fetchedCourse._doc,
-          coverImageUrl: imageUrl,
+          coverImageUrl,
           coverImageBlobName: undefined,
           promotionalVideoUrl: videoUrl
             ? videoUrl.replace(/%5C/g, "/")
