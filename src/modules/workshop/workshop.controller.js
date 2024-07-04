@@ -394,7 +394,7 @@ export const getSpecificWorkshop = asyncHandler(async (req, res, next) => {
     workshop = await workshopModel
       .findById(workshopId)
       .select(
-        "title description requirements price promotionVideo durationInWeek languages level instructor"
+        "title description requirements price promotionVideo promotionImage durationInWeek languages level instructor"
       )
       .populate({ path: "categoryId", select: "name" })
       .populate({ path: "subCategoryId", select: "name" })
