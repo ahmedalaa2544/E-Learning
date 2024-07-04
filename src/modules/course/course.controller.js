@@ -488,7 +488,7 @@ export const getCourse = asyncHandler(async (req, res, next) => {
         message: "Success",
         course: {
           ...fetchedCourse._doc,
-          coverImageUrl,
+          // coverImageUrl,
           coverImageBlobName: undefined,
           promotionalVideoUrl: videoUrl
             ? videoUrl.replace(/%5C/g, "/")
