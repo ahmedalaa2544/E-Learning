@@ -227,7 +227,7 @@ export const recommendedForYou = asyncHandler(async (req, res, next) => {
         select: { userName: 1 },
       })
       .skip(randomSkip)
-      .limit(3);
+      .limit(5);
     courses.forEach((course) => {
       recommend.push({
         course,
