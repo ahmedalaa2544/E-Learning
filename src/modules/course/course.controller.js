@@ -124,7 +124,7 @@ export const editCourse = asyncHandler(async (req, res, next) => {
       // Define the path for the cover image in the user's course directory.
       blobImageName = `Users\\${req.user.userName}_${req.user._id}\\Courses\\${courseId}\\Course_Cover_Image.${blobImageExtension}`;
 
-      const url = `https://elearningtest123.blob.core.windows.net/upload/Users/${req.user.userName}_${req.user._id}/Courses/${courseId}/Course_Cover_Image.${blobImageExtension}`;
+      var url = `https://elearningtest123.blob.core.windows.net/upload/Users/${req.user.userName}_${req.user._id}/Courses/${courseId}/Course_Cover_Image.${blobImageExtension}`;
 
       // Upload the cover image and obtain its URL.
       coverImageUrl = await upload(
