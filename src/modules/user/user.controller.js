@@ -106,6 +106,9 @@ export const updateProfile = asyncHandler(async (req, res, next) => {
     // Define the path for the promotion image in the user's course directory.
     const dateOfPublish = Date.now(); // to change the url from pic to another
     const blobImageName = `Users\\${req.user.userName}_${req.user._id}\\profilePic\\${dateOfPublish}.${blobImageExtension}`;
+
+    const url = `https://elearningtest123.blob.core.windows.net/upload/Users/${req.user.userName}_${req.user._id}/profilePic/${workshop.title}_${workshopId}/${dateOfPublish}.${blobImageExtension}`;
+
     // Upload image and obtain its URL.
     const imageUrl = await upload(
       req.file.path,
@@ -116,7 +119,7 @@ export const updateProfile = asyncHandler(async (req, res, next) => {
 
     // save changes in DB
     req.user.profilePic.blobName = blobImageName;
-    req.user.profilePic.url = imageUrl;
+    req.user.profilePic.url = url;
     await req.user.save();
   }
 
