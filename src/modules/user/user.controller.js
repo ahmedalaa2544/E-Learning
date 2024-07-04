@@ -107,7 +107,7 @@ export const updateProfile = asyncHandler(async (req, res, next) => {
     const dateOfPublish = Date.now(); // to change the url from pic to another
     const blobImageName = `Users\\${req.user.userName}_${req.user._id}\\profilePic\\${dateOfPublish}.${blobImageExtension}`;
 
-    const url = `https://elearningtest123.blob.core.windows.net/upload/Users/${req.user.userName}_${req.user._id}/profilePic/${workshop.title}_${workshopId}/${dateOfPublish}.${blobImageExtension}`;
+    const url = `https://elearningtest123.blob.core.windows.net/upload/Users/${req.user.userName}_${req.user._id}/profilePic/${dateOfPublish}.${blobImageExtension}`;
 
     // Upload image and obtain its URL.
     const imageUrl = await upload(
