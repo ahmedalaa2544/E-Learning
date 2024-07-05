@@ -290,6 +290,11 @@ export const uploadImageOrVideo = asyncHandler(async (req, res, next) => {
       blobImageExtension
     );
 
+    await chatModel.findOneAndUpdate(
+      { title: workshop.title },
+      { $set: { pic: url } }
+    );
+
     // save changes in DB
     workshop.promotionImage.blobName = blobImageName;
     workshop.promotionImage.url = url;
