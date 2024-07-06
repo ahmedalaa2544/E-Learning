@@ -1090,10 +1090,13 @@ export const getAll = asyncHandler(async (req, res, next) => {
   if (req.query.sort == "reverse") {
     const courses = await courseModel
       .find({ status: "Published" })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .populate({ path: "createdBy", select: "userName" });
     return res.status(200).json({ courses });
   }
-  const courses = await courseModel.find({ status: "Published" });
+  const courses = await courseModel
+    .find({ status: "Published" })
+    .populate({ path: "createdBy", select: "userName" });
   return res.status(200).json({ courses });
 });
 
