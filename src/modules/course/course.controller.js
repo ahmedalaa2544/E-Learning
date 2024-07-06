@@ -1091,7 +1091,7 @@ export const getAll = asyncHandler(async (req, res, next) => {
     const courses = await courseModel
       .find({ status: "Published" })
       .sort({ createdAt: -1 })
-      .populate({ path: "createdBy", select: "userName" });
+      .populate({ path: "createdBy", select: "userName profilePic" });
     return res.status(200).json({ courses });
   }
   const courses = await courseModel
