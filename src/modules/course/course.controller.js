@@ -1096,7 +1096,7 @@ export const getAll = asyncHandler(async (req, res, next) => {
   }
   const courses = await courseModel
     .find({ status: "Published" })
-    .populate({ path: "createdBy", select: "userName" });
+    .populate({ path: "createdBy", select: "userName profilePic" });
   return res.status(200).json({ courses });
 });
 
