@@ -43,10 +43,3 @@ export const readNotify = asyncHandler(async (req, res) => {
   await notification.save();
   return res.status(200).json({ message: "Done" });
 });
-///////////////////////////////////////////////////
-
-// app.get("/send-notification", (req, res) => {
-//   webpush.sendNotification(subDatabse[0], "Hello world");
-//   res.json({ statue: "Success", message: "Message sent to push service" });
-//   console.log(subDatabse);
-// });
