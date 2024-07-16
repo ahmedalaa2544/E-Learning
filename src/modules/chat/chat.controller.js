@@ -46,6 +46,18 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
       blobMediaExtension
     );
 
+    message = {
+      from: req.user.id,
+      to: chatId,
+      media: {
+        url: url,
+        size: req.file.size,
+        name: req.file.originalname,
+        typeOfMedia,
+      },
+      time: dateOfPublish,
+    };
+
     // save changes in DB
     chat.messages.push({
       from: req.user.id,
@@ -76,12 +88,12 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
 
     // add notification
     let notification = {
-      image: req.user.profilePic.url,
-      title: "New Message",
-      body: `${req.user.userName} sent you a ${typeOfMedia}`,
-      url: `https://e-learning-azure.vercel.app/instructor/messages/${chatId}`,
+      image,
+      title,
+      body,
+      url,
     };
-    let notify = await notificationModel.findOneAndUpdate(
+    await notificationModel.findOneAndUpdate(
       {
         user: { $in: destId },
       },
@@ -90,21 +102,9 @@ export const sendMsg = asyncHandler(async (req, res, next) => {
       },
       { new: true }
     );
-
-    if (!notify) {
-      notify = await notificationModel.create({
-        user: destId[0],
-        notifications: notification,
-      });
-    }
-    notification = notify.notifications.reverse()[0];
     getIo().to(socketIds).emit("notification", notification);
-    if (destIds[0].popUpId.endpoint) {
-      webpush.sendNotification(
-        destIds[0].popUpId,
-        JSON.stringify(notification)
-      );
-    }
+    webpush.sendNotification(destIds[0].popUpId, JSON.stringify(notification));
+
     return res.status(200).json({ message: "Done" });
   }
 
